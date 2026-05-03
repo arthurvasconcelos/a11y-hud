@@ -1,0 +1,72 @@
+{
+  "name": "@a11y-hud/svelte",
+  "version": "0.0.0",
+  "description": "Svelte adapter for a11y-hud — run axe-core accessibility audits in your Svelte app with no DevTools required.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "a11y-hud": "workspace:*"
+  },
+  "peerDependencies": {
+    "svelte": ">=5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@testing-library/svelte": "^5.3.1",
+    "@vitest/coverage-v8": "^4.1.5",
+    "jsdom": "^29.1.1",
+    "svelte": "^5.55.5",
+    "svelte-check": "^4.4.7",
+    "vite": "^8.0.10",
+    "vite-plugin-dts": "^5.0.0",
+    "vitest": "^4.1.5"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/arthurvasconcelos/a11y-hud#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arthurvasconcelos/a11y-hud.git",
+    "directory": "packages/svelte"
+  },
+  "bugs": {
+    "url": "https://github.com/arthurvasconcelos/a11y-hud/issues"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "axe",
+    "axe-core",
+    "wcag",
+    "svelte",
+    "svelte5",
+    "dev-tools",
+    "overlay",
+    "hud"
+  ]
+}

@@ -54,6 +54,8 @@ jobs:
           pnpm --filter='./packages/react' exec playwright install chromium firefox webkit
           pnpm --filter='./packages/vue' exec playwright install chromium firefox webkit
           pnpm --filter='./packages/angular' exec playwright install chromium firefox webkit
+          pnpm --filter='./packages/svelte' exec playwright install chromium firefox webkit
+          pnpm --filter='./packages/solid' exec playwright install chromium firefox webkit
 
       - name: E2E tests
         run: pnpm test:e2e

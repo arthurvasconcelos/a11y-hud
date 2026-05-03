@@ -41,7 +41,7 @@ Every adapter package must export:
 ```typescript
 interface UseA11yHudOptions {
   theme?: "auto" | "default" | "light" | "high-contrast";
-  scope?: FrameworkScopeType; // React: RefObject<Element | null>; Vue: Element | null (template refs auto-unwrap); Angular: ElementRef<Element> | Element | null (accepts both ViewChild result and raw element); Svelte/Solid: TBD
+  scope?: FrameworkScopeType; // React: RefObject<Element | null>; Vue: Element | null (template refs auto-unwrap); Angular: ElementRef<Element> | Element | null (accepts both ViewChild result and raw element); Svelte: Element | null (from bind:this); Solid: Element | null (passed directly or via reactive getter)
   autoScan?: boolean;
   debounce?: number;
 }
@@ -87,8 +87,12 @@ Every adapter must trigger a rescan after the framework's render pipeline has se
 | React | `useEffect()` with no deps array |
 | Vue | `watchEffect()` or `onUpdated()` + `nextTick()` |
 | Angular | `afterEveryRender()` (render-settled rescan, constructor) + `ngAfterViewInit` (initial mount) + `ngOnChanges` (`@Input()` prop sync) |
-| Svelte | `afterUpdate()` |
-| Solid | `createEffect()` after the relevant signal |
+| Svelte 5 | `onMount` (initial CE mount) + `$effect` per prop (prop-change sync + rescan). Hook must live in a `.svelte.ts` file so runes are compiled. Route changes cause component remount, so `onMount` fires again automatically. |
+| Solid | `onMount` (initial CE mount, runs once) + `createEffect` per prop (tracks reactive reads, runs after DOM commits). Route changes cause component remount. |
+
+**Svelte note:** The hook (`useA11yHud`) accepts a getter function `() => UseA11yHudOptions` instead of a plain object. This is required for `$effect` to track reactive prop reads through the closure. The component (`A11yHud.svelte`) wraps this automatically; direct hook consumers pass `() => ({ theme, scope })` where `theme` and `scope` are reactive `$props()` bindings.
+
+**Solid note:** The primary export is `createA11yHud` (following Solid's `create*` convention for reactive primitives) rather than `useA11yHud`. The component passes Solid's reactive `props` proxy directly, so `createEffect` inside the hook tracks prop reads automatically. Direct hook consumers use getter syntax for reactive values: `{ get scope() { return scopeSignal(); } }`.
 
 The render-settled effect must also sync `scopeElement` before scanning:
 

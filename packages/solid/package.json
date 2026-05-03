@@ -1,0 +1,72 @@
+{
+  "name": "@a11y-hud/solid",
+  "version": "0.0.0",
+  "description": "Solid adapter for a11y-hud — run axe-core accessibility audits in your Solid app with no DevTools required.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "a11y-hud": "workspace:*"
+  },
+  "peerDependencies": {
+    "solid-js": ">=1.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@solidjs/router": "^0.16.1",
+    "@solidjs/testing-library": "^0.8.10",
+    "@vitest/coverage-v8": "^4.1.5",
+    "jsdom": "^29.1.1",
+    "solid-js": "^1.9.12",
+    "tsup": "^8.3.5",
+    "vite-plugin-solid": "^2.11.12",
+    "vitest": "^4.1.5"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/arthurvasconcelos/a11y-hud#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arthurvasconcelos/a11y-hud.git",
+    "directory": "packages/solid"
+  },
+  "bugs": {
+    "url": "https://github.com/arthurvasconcelos/a11y-hud/issues"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "axe",
+    "axe-core",
+    "wcag",
+    "solid",
+    "solidjs",
+    "dev-tools",
+    "overlay",
+    "hud"
+  ]
+}

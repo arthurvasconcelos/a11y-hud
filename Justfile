@@ -23,6 +23,18 @@ dev-angular:
     pnpm --filter=@a11y-hud/angular build
     pnpm --filter=@a11y-hud/example-angular dev
 
+# Build core + Svelte adapter, then start the Svelte example dev server
+dev-svelte:
+    pnpm --filter=a11y-hud build
+    pnpm --filter=@a11y-hud/svelte build
+    pnpm --filter=@a11y-hud/example-svelte dev
+
+# Build core + Solid adapter, then start the Solid example dev server
+dev-solid:
+    pnpm --filter=a11y-hud build
+    pnpm --filter=@a11y-hud/solid build
+    pnpm --filter=@a11y-hud/example-solid dev
+
 # Start all example dev servers concurrently (builds first)
 dev-all:
     #!/usr/bin/env bash
@@ -30,11 +42,15 @@ dev-all:
     pnpm --filter=@a11y-hud/react build
     pnpm --filter=@a11y-hud/vue build
     pnpm --filter=@a11y-hud/angular build
+    pnpm --filter=@a11y-hud/svelte build
+    pnpm --filter=@a11y-hud/solid build
     trap 'kill $(jobs -p) 2>/dev/null' EXIT
     pnpm --filter=@a11y-hud/example-vanilla dev &
     pnpm --filter=@a11y-hud/example-react dev &
     pnpm --filter=@a11y-hud/example-vue dev &
     pnpm --filter=@a11y-hud/example-angular dev &
+    pnpm --filter=@a11y-hud/example-svelte dev &
+    pnpm --filter=@a11y-hud/example-solid dev &
     wait
 
 # ─── building ─────────────────────────────────────────────────────────────────
@@ -58,6 +74,14 @@ build-vue:
 # Build only the Angular adapter
 build-angular:
     pnpm --filter=@a11y-hud/angular build
+
+# Build only the Svelte adapter
+build-svelte:
+    pnpm --filter=@a11y-hud/svelte build
+
+# Build only the Solid adapter
+build-solid:
+    pnpm --filter=@a11y-hud/solid build
 
 # ─── testing ──────────────────────────────────────────────────────────────────
 
@@ -99,6 +123,18 @@ e2e-angular:
     pnpm --filter=a11y-hud build
     pnpm --filter=@a11y-hud/angular build
     pnpm --filter=@a11y-hud/angular test:e2e
+
+# Build core + Svelte adapter, then run only the Svelte E2E suite
+e2e-svelte:
+    pnpm --filter=a11y-hud build
+    pnpm --filter=@a11y-hud/svelte build
+    pnpm --filter=@a11y-hud/svelte test:e2e
+
+# Build core + Solid adapter, then run only the Solid E2E suite
+e2e-solid:
+    pnpm --filter=a11y-hud build
+    pnpm --filter=@a11y-hud/solid build
+    pnpm --filter=@a11y-hud/solid test:e2e
 
 # ─── quality ──────────────────────────────────────────────────────────────────
 

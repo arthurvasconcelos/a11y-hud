@@ -56,8 +56,8 @@ console.log(results.violations);
 - React — [`@a11y-hud/react`](https://www.npmjs.com/package/@a11y-hud/react)
 - Vue — [`@a11y-hud/vue`](https://www.npmjs.com/package/@a11y-hud/vue)
 - Angular — [`@a11y-hud/angular`](https://www.npmjs.com/package/@a11y-hud/angular)
-- Svelte — `@a11y-hud/svelte` _(coming soon)_
-- Solid — `@a11y-hud/solid` _(coming soon)_
+- Svelte 5 — [`@a11y-hud/svelte`](https://www.npmjs.com/package/@a11y-hud/svelte)
+- Solid — [`@a11y-hud/solid`](https://www.npmjs.com/package/@a11y-hud/solid)
 
 ## License
 

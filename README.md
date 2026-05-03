@@ -6,6 +6,8 @@
 [![@a11y-hud/react](https://img.shields.io/npm/v/@a11y-hud/react.svg?label=%40a11y-hud%2Freact)](https://www.npmjs.com/package/@a11y-hud/react)
 [![@a11y-hud/vue](https://img.shields.io/npm/v/@a11y-hud/vue.svg?label=%40a11y-hud%2Fvue)](https://www.npmjs.com/package/@a11y-hud/vue)
 [![@a11y-hud/angular](https://img.shields.io/npm/v/@a11y-hud/angular.svg?label=%40a11y-hud%2Fangular)](https://www.npmjs.com/package/@a11y-hud/angular)
+[![@a11y-hud/svelte](https://img.shields.io/npm/v/@a11y-hud/svelte.svg?label=%40a11y-hud%2Fsvelte)](https://www.npmjs.com/package/@a11y-hud/svelte)
+[![@a11y-hud/solid](https://img.shields.io/npm/v/@a11y-hud/solid.svg?label=%40a11y-hud%2Fsolid)](https://www.npmjs.com/package/@a11y-hud/solid)
 [![CI](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml/badge.svg)](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -99,8 +101,8 @@ See the [full token reference](https://github.com/arthurvasconcelos/a11y-hud/blo
 | React | [`@a11y-hud/react`](https://www.npmjs.com/package/@a11y-hud/react) | `npm i -D @a11y-hud/react` |
 | Vue | [`@a11y-hud/vue`](https://www.npmjs.com/package/@a11y-hud/vue) | `npm i -D @a11y-hud/vue` |
 | Angular | [`@a11y-hud/angular`](https://www.npmjs.com/package/@a11y-hud/angular) | `npm i -D @a11y-hud/angular` |
-| Svelte | `@a11y-hud/svelte` | coming in 0.5 |
-| Solid | `@a11y-hud/solid` | coming in 0.5 |
+| Svelte | [`@a11y-hud/svelte`](https://www.npmjs.com/package/@a11y-hud/svelte) | `npm i -D @a11y-hud/svelte` |
+| Solid | [`@a11y-hud/solid`](https://www.npmjs.com/package/@a11y-hud/solid) | `npm i -D @a11y-hud/solid` |
 
 ## Framework quick starts
 
@@ -139,6 +141,34 @@ import { A11yHudComponent } from '@a11y-hud/angular';
   template: `<a11y-hud-angular [theme]="'auto'" />`,
 })
 export class AppComponent {}
+```
+
+**Svelte 5**
+
+```svelte
+<!-- App.svelte -->
+<script lang="ts">
+  import { A11yHud } from "@a11y-hud/svelte";
+</script>
+
+<A11yHud theme="auto" />
+<!-- rest of app -->
+```
+
+**Solid**
+
+```tsx
+// App.tsx
+import { A11yHud } from "@a11y-hud/solid";
+
+export default function App() {
+  return (
+    <>
+      <A11yHud theme="auto" />
+      {/* rest of app */}
+    </>
+  );
+}
 ```
 
 ## Contributing
