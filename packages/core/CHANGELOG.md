@@ -1,5 +1,11 @@
 # a11y-hud
 
+## 0.1.3
+
+### Patch Changes
+
+- Update README to link `@a11y-hud/angular` now that the adapter is published.
+
 ## 0.1.2
 
 ### Patch Changes

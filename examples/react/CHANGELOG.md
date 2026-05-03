@@ -1,5 +1,11 @@
 # @a11y-hud/example-react
 
+## 0.0.4
+
+### Patch Changes
+
+- @a11y-hud/react@0.2.3
+
 ## 0.0.3
 
 ### Patch Changes

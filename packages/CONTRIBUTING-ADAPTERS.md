@@ -86,7 +86,7 @@ Every adapter must trigger a rescan after the framework's render pipeline has se
 |-----------|------|
 | React | `useEffect()` with no deps array |
 | Vue | `watchEffect()` or `onUpdated()` + `nextTick()` |
-| Angular | `afterNextRender` (initial mount) + `effect()` per signal input (prop changes) |
+| Angular | `ngAfterViewInit` (initial mount) + `ngOnChanges` (prop-change sync via `@Input()`) |
 | Svelte | `afterUpdate()` |
 | Solid | `createEffect()` after the relevant signal |
 
