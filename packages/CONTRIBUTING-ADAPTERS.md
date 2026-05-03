@@ -41,7 +41,7 @@ Every adapter package must export:
 ```typescript
 interface UseA11yHudOptions {
   theme?: "auto" | "default" | "light" | "high-contrast";
-  scope?: FrameworkScopeType; // React: RefObject<Element | null>; Vue: Element | null (template refs auto-unwrap); Angular/Svelte/Solid: TBD
+  scope?: FrameworkScopeType; // React: RefObject<Element | null>; Vue: Element | null (template refs auto-unwrap); Angular: ElementRef<Element> | Element | null (accepts both ViewChild result and raw element); Svelte/Solid: TBD
   autoScan?: boolean;
   debounce?: number;
 }
@@ -86,7 +86,7 @@ Every adapter must trigger a rescan after the framework's render pipeline has se
 |-----------|------|
 | React | `useEffect()` with no deps array |
 | Vue | `watchEffect()` or `onUpdated()` + `nextTick()` |
-| Angular | `ngAfterViewChecked` (run outside NgZone) |
+| Angular | `afterNextRender` (initial mount) + `effect()` per signal input (prop changes) |
 | Svelte | `afterUpdate()` |
 | Solid | `createEffect()` after the relevant signal |
 

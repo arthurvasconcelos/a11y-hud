@@ -1,0 +1,17 @@
+import { Component } from "@angular/core";
+
+@Component({
+  standalone: true,
+  selector: "app-page-a",
+  template: `
+    <main>
+      <h1>Page A — Fixture violations</h1>
+      <p>This page contains intentional accessibility violations used to test the HUD.</p>
+      <!-- image-alt violation: img without alt attribute -->
+      <img src="https://via.placeholder.com/150" width="150" height="150" />
+      <!-- button-name violation: button with no accessible name -->
+      <button type="button" style="width: 32px; height: 32px"></button>
+    </main>
+  `,
+})
+export class PageAComponent {}

@@ -53,6 +53,7 @@ jobs:
           pnpm --filter='./packages/core' exec playwright install --with-deps chromium firefox webkit
           pnpm --filter='./packages/react' exec playwright install chromium firefox webkit
           pnpm --filter='./packages/vue' exec playwright install chromium firefox webkit
+          pnpm --filter='./packages/angular' exec playwright install chromium firefox webkit
 
       - name: E2E tests
         run: pnpm test:e2e

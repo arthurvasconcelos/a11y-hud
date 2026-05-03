@@ -5,6 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/a11y-hud.svg)](https://www.npmjs.com/package/a11y-hud)
 [![@a11y-hud/react](https://img.shields.io/npm/v/@a11y-hud/react.svg?label=%40a11y-hud%2Freact)](https://www.npmjs.com/package/@a11y-hud/react)
 [![@a11y-hud/vue](https://img.shields.io/npm/v/@a11y-hud/vue.svg?label=%40a11y-hud%2Fvue)](https://www.npmjs.com/package/@a11y-hud/vue)
+[![@a11y-hud/angular](https://img.shields.io/npm/v/@a11y-hud/angular.svg?label=%40a11y-hud%2Fangular)](https://www.npmjs.com/package/@a11y-hud/angular)
 [![CI](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml/badge.svg)](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -97,7 +98,7 @@ See the [full token reference](https://github.com/arthurvasconcelos/a11y-hud/blo
 |---------|---------|---------|
 | React | [`@a11y-hud/react`](https://www.npmjs.com/package/@a11y-hud/react) | `npm i -D @a11y-hud/react` |
 | Vue | [`@a11y-hud/vue`](https://www.npmjs.com/package/@a11y-hud/vue) | `npm i -D @a11y-hud/vue` |
-| Angular | `@a11y-hud/angular` | coming in 0.4 |
+| Angular | [`@a11y-hud/angular`](https://www.npmjs.com/package/@a11y-hud/angular) | `npm i -D @a11y-hud/angular` |
 | Svelte | `@a11y-hud/svelte` | coming in 0.5 |
 | Solid | `@a11y-hud/solid` | coming in 0.5 |
 
@@ -123,6 +124,21 @@ import { A11yHud } from "@a11y-hud/vue";
   <A11yHud theme="auto" />
   <!-- rest of app -->
 </template>
+```
+
+**Angular**
+
+```typescript
+// app.component.ts
+import { Component } from '@angular/core';
+import { A11yHudComponent } from '@a11y-hud/angular';
+
+@Component({
+  standalone: true,
+  imports: [A11yHudComponent],
+  template: `<a11y-hud-angular [theme]="'auto'" />`,
+})
+export class AppComponent {}
 ```
 
 ## Contributing

@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!**/dist", "!**/node_modules", "!**/coverage", "!**/.vitepress"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/coverage",
+      "!**/.vitepress",
+      "!**/.angular"
+    ]
   },
   "formatter": {
     "enabled": true,
