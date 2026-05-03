@@ -39,7 +39,7 @@ export function mount(options: MountOptions = {}): A11yHudInstance {
       el.setTheme(theme);
     },
     async runScan(): Promise<AxeResults> {
-      return el.triggerScan();
+      return el.runScan();
     },
   };
 }

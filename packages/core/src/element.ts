@@ -170,7 +170,7 @@ export class A11yHudElement extends HTMLElement {
     this._applyResolvedTheme();
   }
 
-  async triggerScan(): Promise<AxeResults> {
+  async runScan(): Promise<AxeResults> {
     return this._runScan();
   }
 

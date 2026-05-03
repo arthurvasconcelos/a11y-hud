@@ -171,11 +171,11 @@ describe("A11yHudElement", () => {
     el.remove();
   });
 
-  it("triggerScan() returns axe results", async () => {
+  it("runScan() returns axe results", async () => {
     const el = createElement();
     // Wait for initial scan to complete (violation list rendered) before triggering a new one.
     await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
-    const results = await el.triggerScan();
+    const results = await el.runScan();
     expect(results.violations).toHaveLength(1);
     el.remove();
   });
