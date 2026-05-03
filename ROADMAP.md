@@ -2,7 +2,7 @@
 
 This document outlines the planned releases for `a11y-hud`.
 
-## 0.1 — Core MVP (vanilla) ← _current_
+## 0.1 — Core MVP (vanilla) ✓
 
 - `a11y-hud` npm package (unscoped)
 - `<a11y-hud>` Custom Element with Shadow DOM
@@ -13,19 +13,19 @@ This document outlines the planned releases for `a11y-hud`.
 - Three built-in themes: `default` (dark), `light`, `high-contrast`; `auto` default
 - ESM + CJS + UMD (CDN-ready)
 
-## 0.2 — `@a11y-hud/react`
+## 0.2 — `@a11y-hud/react` ✓
 
 React adapter: `<A11yHud />` component + `useA11yHud()` hook.
 
-## 0.3 — `@a11y-hud/vue`
+## 0.3 — `@a11y-hud/vue` ✓
 
 Vue adapter: `<A11yHud />` component + `useA11yHud()` composable.
 
-## 0.4 — `@a11y-hud/angular`
+## 0.4 — `@a11y-hud/angular` ✓
 
 Angular adapter: standalone component + `A11yHudService`.
 
-## 0.5 — `@a11y-hud/svelte` + `@a11y-hud/solid`
+## 0.5 — `@a11y-hud/svelte` + `@a11y-hud/solid` ← _current_
 
 Svelte 5 (runes) + Solid adapters.
 
