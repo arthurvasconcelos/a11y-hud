@@ -41,7 +41,7 @@ Every adapter package must export:
 ```typescript
 interface UseA11yHudOptions {
   theme?: "auto" | "default" | "light" | "high-contrast";
-  scope?: FrameworkRef<Element | null>; // RefObject in React, Ref in Vue, etc.
+  scope?: FrameworkScopeType; // React: RefObject<Element | null>; Vue: Element | null (template refs auto-unwrap); Angular/Svelte/Solid: TBD
   autoScan?: boolean;
   debounce?: number;
 }

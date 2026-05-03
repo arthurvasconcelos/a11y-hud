@@ -68,7 +68,7 @@ const scopeRef = ref(null);
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `theme` | `"auto" \| "default" \| "light" \| "high-contrast"` | `"auto"` | Panel theme |
-| `scope` | `Ref<Element \| null>` | — | Restrict scan to a subtree |
+| `scope` | `Element \| null` | — | Restrict scan to a subtree |
 | `autoScan` | `boolean` | `true` | Auto-rescan on DOM mutations |
 | `debounce` | `number` | `500` | Debounce delay in ms |
 

@@ -1,9 +1,8 @@
 import type { AxeResults, Theme } from "a11y-hud";
-import type { Ref } from "vue";
 
 export interface UseA11yHudOptions {
   theme?: Theme;
-  scope?: Ref<Element | null>;
+  scope?: Element | null;
   autoScan?: boolean;
   debounce?: number;
 }

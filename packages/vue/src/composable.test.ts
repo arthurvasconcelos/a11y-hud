@@ -1,7 +1,7 @@
 import { mount as vueMount } from "@vue/test-utils";
 import { mount } from "a11y-hud";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { defineComponent, nextTick, reactive, ref, shallowReactive } from "vue";
+import { defineComponent, nextTick, reactive, shallowReactive } from "vue";
 import { useA11yHud } from "./composable.js";
 import type { UseA11yHudOptions } from "./types.js";
 
@@ -105,7 +105,7 @@ describe("useA11yHud", () => {
     );
     await nextTick();
     const callsBefore = mockInstance.runScan.mock.calls.length;
-    opts.scope = ref<Element | null>(container);
+    opts.scope = container;
     await nextTick();
     expect(mockInstance.runScan.mock.calls.length).toBeGreaterThan(callsBefore);
     container.remove();
@@ -217,30 +217,27 @@ describe("useA11yHud", () => {
     wrapper.unmount();
   });
 
-  it("sets scopeElement on the CE when scope ref has a current value", async () => {
+  it("sets scopeElement on the CE when scope has a value", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    const scopeRef = ref<Element | null>(container);
 
-    mountComposable({ scope: scopeRef });
+    mountComposable({ scope: container });
     await nextTick();
 
     expect(mockEl.scopeElement).toBe(container);
     container.remove();
   });
 
-  it("clears scopeElement when scope ref current is null", async () => {
-    const scopeRef = ref<Element | null>(null);
-    mountComposable({ scope: scopeRef });
+  it("clears scopeElement when scope is null", async () => {
+    mountComposable({ scope: null });
     await nextTick();
     expect(mockEl.scopeElement).toBeUndefined();
   });
 
-  it("clears scopeElement when scope changes from a ref to undefined", async () => {
+  it("clears scopeElement when scope changes from an element to undefined", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    const scopeRef = ref<Element | null>(container);
-    const opts = shallowReactive<UseA11yHudOptions>({ scope: scopeRef });
+    const opts = shallowReactive<UseA11yHudOptions>({ scope: container });
 
     const wrapper = vueMount(
       defineComponent({

@@ -18,7 +18,7 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
     elementRef.value = document.querySelector<A11yHudElement>("a11y-hud");
     const el = elementRef.value;
     if (el) {
-      el.scopeElement = options.scope?.value ?? undefined;
+      el.scopeElement = options.scope ?? undefined;
     }
     void instance.runScan();
   });
@@ -39,7 +39,7 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
       const instance = instanceRef.value;
       const el = elementRef.value;
       if (!instance || !el) return;
-      el.scopeElement = options.scope?.value ?? undefined;
+      el.scopeElement = options.scope ?? undefined;
       void instance.runScan();
     },
     { flush: "post" }

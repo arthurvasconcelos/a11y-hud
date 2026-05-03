@@ -1,5 +1,5 @@
 import type { Theme } from "a11y-hud";
-import type { PropType, Ref } from "vue";
+import type { PropType } from "vue";
 import { defineComponent } from "vue";
 import { useA11yHud } from "./composable.js";
 import type { A11yHudProps } from "./types.js";
@@ -12,7 +12,7 @@ export const A11yHud = defineComponent({
       default: undefined,
     },
     scope: {
-      type: Object as PropType<Ref<Element | null>>,
+      type: Object as PropType<Element | null>,
       default: undefined,
     },
     autoScan: {
