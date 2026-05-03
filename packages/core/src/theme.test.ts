@@ -31,6 +31,10 @@ describe("resolveTheme", () => {
     expect(resolveTheme("default")).toBe("high-contrast");
     expect(resolveTheme("light")).toBe("high-contrast");
     expect(resolveTheme("auto")).toBe("high-contrast");
+    expect(resolveTheme("github-dark")).toBe("high-contrast");
+    expect(resolveTheme("github-light")).toBe("high-contrast");
+    expect(resolveTheme("tokyo-night")).toBe("high-contrast");
+    expect(resolveTheme("solarized-dark")).toBe("high-contrast");
   });
 
   it("resolves auto to default when prefers dark scheme", () => {
@@ -47,6 +51,10 @@ describe("resolveTheme", () => {
     mockMedia(false, false);
     expect(resolveTheme("default")).toBe("default");
     expect(resolveTheme("light")).toBe("light");
+    expect(resolveTheme("github-dark")).toBe("github-dark");
+    expect(resolveTheme("github-light")).toBe("github-light");
+    expect(resolveTheme("tokyo-night")).toBe("tokyo-night");
+    expect(resolveTheme("solarized-dark")).toBe("solarized-dark");
   });
 });
 

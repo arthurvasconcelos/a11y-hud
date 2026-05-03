@@ -1,7 +1,15 @@
 import type { AxeResults } from "axe-core";
 
-export type Theme = "auto" | "default" | "light" | "high-contrast";
-export type ResolvedTheme = "default" | "light" | "high-contrast";
+export type Theme =
+  | "auto"
+  | "default"
+  | "light"
+  | "high-contrast"
+  | "github-dark"
+  | "github-light"
+  | "tokyo-night"
+  | "solarized-dark";
+export type ResolvedTheme = Exclude<Theme, "auto">;
 export type Severity = "minor" | "moderate" | "serious" | "critical";
 
 export interface MountOptions {

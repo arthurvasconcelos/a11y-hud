@@ -27,6 +27,91 @@
   color: #1a1a2e;
 }
 
+:host([data-theme="github-dark"]) {
+  --a11y-hud-bg: #0d1117;
+  --a11y-hud-bg-elevated: #161b22;
+  --a11y-hud-bg-hover: #21262d;
+  --a11y-hud-border: #30363d;
+  --a11y-hud-text: #e6edf3;
+  --a11y-hud-text-muted: #8b949e;
+  --a11y-hud-critical: #ff7b72;
+  --a11y-hud-serious: #ffa657;
+  --a11y-hud-moderate: #e3b341;
+  --a11y-hud-minor: #79c0ff;
+  --a11y-hud-highlight: #d2a8ff;
+  --a11y-hud-focus-ring: #2f81f7;
+}
+
+:host([data-theme="github-light"]) {
+  --a11y-hud-bg: #ffffff;
+  --a11y-hud-bg-elevated: #f6f8fa;
+  --a11y-hud-bg-hover: #eaeef2;
+  --a11y-hud-border: #d0d7de;
+  --a11y-hud-text: #1f2328;
+  --a11y-hud-text-muted: #636c76;
+  --a11y-hud-critical: #cf222e;
+  --a11y-hud-serious: #bc4c00;
+  /* #8a5e00 gives 5.33:1 white-on-chip (was #9a6700 at 4.37:1 — neither black nor white passed) */
+  --a11y-hud-moderate: #8a5e00;
+  --a11y-hud-minor: #0550ae;
+  --a11y-hud-highlight: #8250df;
+  --a11y-hud-focus-ring: #0550ae;
+}
+
+:host([data-theme="github-light"]) .filter-chip[aria-pressed="true"][data-severity="critical"],
+:host([data-theme="github-light"]) .filter-chip[aria-pressed="true"][data-severity="serious"],
+:host([data-theme="github-light"]) .filter-chip[aria-pressed="true"][data-severity="moderate"],
+:host([data-theme="github-light"]) .filter-chip[aria-pressed="true"][data-severity="minor"] {
+  color: #ffffff;
+}
+
+:host([data-theme="tokyo-night"]) {
+  --a11y-hud-bg: #1a1b26;
+  --a11y-hud-bg-elevated: #24283b;
+  --a11y-hud-bg-hover: #2f3549;
+  --a11y-hud-border: #3b4261;
+  --a11y-hud-text: #c0caf5;
+  /* #9aa5ce gives 7.67:1 on #1a1b26 (was #737aa2 at ~4.1:1) */
+  --a11y-hud-text-muted: #9aa5ce;
+  --a11y-hud-critical: #f7768e;
+  --a11y-hud-serious: #ff9e64;
+  --a11y-hud-moderate: #e0af68;
+  --a11y-hud-minor: #7aa2f7;
+  --a11y-hud-highlight: #bb9af7;
+  --a11y-hud-focus-ring: #7aa2f7;
+}
+
+:host([data-theme="solarized-dark"]) {
+  --a11y-hud-bg: #002b36;
+  --a11y-hud-bg-elevated: #073642;
+  --a11y-hud-bg-hover: #0d4456;
+  --a11y-hud-border: #586e75;
+  --a11y-hud-text: #eee8d5;
+  --a11y-hud-text-muted: #93a1a1;
+  --a11y-hud-critical: #dc322f;
+  --a11y-hud-serious: #cb4b16;
+  --a11y-hud-moderate: #b58900;
+  /* #5ba4cf gives 5.78:1 on #002b36 for text, 5.78:1 for chip (was #268bd2 at ~3.1:1 for both) */
+  --a11y-hud-minor: #5ba4cf;
+  /* #f06090 gives 4.88:1 on #002b36 (was #d33682 at ~3.3:1) */
+  --a11y-hud-highlight: #f06090;
+  --a11y-hud-focus-ring: #268bd2;
+}
+
+/* Solarized Dark chip text overrides — canonical solarized palette falls in the
+   middle-luminance zone where neither the panel bg (#002b36) nor white passes
+   4.5:1 on yellow/blue chip backgrounds. Use white text on red/orange,
+   dark panel bg text on yellow/blue. */
+:host([data-theme="solarized-dark"]) .filter-chip[aria-pressed="true"][data-severity="critical"],
+:host([data-theme="solarized-dark"]) .filter-chip[aria-pressed="true"][data-severity="serious"] {
+  color: #ffffff;
+}
+
+:host([data-theme="solarized-dark"]) .filter-chip[aria-pressed="true"][data-severity="moderate"],
+:host([data-theme="solarized-dark"]) .filter-chip[aria-pressed="true"][data-severity="minor"] {
+  color: #002b36;
+}
+
 :host([data-theme="high-contrast"]) {
   --a11y-hud-bg: #000000;
   --a11y-hud-bg-elevated: #111111;
