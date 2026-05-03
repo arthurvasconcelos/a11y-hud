@@ -48,6 +48,11 @@ test.describe("@a11y-hud/angular adapter", () => {
 
     await page.click('a[href="/page-b"]');
 
+    // Wait for Angular Router to complete navigation and Page B to render before
+    // checking violations — prevents a race where waitForFunction resolves on a
+    // transient empty state before the post-navigation rescan finishes.
+    await page.getByRole("heading", { name: "Page B" }).waitFor();
+
     await page.waitForFunction(() => {
       const el = document.querySelector("a11y-hud");
       const rules = Array.from(el?.shadowRoot?.querySelectorAll(".violation-rule") ?? []).map((r) =>
@@ -65,6 +70,10 @@ test.describe("@a11y-hud/angular adapter", () => {
     const countBefore = await getViolationItemCount(page);
 
     await page.click("#btn-add-violation");
+
+    // Wait for Angular's @if block to attach the element to the DOM — this confirms
+    // the re-render happened and gives the MutationObserver a stable DOM to scan.
+    await page.locator('[tabindex="5"]').waitFor({ state: "attached" });
 
     await page.waitForFunction((expected) => {
       const el = document.querySelector("a11y-hud");
