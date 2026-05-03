@@ -1,5 +1,13 @@
 # @a11y-hud/angular
 
+## 0.1.1
+
+### Patch Changes
+
+- Fix missing render-settled rescan on route changes.
+
+  `ngAfterViewInit` fires once and `ngOnChanges` only fires when `@Input()` props change, so Angular Router navigations that leave inputs unchanged never triggered a rescan. Adding `afterEveryRender()` in the constructor mirrors React's `useEffect(fn)` (no deps) and ensures a rescan fires after every Angular render commit, including route changes.
+
 ## 0.1.0
 
 ### Minor Changes
