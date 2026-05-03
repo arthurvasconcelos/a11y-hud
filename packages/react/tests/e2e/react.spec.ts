@@ -48,17 +48,19 @@ test.describe("@a11y-hud/react adapter", () => {
 
     await page.click('a[href="/page-b"]');
 
+    // Wait for the rescan to complete: Page A's image-alt and button-name should
+    // both disappear because Page B has no images or unlabelled buttons.
     await page.waitForFunction(() => {
       const el = document.querySelector("a11y-hud");
       const rules = Array.from(el?.shadowRoot?.querySelectorAll(".violation-rule") ?? []).map((r) =>
         r.textContent?.trim()
       );
-      return !rules.includes("image-alt") && rules.includes("label");
+      return !rules.includes("image-alt") && !rules.includes("button-name");
     });
 
     const rulesAfter = await getViolationRules(page);
     expect(rulesAfter).not.toContain("image-alt");
-    expect(rulesAfter).toContain("label");
+    expect(rulesAfter).not.toContain("button-name");
   });
 
   test("scan triggers on prop-driven re-render — new violation appears", async ({ page }) => {

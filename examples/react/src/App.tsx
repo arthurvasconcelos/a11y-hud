@@ -1,16 +1,19 @@
 import { A11yHud } from "@a11y-hud/react";
 import { useRef, useState } from "react";
-import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { Link, Route, BrowserRouter as Router, Routes, useLocation } from "react-router-dom";
 import { PageA } from "./pages/PageA.js";
 import { PageB } from "./pages/PageB.js";
 
-export function App() {
+function AppContent() {
+  // Subscribes to route changes so this component re-renders on navigation,
+  // which fires the render-settled rescan inside useA11yHud.
+  const _location = useLocation();
   const [scopeEnabled, setScopeEnabled] = useState(false);
   const [extraTabindex, setExtraTabindex] = useState(false);
   const scopeSectionRef = useRef<HTMLDivElement>(null);
 
   return (
-    <Router>
+    <>
       <A11yHud scope={scopeEnabled ? scopeSectionRef : undefined} />
 
       <nav>
@@ -47,6 +50,14 @@ export function App() {
           <Route path="/page-b" element={<PageB />} />
         </Routes>
       </div>
+    </>
+  );
+}
+
+export function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
