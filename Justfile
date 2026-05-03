@@ -11,6 +11,24 @@ dev-react:
     pnpm --filter=@a11y-hud/react build
     pnpm --filter=@a11y-hud/example-react dev
 
+# Build core + Vue adapter, then start the Vue example dev server
+dev-vue:
+    pnpm --filter=a11y-hud build
+    pnpm --filter=@a11y-hud/vue build
+    pnpm --filter=@a11y-hud/example-vue dev
+
+# Start all example dev servers concurrently (builds first)
+dev-all:
+    #!/usr/bin/env bash
+    pnpm --filter=a11y-hud build
+    pnpm --filter=@a11y-hud/react build
+    pnpm --filter=@a11y-hud/vue build
+    trap 'kill $(jobs -p) 2>/dev/null' EXIT
+    pnpm --filter=@a11y-hud/example-vanilla dev &
+    pnpm --filter=@a11y-hud/example-react dev &
+    pnpm --filter=@a11y-hud/example-vue dev &
+    wait
+
 # ─── building ─────────────────────────────────────────────────────────────────
 
 # Build all published packages
@@ -24,6 +42,10 @@ build-core:
 # Build only the React adapter
 build-react:
     pnpm --filter=@a11y-hud/react build
+
+# Build only the Vue adapter
+build-vue:
+    pnpm --filter=@a11y-hud/vue build
 
 # ─── testing ──────────────────────────────────────────────────────────────────
 
@@ -53,6 +75,12 @@ e2e-react:
     pnpm --filter=a11y-hud build
     pnpm --filter=@a11y-hud/react build
     pnpm --filter=@a11y-hud/react test:e2e
+
+# Build core + Vue adapter, then run only the Vue E2E suite
+e2e-vue:
+    pnpm --filter=a11y-hud build
+    pnpm --filter=@a11y-hud/vue build
+    pnpm --filter=@a11y-hud/vue test:e2e
 
 # ─── quality ──────────────────────────────────────────────────────────────────
 

@@ -3,6 +3,8 @@
 **Framework-agnostic dev overlay that runs axe-core accessibility audits in your running app — no DevTools required.**
 
 [![npm version](https://img.shields.io/npm/v/a11y-hud.svg)](https://www.npmjs.com/package/a11y-hud)
+[![@a11y-hud/react](https://img.shields.io/npm/v/@a11y-hud/react.svg?label=%40a11y-hud%2Freact)](https://www.npmjs.com/package/@a11y-hud/react)
+[![@a11y-hud/vue](https://img.shields.io/npm/v/@a11y-hud/vue.svg?label=%40a11y-hud%2Fvue)](https://www.npmjs.com/package/@a11y-hud/vue)
 [![CI](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml/badge.svg)](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -89,10 +91,39 @@ a11y-hud {
 
 See the [full token reference](https://github.com/arthurvasconcelos/a11y-hud/blob/main/docs/theming.md) for the complete list.
 
-## Framework guides
+## Framework adapters
 
-- [Vanilla JS / HTML](https://github.com/arthurvasconcelos/a11y-hud)
-- React, Vue, Angular, Svelte, Solid — adapters coming in 0.2–0.5
+| Adapter | Package | Install |
+|---------|---------|---------|
+| React | [`@a11y-hud/react`](https://www.npmjs.com/package/@a11y-hud/react) | `npm i -D @a11y-hud/react` |
+| Vue | [`@a11y-hud/vue`](https://www.npmjs.com/package/@a11y-hud/vue) | `npm i -D @a11y-hud/vue` |
+| Angular | `@a11y-hud/angular` | coming in 0.4 |
+| Svelte | `@a11y-hud/svelte` | coming in 0.5 |
+| Solid | `@a11y-hud/solid` | coming in 0.5 |
+
+## Framework quick starts
+
+**React**
+
+```typescript
+import { A11yHud } from "@a11y-hud/react";
+
+// In your root component:
+<A11yHud theme="auto" />
+```
+
+**Vue 3**
+
+```vue
+<!-- App.vue -->
+<script setup>
+import { A11yHud } from "@a11y-hud/vue";
+</script>
+<template>
+  <A11yHud theme="auto" />
+  <!-- rest of app -->
+</template>
+```
 
 ## Contributing
 
