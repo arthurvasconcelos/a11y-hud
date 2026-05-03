@@ -1,0 +1,16 @@
+.claude/
+node_modules/
+dist/
+coverage/
+*.tgz
+.env
+.env.local
+*.local
+.DS_Store
+*.log
+npm-debug.log*
+pnpm-debug.log*
+playwright-report/
+test-results/
+docs/.vitepress/dist/
+docs/.vitepress/cache/

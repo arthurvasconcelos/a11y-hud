@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      dev-tooling:
+        patterns:
+          - "@biomejs/*"
+          - "@changesets/*"
+          - "@commitlint/*"
+          - "lint-staged"
+          - "simple-git-hooks"
+          - "typescript"
+          - "tsup"
+          - "vitest"
+          - "@vitest/*"
+          - "@playwright/*"
+          - "playwright"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday

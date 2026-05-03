@@ -1,0 +1,43 @@
+:host([data-theme="light"]) {
+  --a11y-hud-bg: #eff1f5;
+  --a11y-hud-bg-elevated: #e6e9ef;
+  --a11y-hud-bg-hover: #dce0e8;
+  --a11y-hud-border: #bcc0cc;
+  --a11y-hud-text: #4c4f69;
+  /* #5c5f77 gives 5.56:1 on #eff1f5 (was #6c6f85 at 4.36:1) */
+  --a11y-hud-text-muted: #5c5f77;
+  --a11y-hud-critical: #d20f39;
+  --a11y-hud-serious: #fe640b;
+  --a11y-hud-moderate: #df8e1d;
+  /* #1452c7 gives 5.92:1 on #eff1f5 (was #1e66f5 at 4.34:1) */
+  --a11y-hud-minor: #1452c7;
+  --a11y-hud-highlight: #8839ef;
+  --a11y-hud-focus-ring: #1452c7;
+}
+
+/* Chip text overrides — bright severity backgrounds need dark or white text
+   to meet 4.5:1 at 11 px. The base CSS uses --a11y-hud-bg (light in this
+   theme) which fails on orange and yellow. */
+:host([data-theme="light"]) .filter-chip[aria-pressed="true"][data-severity="critical"] {
+  color: #ffffff;
+}
+
+:host([data-theme="light"]) .filter-chip[aria-pressed="true"][data-severity="serious"],
+:host([data-theme="light"]) .filter-chip[aria-pressed="true"][data-severity="moderate"] {
+  color: #1a1a2e;
+}
+
+:host([data-theme="high-contrast"]) {
+  --a11y-hud-bg: #000000;
+  --a11y-hud-bg-elevated: #111111;
+  --a11y-hud-bg-hover: #222222;
+  --a11y-hud-border: #ffffff;
+  --a11y-hud-text: #ffffff;
+  --a11y-hud-text-muted: #cccccc;
+  --a11y-hud-critical: #ff4444;
+  --a11y-hud-serious: #ff8800;
+  --a11y-hud-moderate: #ffcc00;
+  --a11y-hud-minor: #66aaff;
+  --a11y-hud-highlight: #ff66ff;
+  --a11y-hud-focus-ring: #ffffff;
+}
