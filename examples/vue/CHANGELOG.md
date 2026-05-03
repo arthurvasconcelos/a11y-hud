@@ -1,5 +1,12 @@
 # @a11y-hud/example-vue
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [f652e17]
+  - @a11y-hud/vue@0.2.2
+
 ## 0.0.3
 
 ### Patch Changes

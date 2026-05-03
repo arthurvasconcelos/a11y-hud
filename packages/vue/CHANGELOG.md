@@ -1,5 +1,11 @@
 # @a11y-hud/vue
 
+## 0.2.2
+
+### Patch Changes
+
+- f652e17: Add missing LICENSE file to the published package.
+
 ## 0.2.1
 
 ### Patch Changes
