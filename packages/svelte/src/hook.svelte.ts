@@ -10,11 +10,12 @@ export function useA11yHud(getOptions: () => UseA11yHudOptions = () => ({})): Us
 
   onMount(() => {
     const opts = getOptions();
-    const { theme, autoScan, debounce } = opts;
+    const { theme, autoScan, debounce, runOnly } = opts;
     instanceRef = mount({
       ...(theme !== undefined && { theme }),
       ...(autoScan !== undefined && { autoScan }),
       ...(debounce !== undefined && { debounce }),
+      ...(runOnly !== undefined && { runOnly }),
     });
     elementRef = document.querySelector<A11yHudElement>("a11y-hud");
     mounted = true;
@@ -70,6 +71,14 @@ export function useA11yHud(getOptions: () => UseA11yHudOptions = () => ({})): Us
     }
   });
 
+  // runOnly sync
+  $effect(() => {
+    if (mounted) {
+      const { runOnly } = getOptions();
+      if (runOnly !== undefined) instanceRef?.setRunOnly(runOnly);
+    }
+  });
+
   function runScan(): Promise<AxeResults> {
     return instanceRef?.runScan() ?? Promise.resolve(null as unknown as AxeResults);
   }
@@ -78,5 +87,9 @@ export function useA11yHud(getOptions: () => UseA11yHudOptions = () => ({})): Us
     instanceRef?.setTheme(t);
   }
 
-  return { runScan, setTheme };
+  function setRunOnly(tags: string[]): void {
+    instanceRef?.setRunOnly(tags);
+  }
+
+  return { runScan, setTheme, setRunOnly };
 }

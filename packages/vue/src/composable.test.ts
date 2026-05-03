@@ -12,6 +12,7 @@ vi.mock("a11y-hud", () => ({
 type MockInstance = {
   unmount: ReturnType<typeof vi.fn>;
   setTheme: ReturnType<typeof vi.fn>;
+  setRunOnly: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
 };
 
@@ -35,6 +36,7 @@ beforeEach(() => {
   mockInstance = {
     unmount: vi.fn(() => mockEl.remove()),
     setTheme: vi.fn(),
+    setRunOnly: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
@@ -270,6 +272,32 @@ describe("useA11yHud", () => {
     await nextTick();
     (wrapper.vm as unknown as { setTheme: (t: string) => void }).setTheme("dark");
     expect(mockInstance.setTheme).toHaveBeenCalledWith("dark");
+  });
+
+  it("calls instance.setRunOnly() when runOnly changes", async () => {
+    const opts = reactive<UseA11yHudOptions>({ runOnly: ["wcag2a"] });
+    const wrapper = vueMount(
+      defineComponent({
+        setup() {
+          useA11yHud(opts);
+          return () => null;
+        },
+      })
+    );
+    await nextTick();
+    opts.runOnly = ["wcag2a", "wcag2aa"];
+    await nextTick();
+    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["wcag2a", "wcag2aa"]);
+    wrapper.unmount();
+  });
+
+  it("returned setRunOnly() delegates to instance.setRunOnly()", async () => {
+    const wrapper = mountComposable();
+    await nextTick();
+    (wrapper.vm as unknown as { setRunOnly: (tags: string[]) => void }).setRunOnly([
+      "best-practice",
+    ]);
+    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["best-practice"]);
   });
 
   it("returned runScan and setTheme are stable references across re-renders", async () => {

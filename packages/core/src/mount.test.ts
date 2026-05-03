@@ -66,10 +66,28 @@ describe("mount()", () => {
     expect(document.querySelector("a11y-hud")?.getAttribute("debounce")).toBe("300");
   });
 
+  it("sets run-only attribute when runOnly option is provided with tags", () => {
+    mount({ runOnly: ["wcag2a", "wcag2aa"] });
+    expect(document.querySelector("a11y-hud")?.getAttribute("run-only")).toBe(
+      '["wcag2a","wcag2aa"]'
+    );
+  });
+
+  it("does not set run-only attribute when runOnly is an empty array", () => {
+    mount({ runOnly: [] });
+    expect(document.querySelector("a11y-hud")?.hasAttribute("run-only")).toBe(false);
+  });
+
   it("setTheme() on the instance updates the element theme", () => {
     const hud = mount();
     hud.setTheme("high-contrast");
     expect(document.querySelector("a11y-hud")?.getAttribute("theme")).toBe("high-contrast");
+  });
+
+  it("setRunOnly() on the instance updates the run-only attribute", () => {
+    const hud = mount();
+    hud.setRunOnly(["best-practice"]);
+    expect(document.querySelector("a11y-hud")?.getAttribute("run-only")).toBe('["best-practice"]');
   });
 
   it("runScan() on the instance resolves with axe results", async () => {

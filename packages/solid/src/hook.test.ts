@@ -10,6 +10,7 @@ vi.mock("a11y-hud", () => ({ mount: vi.fn() }));
 type MockInstance = {
   unmount: ReturnType<typeof vi.fn>;
   setTheme: ReturnType<typeof vi.fn>;
+  setRunOnly: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
 };
 
@@ -33,6 +34,7 @@ beforeEach(() => {
   mockInstance = {
     unmount: vi.fn(() => mockEl.remove()),
     setTheme: vi.fn(),
+    setRunOnly: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
@@ -257,6 +259,47 @@ describe("createA11yHud", () => {
 
     result.setTheme("dark");
     expect(mockInstance.setTheme).toHaveBeenCalledWith("dark");
+  });
+
+  it("passes initial runOnly to mount()", () => {
+    mountHook({ runOnly: ["wcag2a", "wcag2aa"] });
+    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ runOnly: ["wcag2a", "wcag2aa"] }));
+  });
+
+  it("calls instance.setRunOnly() when runOnly changes via signal", () => {
+    const [runOnly, setRunOnly] = createSignal<string[] | undefined>(["wcag2a"]);
+
+    render(() => {
+      createA11yHud({
+        get runOnly() {
+          return runOnly();
+        },
+      });
+      return null;
+    });
+
+    setRunOnly(["wcag2a", "wcag2aa"]);
+    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["wcag2a", "wcag2aa"]);
+  });
+
+  it("does not call setRunOnly when runOnly is undefined", () => {
+    render(() => {
+      createA11yHud({ runOnly: undefined });
+      return null;
+    });
+    expect(mockInstance.setRunOnly).not.toHaveBeenCalled();
+  });
+
+  it("returned setRunOnly() delegates to instance.setRunOnly()", () => {
+    let result!: ReturnType<typeof createA11yHud>;
+
+    render(() => {
+      result = createA11yHud({});
+      return null;
+    });
+
+    result.setRunOnly(["best-practice"]);
+    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["best-practice"]);
   });
 
   it("runScan() returns a resolved promise when no instance", () => {

@@ -31,12 +31,19 @@ export function mount(options: MountOptions = {}): A11yHudInstance {
     el.setAttribute("debounce", String(options.debounce));
   }
 
+  if (options.runOnly !== undefined && options.runOnly.length > 0) {
+    el.setAttribute("run-only", JSON.stringify(options.runOnly));
+  }
+
   return {
     unmount(): void {
       el.remove();
     },
     setTheme(theme: Theme): void {
       el.setTheme(theme);
+    },
+    setRunOnly(tags: string[]): void {
+      el.setRunOnly(tags);
     },
     async runScan(): Promise<AxeResults> {
       return el.runScan();

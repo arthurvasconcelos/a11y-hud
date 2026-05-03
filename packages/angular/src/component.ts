@@ -22,6 +22,7 @@ export class A11yHudComponent implements AfterViewInit, OnChanges {
   @Input() scope: ScopeInput = null;
   @Input() autoScan?: boolean;
   @Input() debounce?: number;
+  @Input() runOnly?: string[];
 
   private readonly service = inject(A11yHudService);
 
@@ -42,6 +43,7 @@ export class A11yHudComponent implements AfterViewInit, OnChanges {
       scope: this.scope,
       ...(this.autoScan !== undefined && { autoScan: this.autoScan }),
       ...(this.debounce !== undefined && { debounce: this.debounce }),
+      ...(this.runOnly !== undefined && { runOnly: this.runOnly }),
     });
     void this.service.runScan();
   }
@@ -62,6 +64,9 @@ export class A11yHudComponent implements AfterViewInit, OnChanges {
     if ("debounce" in changes) {
       this.service.syncDebounce(this.debounce);
     }
+    if ("runOnly" in changes) {
+      this.service.setRunOnly(this.runOnly ?? []);
+    }
   }
 
   runScan(): Promise<AxeResults> {
@@ -70,5 +75,9 @@ export class A11yHudComponent implements AfterViewInit, OnChanges {
 
   setTheme(theme: Theme): void {
     this.service.setTheme(theme);
+  }
+
+  setRunOnly(tags: string[]): void {
+    this.service.setRunOnly(tags);
   }
 }

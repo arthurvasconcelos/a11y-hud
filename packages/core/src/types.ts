@@ -17,11 +17,13 @@ export interface MountOptions {
   scope?: string | Element;
   autoScan?: boolean;
   debounce?: number;
+  runOnly?: string[];
 }
 
 export interface A11yHudInstance {
   unmount(): void;
   setTheme(theme: Theme): void;
+  setRunOnly(tags: string[]): void;
   runScan(): Promise<AxeResults>;
 }
 

@@ -10,6 +10,7 @@ vi.mock("a11y-hud", () => ({
 type MockInstance = {
   unmount: ReturnType<typeof vi.fn>;
   setTheme: ReturnType<typeof vi.fn>;
+  setRunOnly: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
 };
 
@@ -33,6 +34,7 @@ beforeEach(() => {
   mockInstance = {
     unmount: vi.fn(() => mockEl.remove()),
     setTheme: vi.fn(),
+    setRunOnly: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
@@ -168,6 +170,28 @@ describe("useA11yHud", () => {
     await act(async () => {});
     result.current.setTheme("dark" as never);
     expect(mockInstance.setTheme).toHaveBeenCalledWith("dark");
+  });
+
+  it("passes initial runOnly to mount()", () => {
+    renderHook(() => useA11yHud({ runOnly: ["wcag2a", "wcag2aa"] }));
+    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ runOnly: ["wcag2a", "wcag2aa"] }));
+  });
+
+  it("calls instance.setRunOnly() when runOnly prop changes", async () => {
+    let runOnly = ["wcag2a"] as string[];
+    const { rerender } = renderHook(() => useA11yHud({ runOnly }));
+    await act(async () => {});
+    runOnly = ["wcag2a", "wcag2aa"];
+    rerender();
+    await act(async () => {});
+    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["wcag2a", "wcag2aa"]);
+  });
+
+  it("returned setRunOnly() delegates to instance.setRunOnly()", async () => {
+    const { result } = renderHook(() => useA11yHud());
+    await act(async () => {});
+    result.current.setRunOnly(["best-practice"]);
+    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["best-practice"]);
   });
 
   it("returned runScan and setTheme are stable references across re-renders", async () => {

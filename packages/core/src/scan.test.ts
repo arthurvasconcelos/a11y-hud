@@ -12,17 +12,32 @@ vi.mock("axe-core", () => ({
 describe("runScan", () => {
   afterEach(() => vi.clearAllMocks());
 
-  it("calls axe.run with document.body when no target is given", async () => {
+  it("calls axe.run with document.body and empty options when no target is given", async () => {
     const axe = (await import("axe-core")).default;
     await runScan();
-    expect(axe.run).toHaveBeenCalledWith(document.body);
+    expect(axe.run).toHaveBeenCalledWith(document.body, {});
   });
 
-  it("calls axe.run with the provided element", async () => {
+  it("calls axe.run with the provided element and empty options", async () => {
     const axe = (await import("axe-core")).default;
     const el = document.createElement("main");
     await runScan(el);
-    expect(axe.run).toHaveBeenCalledWith(el);
+    expect(axe.run).toHaveBeenCalledWith(el, {});
+  });
+
+  it("passes runOnly option to axe.run when provided", async () => {
+    const axe = (await import("axe-core")).default;
+    const el = document.createElement("main");
+    await runScan(el, ["wcag2a", "wcag2aa"]);
+    expect(axe.run).toHaveBeenCalledWith(el, {
+      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] },
+    });
+  });
+
+  it("passes empty options to axe.run when runOnly is an empty array", async () => {
+    const axe = (await import("axe-core")).default;
+    await runScan(document.body, []);
+    expect(axe.run).toHaveBeenCalledWith(document.body, {});
   });
 
   it("returns the axe result object", async () => {

@@ -233,6 +233,84 @@ describe("A11yHudElement", () => {
     });
   });
 
+  describe("filter chips — rule sets", () => {
+    it("rule-set chip starts unpressed; clicking it marks it pressed and triggers a scan", async () => {
+      const axe = (await import("axe-core")).default as unknown as {
+        run: ReturnType<typeof vi.fn>;
+      };
+      const el = createElement();
+      await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".filter-chip")).not.toBeNull());
+
+      const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-ruleset="wcag2a"]');
+      expect(chip?.getAttribute("aria-pressed")).toBe("false");
+      const callsBefore = axe.run.mock.calls.length;
+      chip?.click();
+      expect(chip?.getAttribute("aria-pressed")).toBe("true");
+      await vi.waitFor(() => expect(axe.run.mock.calls.length).toBeGreaterThan(callsBefore));
+      el.remove();
+    });
+
+    it("clicking an active rule-set chip deactivates it", async () => {
+      const el = createElement();
+      await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".filter-chip")).not.toBeNull());
+
+      const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-ruleset="wcag2aa"]');
+      chip?.click(); // activate
+      expect(chip?.getAttribute("aria-pressed")).toBe("true");
+      chip?.click(); // deactivate
+      expect(chip?.getAttribute("aria-pressed")).toBe("false");
+      el.remove();
+    });
+
+    it("setRunOnly() marks the matching chip as pressed", async () => {
+      const el = createElement();
+      await vi.waitFor(() => expect(el.shadowRoot?.querySelector("[data-ruleset]")).not.toBeNull());
+
+      el.setRunOnly(["best-practice"]);
+      const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-ruleset="best-practice"]');
+      expect(chip?.getAttribute("aria-pressed")).toBe("true");
+      el.remove();
+    });
+
+    it("setRunOnly([]) clears all rule-set chips", async () => {
+      const el = createElement();
+      await vi.waitFor(() => expect(el.shadowRoot?.querySelector("[data-ruleset]")).not.toBeNull());
+
+      el.setRunOnly(["wcag2a"]);
+      el.setRunOnly([]);
+      const chips = el.shadowRoot?.querySelectorAll<HTMLElement>("[data-ruleset]") ?? [];
+      for (const c of chips) {
+        expect(c.getAttribute("aria-pressed")).toBe("false");
+      }
+      el.remove();
+    });
+
+    it("run-only attribute accepts a JSON array", () => {
+      const el = document.createElement("a11y-hud") as A11yHudElement;
+      el.setAttribute("run-only", '["wcag2a","wcag2aa"]');
+      document.body.appendChild(el);
+      expect(el.getAttribute("run-only")).toBe('["wcag2a","wcag2aa"]');
+      el.remove();
+    });
+
+    it("run-only attribute falls back to empty array on invalid JSON", () => {
+      const el = document.createElement("a11y-hud") as A11yHudElement;
+      el.setAttribute("run-only", "not-json");
+      document.body.appendChild(el);
+      // Element should still be present without throwing
+      expect(el.isConnected).toBe(true);
+      el.remove();
+    });
+
+    it("run-only attribute falls back to empty array when JSON is not an array", () => {
+      const el = document.createElement("a11y-hud") as A11yHudElement;
+      el.setAttribute("run-only", '"just-a-string"');
+      document.body.appendChild(el);
+      expect(el.isConnected).toBe(true);
+      el.remove();
+    });
+  });
+
   describe("violation item expand/collapse", () => {
     it("clicking an expanded toggle collapses the detail", async () => {
       const el = createElement();

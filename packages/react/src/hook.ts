@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { UseA11yHudOptions, UseA11yHudReturn } from "./types.js";
 
 export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
-  const { theme, scope, autoScan, debounce } = options;
+  const { theme, scope, autoScan, debounce, runOnly } = options;
   const instanceRef = useRef<A11yHudInstance | null>(null);
   const elementRef = useRef<A11yHudElement | null>(null);
 
@@ -18,6 +18,7 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
       ...(theme !== undefined && { theme }),
       ...(autoScan !== undefined && { autoScan }),
       ...(debounce !== undefined && { debounce }),
+      ...(runOnly !== undefined && { runOnly }),
     });
     instanceRef.current = instance;
     elementRef.current = document.querySelector<A11yHudElement>("a11y-hud");
@@ -48,6 +49,10 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
     el.setAttribute("debounce", String(debounce));
   }, [debounce]);
 
+  useEffect(() => {
+    if (runOnly !== undefined) instanceRef.current?.setRunOnly(runOnly);
+  }, [runOnly]);
+
   // Render-settled signal: runs after every React commit. Always syncs scope
   // (including clearing it when scope becomes undefined), then triggers a
   // rescan. This is the adapter's core value — rescans fire after React
@@ -73,5 +78,9 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
     instanceRef.current?.setTheme(t);
   }, []);
 
-  return { runScan, setTheme };
+  const setRunOnly = useCallback((tags: string[]): void => {
+    instanceRef.current?.setRunOnly(tags);
+  }, []);
+
+  return { runScan, setTheme, setRunOnly };
 }

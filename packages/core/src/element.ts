@@ -64,7 +64,7 @@ function buildStyleSheet(css: string): CSSStyleSheet | null {
 }
 
 export class A11yHudElement extends HTMLElement {
-  static observedAttributes = ["theme", "scope", "auto-scan", "debounce"];
+  static observedAttributes = ["theme", "scope", "auto-scan", "debounce", "run-only"];
 
   private _shadow: ShadowRoot;
   private _theme: Theme = "auto";
@@ -80,6 +80,7 @@ export class A11yHudElement extends HTMLElement {
   private _removeHighlight: (() => void) | undefined;
   private _activeSeverities = new Set<Severity>(["critical", "serious", "moderate", "minor"]);
   private _activeLevels = new Set<string>(["A", "AA", "AAA"]);
+  private _runOnly: string[] = [];
   private _debouncedScan: ((...args: never[]) => void) & { cancel(): void };
 
   constructor() {
@@ -152,6 +153,16 @@ export class A11yHudElement extends HTMLElement {
         this._debouncedScan = debounce(() => void this._runScan(), this._debounceMs);
         break;
       }
+      case "run-only": {
+        try {
+          const parsed = value ? (JSON.parse(value) as unknown) : [];
+          this._runOnly = Array.isArray(parsed) ? (parsed as string[]) : [];
+        } catch {
+          this._runOnly = [];
+        }
+        if (this._mounted) this._updateRunOnlyChips();
+        break;
+      }
     }
   }
 
@@ -168,6 +179,16 @@ export class A11yHudElement extends HTMLElement {
     this._theme = theme;
     this.setAttribute("theme", theme);
     this._applyResolvedTheme();
+  }
+
+  setRunOnly(tags: string[]): void {
+    this._runOnly = tags;
+    if (tags.length > 0) {
+      this.setAttribute("run-only", JSON.stringify(tags));
+    } else {
+      this.removeAttribute("run-only");
+    }
+    this._updateRunOnlyChips();
   }
 
   async runScan(): Promise<AxeResults> {
@@ -229,7 +250,7 @@ export class A11yHudElement extends HTMLElement {
 
     try {
       const target = this._getScopeTarget();
-      const results = await runScan(target);
+      const results = await runScan(target, this._runOnly.length > 0 ? this._runOnly : undefined);
       if (!this._mounted) return results;
       this._results = results;
       this._render();
@@ -335,6 +356,7 @@ export class A11yHudElement extends HTMLElement {
   private _renderFilters(): string {
     const severities: Severity[] = ["critical", "serious", "moderate", "minor"];
     const levels = ["A", "AA", "AAA"];
+    const ruleSets = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
     const severityChips = severities
       .map((s) => {
@@ -351,10 +373,18 @@ export class A11yHudElement extends HTMLElement {
       })
       .join("");
 
+    const ruleSetChips = ruleSets
+      .map((r) => {
+        const active = this._runOnly.includes(r);
+        return `<button class="filter-chip" data-ruleset="${r}" aria-pressed="${active}">${r}</button>`;
+      })
+      .join("");
+
     return `
       <div class="panel-filters" aria-label="Filters">
         <div class="filter-group" role="group" aria-label="Filter by severity">${severityChips}</div>
         <div class="filter-group" role="group" aria-label="Filter by WCAG level">${levelChips}</div>
+        <div class="filter-group" role="group" aria-label="Run only rule sets">${ruleSetChips}</div>
       </div>
     `;
   }
@@ -514,7 +544,25 @@ export class A11yHudElement extends HTMLElement {
           chip.setAttribute("aria-pressed", "true");
         }
         this._refreshBody();
+      } else if (chip.dataset.ruleset) {
+        const ruleset = chip.dataset.ruleset;
+        const active = this._runOnly.includes(ruleset);
+        if (active) {
+          this._runOnly = this._runOnly.filter((r) => r !== ruleset);
+          chip.setAttribute("aria-pressed", "false");
+        } else {
+          this._runOnly = [...this._runOnly, ruleset];
+          chip.setAttribute("aria-pressed", "true");
+        }
+        void this._runScan();
       }
+    }
+  }
+
+  private _updateRunOnlyChips(): void {
+    for (const chip of this._shadow.querySelectorAll<HTMLElement>(".filter-chip[data-ruleset]")) {
+      const active = this._runOnly.includes(chip.dataset.ruleset ?? "");
+      chip.setAttribute("aria-pressed", String(active));
     }
   }
 

@@ -15,11 +15,12 @@ export class A11yHudService implements OnDestroy {
   private el: A11yHudElement | null = null;
 
   init(options: UseA11yHudOptions = {}): void {
-    const { theme, autoScan, debounce } = options;
+    const { theme, autoScan, debounce, runOnly } = options;
     this.instance = mount({
       ...(theme !== undefined && { theme }),
       ...(autoScan !== undefined && { autoScan }),
       ...(debounce !== undefined && { debounce }),
+      ...(runOnly !== undefined && { runOnly }),
     });
     this.el = document.querySelector<A11yHudElement>("a11y-hud");
     if (this.el) {
@@ -61,6 +62,10 @@ export class A11yHudService implements OnDestroy {
 
   setTheme(theme: Theme): void {
     this.instance?.setTheme(theme);
+  }
+
+  setRunOnly(tags: string[]): void {
+    this.instance?.setRunOnly(tags);
   }
 
   get initialized(): boolean {

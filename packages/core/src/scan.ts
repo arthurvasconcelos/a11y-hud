@@ -1,4 +1,4 @@
-import type { AxeResults } from "axe-core";
+import type { AxeResults, RunOptions } from "axe-core";
 import axe from "axe-core";
 
 // axe-core does not support concurrent runs. Serialize all calls so that a
@@ -6,13 +6,19 @@ import axe from "axe-core";
 // double-invocation) waits for the active run to finish before starting.
 let activeRun: Promise<AxeResults> | null = null;
 
-export async function runScan(target: Element = document.body): Promise<AxeResults> {
+export async function runScan(
+  target: Element = document.body,
+  runOnly?: string[]
+): Promise<AxeResults> {
   if (activeRun) {
     await activeRun.catch(() => {});
   }
 
+  const options: RunOptions =
+    runOnly && runOnly.length > 0 ? { runOnly: { type: "tag", values: runOnly } } : {};
+
   const run = axe
-    .run(target)
+    .run(target, options)
     .then((results) => {
       results.violations = results.violations
         .map((v) => ({
