@@ -36,6 +36,9 @@ jobs:
       - name: Lint + format check
         run: pnpm check:ci
 
+      - name: Build core
+        run: pnpm --filter=a11y-hud build
+
       - name: Type-check
         run: pnpm typecheck
 
