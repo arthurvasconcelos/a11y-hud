@@ -1,5 +1,6 @@
 import {
   type AfterViewInit,
+  afterEveryRender,
   Component,
   Input,
   inject,
@@ -23,6 +24,17 @@ export class A11yHudComponent implements AfterViewInit, OnChanges {
   @Input() debounce?: number;
 
   private readonly service = inject(A11yHudService);
+
+  constructor() {
+    // Render-settled rescan: mirrors React's useEffect(fn) (no deps). Fires after
+    // every Angular render commit — catches route changes and any re-render that
+    // does not alter @Input() values, which ngOnChanges would otherwise miss.
+    afterEveryRender(() => {
+      if (!this.service.initialized) return;
+      this.service.syncScope(this.scope);
+      void this.service.runScan();
+    });
+  }
 
   ngAfterViewInit(): void {
     this.service.init({
