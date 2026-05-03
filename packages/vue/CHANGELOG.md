@@ -1,5 +1,17 @@
 # @a11y-hud/vue
 
+## 0.2.1
+
+### Patch Changes
+
+- 2c0ffb7: Fix scope prop type and add README.
+
+  - `scope` prop is now correctly typed as `Element | null` instead of `Ref<Element | null>`. Vue 3 auto-unwraps template refs before passing them as component props, so the previous `Ref`-based type meant `scopeElement` was never set and subtree scoping never worked.
+  - Add `README.md` to the published package.
+
+- Updated dependencies [2c0ffb7]
+  - a11y-hud@0.1.2
+
 ## 0.2.0
 
 ### Minor Changes
