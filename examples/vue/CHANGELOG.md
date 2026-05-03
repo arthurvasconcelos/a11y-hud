@@ -1,5 +1,11 @@
 # @a11y-hud/example-vue
 
+## 0.0.5
+
+### Patch Changes
+
+- @a11y-hud/vue@0.2.3
+
 ## 0.0.4
 
 ### Patch Changes

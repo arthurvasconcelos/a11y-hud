@@ -1,5 +1,12 @@
 # @a11y-hud/react
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [f1fa962]
+  - a11y-hud@0.1.4
+
 ## 0.2.3
 
 ### Patch Changes

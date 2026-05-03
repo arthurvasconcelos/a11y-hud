@@ -1,5 +1,11 @@
 # a11y-hud
 
+## 0.1.4
+
+### Patch Changes
+
+- f1fa962: Update README to link `@a11y-hud/svelte` and `@a11y-hud/solid` now that both adapters are published.
+
 ## 0.1.3
 
 ### Patch Changes
