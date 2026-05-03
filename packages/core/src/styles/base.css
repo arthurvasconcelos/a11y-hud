@@ -114,7 +114,9 @@
   border-radius: 4px;
   color: var(--a11y-hud-text-muted);
   cursor: pointer;
-  transition: background 120ms, color 120ms;
+  transition:
+    background 120ms,
+    color 120ms;
 }
 
 .btn-icon svg {
@@ -172,7 +174,10 @@
   border: 1px solid var(--a11y-hud-border);
   color: var(--a11y-hud-text-muted);
   background: transparent;
-  transition: background 120ms, color 120ms, border-color 120ms;
+  transition:
+    background 120ms,
+    color 120ms,
+    border-color 120ms;
 }
 
 .filter-chip:hover {
@@ -412,7 +417,9 @@
   font-family: var(--a11y-hud-font);
   color: var(--a11y-hud-text-muted);
   cursor: pointer;
-  transition: background 120ms, color 120ms;
+  transition:
+    background 120ms,
+    color 120ms;
 }
 
 .btn-copy-single svg {

@@ -35,12 +35,12 @@
     </p>
 
     <div class="controls">
-      <button onclick="window.__hud?.setTheme('auto')">Theme: auto</button>
-      <button onclick="window.__hud?.setTheme('default')">Theme: dark</button>
-      <button onclick="window.__hud?.setTheme('light')">Theme: light</button>
-      <button onclick="window.__hud?.setTheme('high-contrast')">Theme: high-contrast</button>
-      <button onclick="window.__hud?.runScan()">Re-scan</button>
-      <button onclick="addDynamicViolation()">Add dynamic element</button>
+      <button type="button" onclick="window.__hud?.setTheme('auto')">Theme: auto</button>
+      <button type="button" onclick="window.__hud?.setTheme('default')">Theme: dark</button>
+      <button type="button" onclick="window.__hud?.setTheme('light')">Theme: light</button>
+      <button type="button" onclick="window.__hud?.setTheme('high-contrast')">Theme: high-contrast</button>
+      <button type="button" onclick="window.__hud?.runScan()">Re-scan</button>
+      <button type="button" onclick="window.addDynamicViolation()">Add dynamic element</button>
     </div>
 
     <!-- ─── Critical violations (wcag2a) ─── -->
@@ -63,7 +63,7 @@
 
     <div class="violation-box">
       <div class="label">button-name (empty button)</div>
-      <button></button>
+      <button type="button"></button>
     </div>
 
     <!-- ─── Serious violations (wcag2aa) ─── -->
@@ -79,7 +79,7 @@
 
     <div class="violation-box">
       <div class="label">tabindex > 0</div>
-      <button tabindex="5">Don't do this</button>
+      <button type="button" tabindex="5">Don't do this</button>
     </div>
 
     <!-- ─── Dynamic rescan test ─── -->
@@ -94,17 +94,17 @@
     <input id="good-input" type="text" placeholder="Arthur">
 
     <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-         width="80" height="60" alt="A 1x1 transparent placeholder image">
+         width="80" height="60" alt="1x1 transparent spacer">
 
     <script>
-      function addDynamicViolation() {
+      window.addDynamicViolation = () => {
         const img = document.createElement("img");
         img.src =
           "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         img.width = 60;
         img.height = 60;
         document.getElementById("dynamic-target").appendChild(img);
-      }
+      };
     </script>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -1,5 +1,5 @@
-import axe from "axe-core";
 import type { AxeResults } from "axe-core";
+import axe from "axe-core";
 
 // axe-core does not support concurrent runs. Serialize all calls so that a
 // second scan triggered while one is in-flight (e.g. from React StrictMode's
@@ -27,7 +27,7 @@ export async function runScan(target: Element = document.body): Promise<AxeResul
       return results;
     })
     .finally(() => {
-      if (activeRun === run) activeRun = null;
+      activeRun = null;
     });
 
   activeRun = run;

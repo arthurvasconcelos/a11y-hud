@@ -1,5 +1,5 @@
-export { mount, runScan } from "./mount.js";
 export { A11yHudElement } from "./element.js";
+export { mount, runScan } from "./mount.js";
 export type {
   A11yHudInstance,
   AxeResults,

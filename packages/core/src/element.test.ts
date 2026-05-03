@@ -587,6 +587,128 @@ describe("A11yHudElement — branch coverage edge cases", () => {
 
     el.remove();
   });
+
+  it("highlight-attr mutations on the host page do not trigger a rescan", async () => {
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+
+    const el = document.createElement("a11y-hud") as A11yHudElement;
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+
+    const callsBefore = axe.run.mock.calls.length;
+
+    // Setting data-a11y-hud-highlighted is what the highlight feature does.
+    // The MutationObserver guard should filter this mutation and not trigger a rescan.
+    document.body.setAttribute("data-a11y-hud-highlighted", "");
+    await Promise.resolve(); // flush MutationObserver microtask queue
+
+    // Advance past the 500ms debounce — if the guard worked, axe.run was never queued
+    await new Promise<void>((r) => setTimeout(r, 600));
+
+    expect(axe.run.mock.calls.length).toBe(callsBefore);
+
+    document.body.removeAttribute("data-a11y-hud-highlighted");
+    el.remove();
+  });
+});
+
+describe("A11yHudElement — clipboard and copy", () => {
+  let writeText: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+      writable: true,
+    });
+    await setupMock();
+  });
+
+  afterEach(() => {
+    for (const el of document.querySelectorAll("a11y-hud")) el.remove();
+    vi.clearAllMocks();
+  });
+
+  it("copy-all button writes formatted markdown to clipboard", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-copy-all")?.click();
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    const text = writeText.mock.calls[0]?.[0] as string;
+    expect(text).toContain("# a11y-hud scan results");
+    expect(text).toContain("image-alt");
+    el.remove();
+  });
+
+  it("copy-single button writes single violation to clipboard", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-copy-single")?.click();
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    const text = writeText.mock.calls[0]?.[0] as string;
+    expect(text).toContain("# a11y-hud scan results");
+    el.remove();
+  });
+
+  it("falls back to execCommand when clipboard API rejects", async () => {
+    writeText.mockRejectedValue(new Error("not allowed"));
+    const execCommand = vi.fn().mockReturnValue(true);
+    Object.defineProperty(document, "execCommand", {
+      value: execCommand,
+      configurable: true,
+      writable: true,
+    });
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-copy-all")?.click();
+    await vi.waitFor(() => expect(execCommand).toHaveBeenCalledWith("copy"));
+    el.remove();
+    Reflect.deleteProperty(document, "execCommand");
+  });
+
+  it("copy-single does nothing when violation index is out of bounds", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    // Inject a btn-copy-single with an out-of-bounds index and click it via the panel handler
+    const panel = el.shadowRoot?.querySelector(".panel");
+    const btn = document.createElement("button");
+    btn.className = "btn-copy-single";
+    btn.dataset.copyViolation = "9999";
+    panel?.appendChild(btn);
+    btn.click();
+    await new Promise<void>((r) => setTimeout(r, 20));
+    expect(writeText).not.toHaveBeenCalled();
+    el.remove();
+  });
+
+  it("copy-all does nothing when results have no violations", async () => {
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+    axe.run.mockResolvedValue({
+      ...MOCK_RESULTS,
+      violations: [],
+    });
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".empty-state")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-copy-all")?.click();
+    await new Promise<void>((r) => setTimeout(r, 20));
+    expect(writeText).not.toHaveBeenCalled();
+    el.remove();
+  });
+
+  it("FAB click removes data-minimized and re-shows the panel", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-minimize")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-minimize")?.click();
+    expect(el.hasAttribute("data-minimized")).toBe(true);
+    el.shadowRoot?.querySelector<HTMLButtonElement>(".fab")?.click();
+    expect(el.hasAttribute("data-minimized")).toBe(false);
+    el.remove();
+  });
 });
 
 describe("A11yHudElement — CSSStyleSheet fallback", () => {
@@ -596,10 +718,6 @@ describe("A11yHudElement — CSSStyleSheet fallback", () => {
   });
 
   it("uses style element fallback when CSSStyleSheet.replaceSync throws", async () => {
-    vi.mock("axe-core", () => ({
-      default: { run: vi.fn().mockResolvedValue({ violations: [] }) },
-    }));
-
     const originalReplaceSync = CSSStyleSheet.prototype.replaceSync;
     CSSStyleSheet.prototype.replaceSync = () => {
       throw new Error("not supported");

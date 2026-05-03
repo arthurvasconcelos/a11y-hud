@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["**/dist/**", "**/node_modules/**", "**/coverage/**", "**/.vitepress/**"]
+    "includes": ["**", "!**/dist", "!**/node_modules", "!**/coverage", "!**/.vitepress"]
   },
   "formatter": {
     "enabled": true,
@@ -39,12 +39,13 @@
   },
   "overrides": [
     {
-      "include": ["examples/**"],
+      "includes": ["**/examples/**"],
       "linter": {
         "rules": {
           "a11y": {
             "useAltText": "off",
-            "noPositiveTabindex": "off"
+            "noPositiveTabindex": "off",
+            "useAnchorContent": "off"
           }
         }
       }

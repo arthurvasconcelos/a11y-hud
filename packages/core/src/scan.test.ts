@@ -64,4 +64,39 @@ describe("runScan", () => {
     expect(label?.nodes).toHaveLength(1);
     expect(label?.nodes[0]?.target[0]).toBe("input");
   });
+
+  it("serializes concurrent calls — second waits for first to complete", async () => {
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+
+    const callOrder: number[] = [];
+    let resolveFirst!: () => void;
+    const emptyResult = { violations: [], passes: [], incomplete: [], inapplicable: [] };
+
+    axe.run
+      .mockImplementationOnce(
+        () =>
+          new Promise<AxeResults>((resolve) => {
+            resolveFirst = () => resolve(emptyResult as AxeResults);
+            callOrder.push(1);
+          })
+      )
+      .mockImplementationOnce(() => {
+        callOrder.push(2);
+        return Promise.resolve(emptyResult as AxeResults);
+      });
+
+    const first = runScan();
+    const second = runScan();
+
+    expect(callOrder).toEqual([1]);
+
+    resolveFirst();
+    await first;
+    await second;
+
+    expect(callOrder).toEqual([1, 2]);
+    expect(axe.run).toHaveBeenCalledTimes(2);
+  });
 });

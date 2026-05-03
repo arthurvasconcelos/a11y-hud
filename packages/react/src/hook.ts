@@ -1,5 +1,5 @@
-import { mount } from "a11y-hud";
 import type { A11yHudElement, A11yHudInstance, AxeResults, Theme } from "a11y-hud";
+import { mount } from "a11y-hud";
 import { useCallback, useEffect, useRef } from "react";
 import type { UseA11yHudOptions, UseA11yHudReturn } from "./types.js";
 
