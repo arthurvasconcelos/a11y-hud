@@ -54,7 +54,7 @@ console.log(results.violations);
 ## Framework adapters
 
 - React — [`@a11y-hud/react`](https://www.npmjs.com/package/@a11y-hud/react)
-- Vue — `@a11y-hud/vue` _(coming soon)_
+- Vue — [`@a11y-hud/vue`](https://www.npmjs.com/package/@a11y-hud/vue)
 - Angular — `@a11y-hud/angular` _(coming soon)_
 - Svelte — `@a11y-hud/svelte` _(coming soon)_
 - Solid — `@a11y-hud/solid` _(coming soon)_
