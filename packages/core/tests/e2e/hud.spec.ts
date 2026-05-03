@@ -114,7 +114,7 @@ test.describe("a11y-hud panel", () => {
     expect(themeDark).toBe("default");
   });
 
-  test("keyboard navigation: Escape closes the panel", async ({ page }) => {
+  test("keyboard navigation: Escape minimizes the panel to FAB", async ({ page }) => {
     await page.waitForFunction(() => {
       const el = document.querySelector("a11y-hud");
       return el?.shadowRoot?.querySelector(".panel") !== null;
@@ -127,7 +127,12 @@ test.describe("a11y-hud panel", () => {
         ?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     });
 
-    await expect(page.locator("a11y-hud")).toHaveCount(0);
+    // Escape minimizes to FAB — element stays in DOM with data-minimized attribute.
+    await expect(page.locator("a11y-hud")).toHaveCount(1);
+    const isMinimized = await page.evaluate(() =>
+      (document.querySelector("a11y-hud") as HTMLElement | null)?.hasAttribute("data-minimized")
+    );
+    expect(isMinimized).toBe(true);
   });
 
   test("re-scan button triggers a new scan", async ({ page }) => {
