@@ -92,18 +92,20 @@ describe("useA11yHud", () => {
   it("calls instance.runScan() on re-render (render-settled signal)", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    const scopeRef = ref<Element | null>(null);
+    // shallowReactive makes opts.scope trackable so watch(() => options.scope)
+    // fires when the scope prop changes, triggering the rescan.
+    const opts = shallowReactive<UseA11yHudOptions>({ scope: undefined });
     const wrapper = vueMount(
       defineComponent({
         setup() {
-          useA11yHud({ scope: scopeRef });
+          useA11yHud(opts);
           return () => null;
         },
       })
     );
     await nextTick();
     const callsBefore = mockInstance.runScan.mock.calls.length;
-    scopeRef.value = container;
+    opts.scope = ref<Element | null>(container);
     await nextTick();
     expect(mockInstance.runScan.mock.calls.length).toBeGreaterThan(callsBefore);
     container.remove();
@@ -124,6 +126,23 @@ describe("useA11yHud", () => {
     opts.theme = "high-contrast";
     await nextTick();
     expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
+    wrapper.unmount();
+  });
+
+  it("does not call setTheme when theme changes to undefined", async () => {
+    const opts = reactive({ theme: "light" as UseA11yHudOptions["theme"] });
+    const wrapper = vueMount(
+      defineComponent({
+        setup() {
+          useA11yHud(opts);
+          return () => null;
+        },
+      })
+    );
+    await nextTick();
+    opts.theme = undefined;
+    await nextTick();
+    expect(mockInstance.setTheme).not.toHaveBeenCalledWith(undefined);
     wrapper.unmount();
   });
 
@@ -178,6 +197,26 @@ describe("useA11yHud", () => {
     wrapper.unmount();
   });
 
+  it("does not update debounce attribute when debounce changes to undefined", async () => {
+    const opts = reactive({ debounce: 200 as UseA11yHudOptions["debounce"] });
+    const wrapper = vueMount(
+      defineComponent({
+        setup() {
+          useA11yHud(opts);
+          return () => null;
+        },
+      })
+    );
+    await nextTick();
+    opts.debounce = 400;
+    await nextTick();
+    expect(mockEl.getAttribute("debounce")).toBe("400");
+    opts.debounce = undefined;
+    await nextTick();
+    expect(mockEl.getAttribute("debounce")).toBe("400");
+    wrapper.unmount();
+  });
+
   it("sets scopeElement on the CE when scope ref has a current value", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -201,8 +240,6 @@ describe("useA11yHud", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const scopeRef = ref<Element | null>(container);
-    // Use shallowReactive to prevent Vue from auto-unwrapping the nested ref,
-    // so opts.scope remains a Ref object (matching how component props work).
     const opts = shallowReactive<UseA11yHudOptions>({ scope: scopeRef });
 
     const wrapper = vueMount(
