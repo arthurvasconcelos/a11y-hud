@@ -1,5 +1,12 @@
 # @a11y-hud/example-svelte
 
+## 0.0.2
+
+### Patch Changes
+
+- Updated dependencies [cf2d1bd]
+  - @a11y-hud/svelte@0.2.0
+
 ## 0.0.1
 
 ### Patch Changes
