@@ -36,5 +36,18 @@
     "formatter": {
       "trailingCommas": "none"
     }
-  }
+  },
+  "overrides": [
+    {
+      "include": ["examples/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useAltText": "off",
+            "noPositiveTabindex": "off"
+          }
+        }
+      }
+    }
+  ]
 }
