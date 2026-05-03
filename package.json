@@ -15,6 +15,7 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write .",
+    "check:ci": "biome check .",
     "typecheck": "pnpm -r --filter='./packages/*' typecheck",
     "changeset": "changeset",
     "version-packages": "changeset version",

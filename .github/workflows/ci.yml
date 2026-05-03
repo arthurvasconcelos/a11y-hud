@@ -34,13 +34,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint + format check
-        run: pnpm check --no-errors-on-unmatched
+        run: pnpm check:ci
 
       - name: Type-check
         run: pnpm typecheck
 
       - name: Unit tests
         run: pnpm test
+
+      - name: Build packages
+        run: pnpm build
 
       - name: Install Playwright browsers
         run: pnpm --filter='./packages/core' exec playwright install --with-deps chromium firefox webkit
