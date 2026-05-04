@@ -1,3 +1,4 @@
+export { generateBookmarklet } from "./bookmarklet.js";
 export { A11yHudElement } from "./element.js";
 export { mount, runScan } from "./mount.js";
 export type {
