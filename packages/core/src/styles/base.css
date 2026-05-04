@@ -229,6 +229,7 @@
 
 .panel-body {
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -251,6 +252,7 @@
 
 .violation-toggle {
   all: unset;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -764,6 +766,7 @@
 
 .btn-kbd-element {
   all: unset;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 6px;
