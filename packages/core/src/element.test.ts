@@ -189,46 +189,122 @@ describe("A11yHudElement", () => {
     el.remove();
   });
 
+  describe("filter panel toggle", () => {
+    it("filter panel starts collapsed", async () => {
+      const el = createElement();
+      await vi.waitFor(() =>
+        expect(el.shadowRoot?.querySelector(".btn-panel-title")).not.toBeNull()
+      );
+      expect(el.shadowRoot?.querySelector("#panel-filters")?.hasAttribute("data-open")).toBe(false);
+      el.remove();
+    });
+
+    it("clicking panel title opens the filter panel", async () => {
+      const el = createElement();
+      await vi.waitFor(() =>
+        expect(el.shadowRoot?.querySelector(".btn-panel-title")).not.toBeNull()
+      );
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-panel-title")?.click();
+      expect(el.shadowRoot?.querySelector("#panel-filters")?.hasAttribute("data-open")).toBe(true);
+      expect(el.shadowRoot?.querySelector(".btn-panel-title")?.getAttribute("aria-expanded")).toBe(
+        "true"
+      );
+      el.remove();
+    });
+
+    it("clicking panel title twice closes the filter panel", async () => {
+      const el = createElement();
+      await vi.waitFor(() =>
+        expect(el.shadowRoot?.querySelector(".btn-panel-title")).not.toBeNull()
+      );
+      const btn = el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-panel-title");
+      btn?.click();
+      btn?.click();
+      expect(el.shadowRoot?.querySelector("#panel-filters")?.hasAttribute("data-open")).toBe(false);
+      el.remove();
+    });
+
+    it("panel title gets data-active when a severity filter is activated", async () => {
+      const el = createElement();
+      await vi.waitFor(() =>
+        expect(el.shadowRoot?.querySelector(".btn-panel-title")).not.toBeNull()
+      );
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-panel-title")?.click();
+      el.shadowRoot?.querySelector<HTMLElement>('[data-severity="critical"]')?.click();
+      expect(el.shadowRoot?.querySelector(".btn-panel-title")?.hasAttribute("data-active")).toBe(
+        true
+      );
+      el.remove();
+    });
+
+    it("data-active is removed when all filters are cleared", async () => {
+      const el = createElement();
+      await vi.waitFor(() =>
+        expect(el.shadowRoot?.querySelector(".btn-panel-title")).not.toBeNull()
+      );
+      el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-panel-title")?.click();
+      const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-severity="critical"]');
+      chip?.click(); // activate
+      chip?.click(); // deactivate
+      expect(el.shadowRoot?.querySelector(".btn-panel-title")?.hasAttribute("data-active")).toBe(
+        false
+      );
+      el.remove();
+    });
+  });
+
   describe("filter chips", () => {
-    it("severity filter toggles aria-pressed", async () => {
+    it("severity chip starts inactive; clicking activates it", async () => {
       const el = createElement();
       await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".filter-chip")).not.toBeNull());
 
       const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-severity="minor"]');
+      expect(chip?.getAttribute("aria-pressed")).toBe("false");
+      chip?.click();
       expect(chip?.getAttribute("aria-pressed")).toBe("true");
       chip?.click();
       expect(chip?.getAttribute("aria-pressed")).toBe("false");
       el.remove();
     });
 
-    it("does not deactivate the last active severity", async () => {
+    it("all severity chips start inactive (no filters = show all)", async () => {
       const el = createElement();
       await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".filter-chip")).not.toBeNull());
 
       const chips = el.shadowRoot?.querySelectorAll<HTMLElement>("[data-severity]") ?? [];
       for (const c of chips) {
-        if (c.getAttribute("aria-pressed") === "true") c.click();
+        expect(c.getAttribute("aria-pressed")).toBe("false");
       }
+      el.remove();
+    });
 
-      const stillActive = el.shadowRoot?.querySelectorAll<HTMLElement>(
-        '[data-severity][aria-pressed="true"]'
+    it("activating all four severity chips can all be deactivated independently", async () => {
+      const el = createElement();
+      await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".filter-chip")).not.toBeNull());
+
+      const chips = Array.from(
+        el.shadowRoot?.querySelectorAll<HTMLElement>("[data-severity]") ?? []
       );
-      expect(stillActive?.length ?? 0).toBeGreaterThanOrEqual(1);
+      for (const c of chips) c.click();
+      for (const c of chips) c.click();
+      for (const c of chips) {
+        expect(c.getAttribute("aria-pressed")).toBe("false");
+      }
       el.remove();
     });
   });
 
   describe("filter chips — WCAG level", () => {
-    it("WCAG level filter toggles aria-pressed", async () => {
+    it("WCAG level chip starts inactive; clicking activates then deactivates", async () => {
       const el = createElement();
       await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".filter-chip")).not.toBeNull());
 
       const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-level="AA"]');
-      expect(chip?.getAttribute("aria-pressed")).toBe("true");
-      chip?.click();
       expect(chip?.getAttribute("aria-pressed")).toBe("false");
       chip?.click();
       expect(chip?.getAttribute("aria-pressed")).toBe("true");
+      chip?.click();
+      expect(chip?.getAttribute("aria-pressed")).toBe("false");
       el.remove();
     });
   });
@@ -327,16 +403,64 @@ describe("A11yHudElement", () => {
     });
   });
 
-  describe("severity filter re-activation", () => {
-    it("deactivated chip can be re-activated", async () => {
+  describe("filter chip filtering behaviour", () => {
+    it("activating a severity filter shows only violations of that severity", async () => {
+      const axe = (await import("axe-core")).default as unknown as {
+        run: ReturnType<typeof vi.fn>;
+      };
+      axe.run.mockResolvedValueOnce({
+        ...MOCK_RESULTS,
+        violations: [
+          { ...MOCK_RESULTS.violations[0]!, impact: "critical" },
+          { ...MOCK_RESULTS.violations[0]!, id: "link-name", impact: "serious" },
+        ],
+      });
+      const el = createElement();
+      await vi.waitFor(() =>
+        expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull()
+      );
+
+      const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-severity="critical"]');
+      chip?.click();
+      const items = el.shadowRoot?.querySelectorAll(".violation-item");
+      expect(items?.length).toBe(1);
+      el.remove();
+    });
+
+    it("activating a WCAG level filter shows only violations of that level", async () => {
+      const axe = (await import("axe-core")).default as unknown as {
+        run: ReturnType<typeof vi.fn>;
+      };
+      axe.run.mockResolvedValueOnce({
+        ...MOCK_RESULTS,
+        violations: [
+          { ...MOCK_RESULTS.violations[0]!, id: "wcag-a", tags: ["wcag2a"] },
+          { ...MOCK_RESULTS.violations[0]!, id: "wcag-aaa", tags: ["wcag2aaa"] },
+        ],
+      });
+      const el = createElement();
+      await vi.waitFor(() =>
+        expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull()
+      );
+
+      const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-level="A"]');
+      chip?.click();
+      const items = el.shadowRoot?.querySelectorAll(".violation-item");
+      expect(items?.length).toBe(1);
+      el.remove();
+    });
+  });
+
+  describe("severity filter toggle", () => {
+    it("inactive chip activates then deactivates on successive clicks", async () => {
       const el = createElement();
       await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".filter-chip")).not.toBeNull());
 
       const chip = el.shadowRoot?.querySelector<HTMLElement>('[data-severity="minor"]');
+      chip?.click(); // activate
+      expect(chip?.getAttribute("aria-pressed")).toBe("true");
       chip?.click(); // deactivate
       expect(chip?.getAttribute("aria-pressed")).toBe("false");
-      chip?.click(); // re-activate
-      expect(chip?.getAttribute("aria-pressed")).toBe("true");
       el.remove();
     });
   });

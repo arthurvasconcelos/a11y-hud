@@ -97,13 +97,14 @@ export class A11yHudElement extends HTMLElement {
   private _observer: MutationObserver | undefined;
   private _unwatchTheme: (() => void) | undefined;
   private _removeHighlight: (() => void) | undefined;
-  private _activeSeverities = new Set<Severity>(["critical", "serious", "moderate", "minor"]);
-  private _activeLevels = new Set<string>(["A", "AA", "AAA"]);
+  private _activeSeverities = new Set<Severity>();
+  private _activeLevels = new Set<string>();
   private _runOnly: string[] = [];
   private _debouncedScan: ((...args: never[]) => void) & { cancel(): void };
   private _keyboardMode = false;
   private _keyboardCleanup: (() => void) | undefined;
   private _kbElements: FocusableElementInfo[] = [];
+  private _filtersOpen = false;
 
   constructor() {
     super();
@@ -293,9 +294,10 @@ export class A11yHudElement extends HTMLElement {
     const violations = this._results?.violations ?? [];
     return violations.filter((v) => {
       const impact = v.impact as Severity | null;
-      if (impact && !this._activeSeverities.has(impact)) return false;
+      if (this._activeSeverities.size > 0 && impact && !this._activeSeverities.has(impact))
+        return false;
       const level = getViolationLevel(v.tags);
-      if (level && !this._activeLevels.has(level)) return false;
+      if (this._activeLevels.size > 0 && level && !this._activeLevels.has(level)) return false;
       return true;
     });
   }
@@ -350,11 +352,12 @@ export class A11yHudElement extends HTMLElement {
     return `
       <div class="panel" role="complementary" aria-label="Accessibility panel">
         <div class="panel-header">
-          <span class="panel-title">
+          <button class="btn-panel-title" aria-expanded="${this._filtersOpen}" aria-controls="panel-filters" aria-label="Toggle filters" title="Toggle filters">
             <span class="panel-title-icon" aria-hidden="true">${icon("filter")}</span>
             a11y
             <span class="panel-count" data-count="${total}" aria-live="polite" aria-label="${total} violations">${total}</span>
-          </span>
+            <span class="panel-title-chevron" aria-hidden="true">${icon("chevron-down")}</span>
+          </button>
           <div class="panel-actions" role="toolbar" aria-label="Panel actions">
             <button class="btn-icon" id="btn-copy-all" aria-label="Copy all violations to clipboard" title="Copy all">
               ${icon("copy")}
@@ -414,7 +417,7 @@ export class A11yHudElement extends HTMLElement {
       .join("");
 
     return `
-      <div class="panel-filters" aria-label="Filters">
+      <div id="panel-filters" class="panel-filters" aria-label="Filters" ${this._filtersOpen ? "data-open" : ""}>
         <div class="filter-group" role="group" aria-label="Filter by severity">${severityChips}</div>
         <div class="filter-group" role="group" aria-label="Filter by WCAG level">${levelChips}</div>
         <div class="filter-group" role="group" aria-label="Run only rule sets">${ruleSetChips}</div>
@@ -547,6 +550,7 @@ export class A11yHudElement extends HTMLElement {
     const panel = this._shadow.querySelector(".panel");
     if (!panel) return;
 
+    panel.querySelector(".btn-panel-title")?.addEventListener("click", () => this._toggleFilters());
     panel.querySelector("#btn-rescan")?.addEventListener("click", () => void this._runScan());
     panel.querySelector("#btn-minimize")?.addEventListener("click", () => {
       this.setAttribute("data-minimized", "");
@@ -675,23 +679,21 @@ export class A11yHudElement extends HTMLElement {
       const level = chip.dataset.level;
       if (severity && isSeverity(severity)) {
         const active = this._activeSeverities.has(severity);
-        if (active && this._activeSeverities.size > 1) {
+        if (active) {
           this._activeSeverities.delete(severity);
-          chip.setAttribute("aria-pressed", "false");
-        } else if (!active) {
+        } else {
           this._activeSeverities.add(severity);
-          chip.setAttribute("aria-pressed", "true");
         }
+        chip.setAttribute("aria-pressed", String(!active));
         this._refreshBody();
       } else if (level) {
         const active = this._activeLevels.has(level);
-        if (active && this._activeLevels.size > 1) {
+        if (active) {
           this._activeLevels.delete(level);
-          chip.setAttribute("aria-pressed", "false");
-        } else if (!active) {
+        } else {
           this._activeLevels.add(level);
-          chip.setAttribute("aria-pressed", "true");
         }
+        chip.setAttribute("aria-pressed", String(!active));
         this._refreshBody();
       } else if (chip.dataset.ruleset) {
         const ruleset = chip.dataset.ruleset;
@@ -703,6 +705,7 @@ export class A11yHudElement extends HTMLElement {
           this._runOnly = [...this._runOnly, ruleset];
           chip.setAttribute("aria-pressed", "true");
         }
+        this._updateFilterToggle();
         void this._runScan();
       }
     }
@@ -757,6 +760,7 @@ export class A11yHudElement extends HTMLElement {
       fabCountEl.textContent = String(total);
       fabCountEl.setAttribute("data-count", String(total));
     }
+    this._updateFilterToggle();
   }
 
   private _formatViolationsAsMarkdown(violations: Result[]): string {
@@ -808,6 +812,30 @@ export class A11yHudElement extends HTMLElement {
     const violation = this._getFilteredViolations()[violationIndex];
     if (!violation) return;
     await this._copyToClipboard(this._formatViolationsAsMarkdown([violation]));
+  }
+
+  private _hasActiveFilters(): boolean {
+    return (
+      this._activeSeverities.size > 0 || this._activeLevels.size > 0 || this._runOnly.length > 0
+    );
+  }
+
+  private _updateFilterToggle(): void {
+    const btn = this._shadow.querySelector<HTMLElement>(".btn-panel-title");
+    if (!btn) return;
+    btn.setAttribute("aria-expanded", String(this._filtersOpen));
+    if (this._hasActiveFilters()) {
+      btn.setAttribute("data-active", "");
+    } else {
+      btn.removeAttribute("data-active");
+    }
+  }
+
+  private _toggleFilters(): void {
+    this._filtersOpen = !this._filtersOpen;
+    const filters = this._shadow.getElementById("panel-filters");
+    filters?.toggleAttribute("data-open", this._filtersOpen);
+    this._updateFilterToggle();
   }
 
   private _toggleKeyboardMode(): void {

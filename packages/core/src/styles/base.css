@@ -10,6 +10,7 @@
   --a11y-hud-moderate: #f9e2af;
   --a11y-hud-minor: #89b4fa;
   --a11y-hud-highlight: #cba6f7;
+  --a11y-hud-tag: #94e2d5;
   --a11y-hud-focus-ring: #89b4fa;
   --a11y-hud-radius: 8px;
   --a11y-hud-font: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
@@ -59,12 +60,23 @@
   flex-shrink: 0;
 }
 
-.panel-title {
+.btn-panel-title {
+  all: unset;
   display: flex;
   align-items: center;
   gap: 6px;
   font-weight: 600;
   letter-spacing: 0.02em;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  transition: color 120ms;
+}
+
+.btn-panel-title:focus-visible {
+  outline: 2px solid var(--a11y-hud-focus-ring);
+  outline-offset: 2px;
 }
 
 .panel-title-icon {
@@ -73,11 +85,35 @@
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  position: relative;
+  transition: color 120ms;
 }
 
 .panel-title-icon svg {
   width: 100%;
   height: 100%;
+}
+
+.btn-panel-title[data-active] .panel-title-icon {
+  color: var(--a11y-hud-highlight);
+}
+
+.panel-title-chevron {
+  display: flex;
+  align-items: center;
+  width: 12px;
+  height: 12px;
+  color: var(--a11y-hud-text-muted);
+  transition: transform 200ms;
+}
+
+.panel-title-chevron svg {
+  width: 100%;
+  height: 100%;
+}
+
+.btn-panel-title[aria-expanded="true"] .panel-title-chevron {
+  transform: rotate(180deg);
 }
 
 .panel-count {
@@ -153,12 +189,16 @@
 }
 
 .panel-filters {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 6px;
   padding: 8px 12px;
   border-block-end: 1px solid var(--a11y-hud-border);
   flex-shrink: 0;
+}
+
+.panel-filters[data-open] {
+  display: flex;
 }
 
 .filter-group {
@@ -222,9 +262,15 @@
 }
 
 .filter-chip[aria-pressed="true"][data-level] {
-  background: var(--a11y-hud-bg-elevated);
-  border-color: var(--a11y-hud-text-muted);
-  color: var(--a11y-hud-text);
+  background: var(--a11y-hud-highlight);
+  border-color: var(--a11y-hud-highlight);
+  color: var(--a11y-hud-bg);
+}
+
+.filter-chip[aria-pressed="true"][data-ruleset] {
+  background: var(--a11y-hud-tag);
+  border-color: var(--a11y-hud-tag);
+  color: var(--a11y-hud-bg);
 }
 
 .panel-body {

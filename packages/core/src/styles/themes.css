@@ -12,6 +12,7 @@
   /* #1452c7 gives 5.92:1 on #eff1f5 (was #1e66f5 at 4.34:1) */
   --a11y-hud-minor: #1452c7;
   --a11y-hud-highlight: #8839ef;
+  --a11y-hud-tag: #0d7d80;
   --a11y-hud-focus-ring: #1452c7;
 }
 
@@ -39,6 +40,7 @@
   --a11y-hud-moderate: #e3b341;
   --a11y-hud-minor: #79c0ff;
   --a11y-hud-highlight: #d2a8ff;
+  --a11y-hud-tag: #56d364;
   --a11y-hud-focus-ring: #2f81f7;
 }
 
@@ -55,6 +57,7 @@
   --a11y-hud-moderate: #8a5e00;
   --a11y-hud-minor: #0550ae;
   --a11y-hud-highlight: #8250df;
+  --a11y-hud-tag: #1a7f37;
   --a11y-hud-focus-ring: #0550ae;
 }
 
@@ -78,6 +81,7 @@
   --a11y-hud-moderate: #e0af68;
   --a11y-hud-minor: #7aa2f7;
   --a11y-hud-highlight: #bb9af7;
+  --a11y-hud-tag: #73daca;
   --a11y-hud-focus-ring: #7aa2f7;
 }
 
@@ -95,6 +99,7 @@
   --a11y-hud-minor: #5ba4cf;
   /* #f06090 gives 4.88:1 on #002b36 (was #d33682 at ~3.3:1) */
   --a11y-hud-highlight: #f06090;
+  --a11y-hud-tag: #5cccbc;
   --a11y-hud-focus-ring: #268bd2;
 }
 
@@ -124,5 +129,6 @@
   --a11y-hud-moderate: #ffcc00;
   --a11y-hud-minor: #66aaff;
   --a11y-hud-highlight: #ff66ff;
+  --a11y-hud-tag: #00e5d0;
   --a11y-hud-focus-ring: #ffffff;
 }
