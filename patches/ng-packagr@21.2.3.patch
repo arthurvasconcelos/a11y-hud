@@ -1,0 +1,12 @@
+diff --git a/src/lib/ts/conf/tsconfig.ngc.json b/src/lib/ts/conf/tsconfig.ngc.json
+index 38f412415b992794b8f94facafff03f2edeaae03..8d061669e8f59c5fc048d42835dfaa958d08df48 100644
+--- a/src/lib/ts/conf/tsconfig.ngc.json
++++ b/src/lib/ts/conf/tsconfig.ngc.json
+@@ -8,6 +8,7 @@
+   "compileOnSave": false,
+   "compilerOptions": {
+     "baseUrl": ".",
++    "ignoreDeprecations": "6.0",
+     "target": "es2022",
+     "module": "es2022",
+     "moduleResolution": "bundler",
