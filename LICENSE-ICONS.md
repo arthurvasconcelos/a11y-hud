@@ -42,6 +42,8 @@ The following Lucide icons are vendored in `packages/core/src/icons/`:
 | `moon.svg` | `moon` |
 | `refresh-cw.svg` | `refresh-cw` |
 | `sun.svg` | `sun` |
+| `trash-2.svg` | `trash-2` |
+| `upload.svg` | `upload` |
 | `x.svg` | `x` |
 
 Icons are normalized to use `stroke="currentColor"` and `fill="none"` (for stroke icons), with no hard-coded colors, to allow theming via CSS `color`.

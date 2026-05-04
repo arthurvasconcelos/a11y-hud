@@ -908,6 +908,146 @@ describe("A11yHudElement — JSON export", () => {
   });
 });
 
+describe("A11yHudElement — ignore rules UI", () => {
+  beforeEach(async () => {
+    await setupMock();
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    for (const el of document.querySelectorAll("a11y-hud")) el.remove();
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it("renders an ignore button inside each violation detail", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    expect(el.shadowRoot?.querySelector(".btn-ignore-rule")).not.toBeNull();
+    el.remove();
+  });
+
+  it("renders the ignored-section below the violation list", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    expect(el.shadowRoot?.querySelector(".ignored-section")).not.toBeNull();
+    el.remove();
+  });
+
+  it("clicking ignore button adds rule to localStorage and triggers rescan", async () => {
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    const callsBefore = axe.run.mock.calls.length;
+
+    const btn = el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-ignore-rule");
+    btn?.click();
+
+    await vi.waitFor(() => expect(axe.run.mock.calls.length).toBeGreaterThan(callsBefore));
+    expect(localStorage.getItem("a11y-hud:ignores")).toContain("image-alt");
+    el.remove();
+  });
+
+  it("ignored-section toggle expands the body", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".ignored-section")).not.toBeNull());
+    const toggle = el.shadowRoot?.querySelector<HTMLButtonElement>(".ignored-section-toggle");
+    toggle?.click();
+    expect(el.shadowRoot?.querySelector("#ignored-section-body")?.hasAttribute("data-open")).toBe(
+      true
+    );
+    el.remove();
+  });
+
+  it("ignored-section toggle collapses the body on second click", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".ignored-section")).not.toBeNull());
+    const toggle = el.shadowRoot?.querySelector<HTMLButtonElement>(".ignored-section-toggle");
+    toggle?.click();
+    toggle?.click();
+    expect(el.shadowRoot?.querySelector("#ignored-section-body")?.hasAttribute("data-open")).toBe(
+      false
+    );
+    el.remove();
+  });
+
+  it("remove-ignore button calls removeIgnore and triggers rescan", async () => {
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+    localStorage.setItem("a11y-hud:ignores", JSON.stringify([{ ruleId: "image-alt" }]));
+
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".ignored-section")).not.toBeNull());
+
+    const callsBefore = axe.run.mock.calls.length;
+    const removeBtn = el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-remove-ignore");
+    removeBtn?.click();
+    await vi.waitFor(() => expect(axe.run.mock.calls.length).toBeGreaterThan(callsBefore));
+    expect(JSON.parse(localStorage.getItem("a11y-hud:ignores") ?? "[]")).toHaveLength(0);
+    el.remove();
+  });
+
+  it("clear-ignores button clears all ignores and triggers rescan", async () => {
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+    localStorage.setItem("a11y-hud:ignores", JSON.stringify([{ ruleId: "image-alt" }]));
+
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".ignored-section")).not.toBeNull());
+
+    const toggle = el.shadowRoot?.querySelector<HTMLButtonElement>(".ignored-section-toggle");
+    toggle?.click();
+    await vi.waitFor(() =>
+      expect(el.shadowRoot?.querySelector("#ignored-section-body")?.hasAttribute("data-open")).toBe(
+        true
+      )
+    );
+
+    const callsBefore = axe.run.mock.calls.length;
+    const clearBtn = el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-clear-ignores");
+    clearBtn?.click();
+    await vi.waitFor(() => expect(axe.run.mock.calls.length).toBeGreaterThan(callsBefore));
+    expect(JSON.parse(localStorage.getItem("a11y-hud:ignores") ?? "[]")).toHaveLength(0);
+    el.remove();
+  });
+
+  it("export-ignores button creates a downloadable JSON blob", async () => {
+    const createObjectURL = vi.fn().mockReturnValue("blob:ignores-url");
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, "createObjectURL", {
+      value: createObjectURL,
+      configurable: true,
+      writable: true,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      value: revokeObjectURL,
+      configurable: true,
+      writable: true,
+    });
+
+    localStorage.setItem("a11y-hud:ignores", JSON.stringify([{ ruleId: "image-alt" }]));
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".ignored-section")).not.toBeNull());
+
+    const toggle = el.shadowRoot?.querySelector<HTMLButtonElement>(".ignored-section-toggle");
+    toggle?.click();
+    await vi.waitFor(() =>
+      expect(el.shadowRoot?.querySelector("#ignored-section-body")?.hasAttribute("data-open")).toBe(
+        true
+      )
+    );
+
+    el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-export-ignores")?.click();
+    expect(createObjectURL).toHaveBeenCalledOnce();
+    expect(createObjectURL.mock.calls[0]?.[0]).toBeInstanceOf(Blob);
+    el.remove();
+  });
+});
+
 describe("A11yHudElement — CSSStyleSheet fallback", () => {
   afterEach(() => {
     for (const el of document.querySelectorAll("a11y-hud")) el.remove();

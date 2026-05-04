@@ -1,11 +1,19 @@
 import type { AxeResults, Result } from "axe-core";
 import { icon } from "./icons/index.js";
+import {
+  addIgnore,
+  clearIgnores,
+  exportIgnores,
+  importIgnores,
+  listIgnores,
+  removeIgnore,
+} from "./ignores.js";
 import { debounce } from "./observer.js";
 import { runScan } from "./scan.js";
 import baseCss from "./styles/base.css";
 import themesCss from "./styles/themes.css";
 import { resolveTheme, watchTheme } from "./theme.js";
-import type { A11yHudExport, Severity, Theme } from "./types.js";
+import type { A11yHudExport, IgnoreEntry, Severity, Theme } from "./types.js";
 
 const HIGHLIGHT_ATTR = "data-a11y-hud-highlighted";
 const HIGHLIGHT_STYLE_ID = "a11y-hud-highlight-style";
@@ -315,6 +323,7 @@ export class A11yHudElement extends HTMLElement {
           <span class="scanning-spinner" aria-hidden="true">${icon("refresh-cw")}</span>
           Scanning…
         </div>
+        ${this._renderIgnoredSection()}
       `;
     }
   }
@@ -399,6 +408,7 @@ export class A11yHudElement extends HTMLElement {
           <span class="scanning-spinner" aria-hidden="true">${icon("refresh-cw")}</span>
           <span class="empty-state-body">Running first scan…</span>
         </div>
+        ${this._renderIgnoredSection()}
       `;
     }
 
@@ -411,11 +421,54 @@ export class A11yHudElement extends HTMLElement {
             ${this._results.violations.length > 0 ? "All violations filtered out." : "Great job! The scanned area has no axe-core violations."}
           </span>
         </div>
+        ${this._renderIgnoredSection()}
       `;
     }
 
     const items = violations.map((v, i) => this._renderViolationItem(v, i)).join("");
-    return `<ul class="violation-list" role="list" aria-label="${violations.length} violation${violations.length !== 1 ? "s" : ""}">${items}</ul>`;
+    return `<ul class="violation-list" role="list" aria-label="${violations.length} violation${violations.length !== 1 ? "s" : ""}">${items}</ul>${this._renderIgnoredSection()}`;
+  }
+
+  private _renderIgnoredSection(): string {
+    const entries = listIgnores();
+    const removeAttrs = (e: IgnoreEntry) =>
+      e.selector !== undefined
+        ? `data-remove-rule="${e.ruleId}" data-remove-selector="${e.selector}"`
+        : `data-remove-rule="${e.ruleId}"`;
+    const listHtml =
+      entries.length === 0
+        ? `<p class="ignored-empty">No rules ignored yet.</p>`
+        : `<ul class="ignored-list" aria-label="Ignored rules">${entries
+            .map(
+              (e) => `
+              <li class="ignored-entry">
+                <span class="ignored-rule-id">${e.ruleId}</span>
+                ${e.selector !== undefined ? `<code class="ignored-selector">${e.selector}</code>` : ""}
+                <button class="btn-remove-ignore" ${removeAttrs(e)} aria-label="Remove ignore for ${e.ruleId}">
+                  ${icon("trash-2")}
+                </button>
+              </li>`
+            )
+            .join("")}</ul>`;
+    return `
+      <div class="ignored-section">
+        <button class="ignored-section-toggle" aria-expanded="false" aria-controls="ignored-section-body">
+          <span>Ignored rules (${entries.length})</span>
+          <span class="chevron-icon" aria-hidden="true">${icon("chevron-down")}</span>
+        </button>
+        <div id="ignored-section-body" class="ignored-section-body">
+          ${listHtml}
+          <div class="ignored-actions">
+            <button class="btn-export-ignores btn-sm" aria-label="Export ignored rules as JSON" title="Export ignores">
+              ${icon("download")} Export
+            </button>
+            <button class="btn-import-ignores btn-sm" aria-label="Import ignored rules from JSON" title="Import ignores">
+              ${icon("upload")} Import
+            </button>
+            ${entries.length > 0 ? `<button class="btn-clear-ignores btn-sm" aria-label="Clear all ignored rules" title="Clear all">${icon("trash-2")} Clear all</button>` : ""}
+          </div>
+        </div>
+      </div>`;
   }
 
   private _renderViolationItem(violation: Result, index: number): string {
@@ -454,6 +507,9 @@ export class A11yHudElement extends HTMLElement {
             </a>
             <button class="btn-copy-single" data-copy-violation="${index}" aria-label="Copy ${violation.id} to clipboard" title="Copy violation">
               ${icon("copy")} Copy
+            </button>
+            <button class="btn-ignore-rule" data-ignore-rule="${violation.id}" aria-label="Ignore rule ${violation.id}" title="Ignore this rule">
+              ${icon("trash-2")} Ignore
             </button>
           </div>
         </div>
@@ -521,6 +577,56 @@ export class A11yHudElement extends HTMLElement {
     if (copyBtn) {
       const vIdx = Number.parseInt(copyBtn.dataset.copyViolation ?? "", 10);
       void this._copySingle(vIdx);
+      return;
+    }
+
+    const ignoreBtn = target.closest(".btn-ignore-rule") as HTMLElement | null;
+    if (ignoreBtn) {
+      const ruleId = ignoreBtn.dataset.ignoreRule;
+      if (ruleId) {
+        addIgnore(ruleId);
+        void this._runScan();
+      }
+      return;
+    }
+
+    const removeIgnoreBtn = target.closest(".btn-remove-ignore") as HTMLElement | null;
+    if (removeIgnoreBtn) {
+      const ruleId = removeIgnoreBtn.dataset.removeRule;
+      const selector = removeIgnoreBtn.dataset.removeSelector || undefined;
+      if (ruleId) {
+        removeIgnore(ruleId, selector);
+        void this._runScan();
+      }
+      return;
+    }
+
+    if (target.closest(".btn-export-ignores")) {
+      this._exportIgnoresJson();
+      return;
+    }
+
+    if (target.closest(".btn-import-ignores")) {
+      this._importIgnoresJson();
+      return;
+    }
+
+    if (target.closest(".btn-clear-ignores")) {
+      clearIgnores();
+      void this._runScan();
+      return;
+    }
+
+    const ignoredToggle = target.closest(".ignored-section-toggle") as HTMLElement | null;
+    if (ignoredToggle) {
+      const expanded = ignoredToggle.getAttribute("aria-expanded") === "true";
+      ignoredToggle.setAttribute("aria-expanded", String(!expanded));
+      const bodyId = ignoredToggle.getAttribute("aria-controls");
+      const sectionBody = bodyId ? this._shadow.getElementById(bodyId) : null;
+      if (sectionBody) {
+        if (expanded) sectionBody.removeAttribute("data-open");
+        else sectionBody.setAttribute("data-open", "");
+      }
       return;
     }
 
@@ -663,6 +769,34 @@ export class A11yHudElement extends HTMLElement {
     const violation = this._getFilteredViolations()[violationIndex];
     if (!violation) return;
     await this._copyToClipboard(this._formatViolationsAsMarkdown([violation]));
+  }
+
+  private _exportIgnoresJson(): void {
+    const json = exportIgnores();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "a11y-hud-ignores.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private _importIgnoresJson(): void {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json,application/json";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        importIgnores((evt.target?.result as string | null) ?? "");
+        void this._runScan();
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   }
 
   private _getScopeString(): string {

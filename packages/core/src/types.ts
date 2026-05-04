@@ -8,6 +8,11 @@ export interface A11yHudExport {
   results: AxeResults;
 }
 
+export interface IgnoreEntry {
+  ruleId: string;
+  selector?: string;
+}
+
 export type Theme =
   | "auto"
   | "default"
@@ -34,6 +39,14 @@ export interface A11yHudInstance {
   setRunOnly(tags: string[]): void;
   runScan(): Promise<AxeResults>;
   exportResults(): string | null;
+  ignores: {
+    add(ruleId: string, selector?: string): void;
+    remove(ruleId: string, selector?: string): void;
+    clear(): void;
+    list(): IgnoreEntry[];
+    exportJson(): string;
+    importJson(json: string): void;
+  };
 }
 
 export type { AxeResults };

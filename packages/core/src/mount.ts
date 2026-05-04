@@ -1,7 +1,15 @@
 import type { AxeResults } from "axe-core";
 import type { A11yHudElement } from "./element.js";
+import {
+  addIgnore,
+  clearIgnores,
+  exportIgnores,
+  importIgnores,
+  listIgnores,
+  removeIgnore,
+} from "./ignores.js";
 import { runScan } from "./scan.js";
-import type { A11yHudInstance, MountOptions, Theme } from "./types.js";
+import type { A11yHudInstance, IgnoreEntry, MountOptions, Theme } from "./types.js";
 
 export function mount(options: MountOptions = {}): A11yHudInstance {
   let el = document.querySelector<A11yHudElement>("a11y-hud");
@@ -50,6 +58,30 @@ export function mount(options: MountOptions = {}): A11yHudInstance {
     },
     exportResults(): string | null {
       return el.exportResults();
+    },
+    ignores: {
+      add(ruleId: string, selector?: string): void {
+        addIgnore(ruleId, selector);
+        void el.runScan();
+      },
+      remove(ruleId: string, selector?: string): void {
+        removeIgnore(ruleId, selector);
+        void el.runScan();
+      },
+      clear(): void {
+        clearIgnores();
+        void el.runScan();
+      },
+      list(): IgnoreEntry[] {
+        return listIgnores();
+      },
+      exportJson(): string {
+        return exportIgnores();
+      },
+      importJson(json: string): void {
+        importIgnores(json);
+        void el.runScan();
+      },
     },
   };
 }

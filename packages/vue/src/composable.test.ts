@@ -9,12 +9,22 @@ vi.mock("a11y-hud", () => ({
   mount: vi.fn(),
 }));
 
+type MockIgnores = {
+  add: ReturnType<typeof vi.fn>;
+  remove: ReturnType<typeof vi.fn>;
+  clear: ReturnType<typeof vi.fn>;
+  list: ReturnType<typeof vi.fn>;
+  exportJson: ReturnType<typeof vi.fn>;
+  importJson: ReturnType<typeof vi.fn>;
+};
+
 type MockInstance = {
   unmount: ReturnType<typeof vi.fn>;
   setTheme: ReturnType<typeof vi.fn>;
   setRunOnly: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
   exportResults: ReturnType<typeof vi.fn>;
+  ignores: MockIgnores;
 };
 
 function makeMockElement() {
@@ -40,6 +50,14 @@ beforeEach(() => {
     setRunOnly: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
     exportResults: vi.fn().mockReturnValue(null),
+    ignores: {
+      add: vi.fn(),
+      remove: vi.fn(),
+      clear: vi.fn(),
+      list: vi.fn().mockReturnValue([]),
+      exportJson: vi.fn().mockReturnValue("[]"),
+      importJson: vi.fn(),
+    },
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
     document.body.appendChild(mockEl);
@@ -309,6 +327,16 @@ describe("useA11yHud", () => {
     const json = (wrapper.vm as unknown as { exportResults: () => string | null }).exportResults();
     expect(mockInstance.exportResults).toHaveBeenCalledOnce();
     expect(json).toBe('{"version":"1"}');
+    wrapper.unmount();
+  });
+
+  it("returned ignores.add() delegates to instance.ignores.add()", async () => {
+    const wrapper = mountComposable();
+    await nextTick();
+    (wrapper.vm as unknown as { ignores: { add: (id: string) => void } }).ignores.add(
+      "color-contrast"
+    );
+    expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
     wrapper.unmount();
   });
 

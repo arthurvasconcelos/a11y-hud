@@ -9,6 +9,10 @@ vi.mock("axe-core", () => ({
   },
 }));
 
+vi.mock("./ignores.js", () => ({
+  listIgnores: vi.fn().mockReturnValue([]),
+}));
+
 describe("runScan", () => {
   afterEach(() => vi.clearAllMocks());
 
@@ -78,6 +82,76 @@ describe("runScan", () => {
     const label = result.violations.find((v) => v.id === "label");
     expect(label?.nodes).toHaveLength(1);
     expect(label?.nodes[0]?.target[0]).toBe("input");
+  });
+
+  it("drops violations whose ruleId is ignored (rule-level ignore, no selector)", async () => {
+    const { listIgnores } = await import("./ignores.js");
+    (listIgnores as ReturnType<typeof vi.fn>).mockReturnValueOnce([{ ruleId: "image-alt" }]);
+
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+    axe.run.mockResolvedValueOnce({
+      violations: [
+        { id: "image-alt", nodes: [{ target: ["img"] }] },
+        { id: "color-contrast", nodes: [{ target: ["p"] }] },
+      ],
+      passes: [],
+      incomplete: [],
+      inapplicable: [],
+    });
+
+    const result = await runScan();
+    expect(result.violations.find((v) => v.id === "image-alt")).toBeUndefined();
+    expect(result.violations.find((v) => v.id === "color-contrast")).toBeDefined();
+  });
+
+  it("drops only nodes matching a node-level ignore (ruleId + selector)", async () => {
+    const { listIgnores } = await import("./ignores.js");
+    (listIgnores as ReturnType<typeof vi.fn>).mockReturnValueOnce([
+      { ruleId: "image-alt", selector: "img.hero" },
+    ]);
+
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+    axe.run.mockResolvedValueOnce({
+      violations: [
+        {
+          id: "image-alt",
+          nodes: [{ target: ["img.hero"] }, { target: ["img.thumb"] }],
+        },
+      ],
+      passes: [],
+      incomplete: [],
+      inapplicable: [],
+    });
+
+    const result = await runScan();
+    const v = result.violations.find((v) => v.id === "image-alt");
+    expect(v).toBeDefined();
+    expect(v?.nodes).toHaveLength(1);
+    expect(v?.nodes[0]?.target[0]).toBe("img.thumb");
+  });
+
+  it("drops the whole violation when all nodes are node-level ignored", async () => {
+    const { listIgnores } = await import("./ignores.js");
+    (listIgnores as ReturnType<typeof vi.fn>).mockReturnValueOnce([
+      { ruleId: "image-alt", selector: "img" },
+    ]);
+
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+    axe.run.mockResolvedValueOnce({
+      violations: [{ id: "image-alt", nodes: [{ target: ["img"] }] }],
+      passes: [],
+      incomplete: [],
+      inapplicable: [],
+    });
+
+    const result = await runScan();
+    expect(result.violations).toHaveLength(0);
   });
 
   it("serializes concurrent calls — second waits for first to complete", async () => {

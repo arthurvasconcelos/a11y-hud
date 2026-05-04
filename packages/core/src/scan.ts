@@ -1,5 +1,6 @@
 import type { AxeResults, RunOptions } from "axe-core";
 import axe from "axe-core";
+import { listIgnores } from "./ignores.js";
 
 // axe-core does not support concurrent runs. Serialize all calls so that a
 // second scan triggered while one is in-flight (e.g. from React StrictMode's
@@ -20,6 +21,7 @@ export async function runScan(
   const run = axe
     .run(target, options)
     .then((results) => {
+      const ignores = listIgnores();
       results.violations = results.violations
         .map((v) => ({
           ...v,
@@ -29,7 +31,21 @@ export async function runScan(
             return !String(selector).toLowerCase().startsWith("a11y-hud");
           }),
         }))
-        .filter((v) => v.nodes.length > 0);
+        .filter((v) => v.nodes.length > 0)
+        .map((v) => {
+          if (ignores.some((e) => e.ruleId === v.id && e.selector === undefined)) {
+            return null;
+          }
+          const hasNodeIgnores = ignores.some((e) => e.ruleId === v.id && e.selector !== undefined);
+          if (!hasNodeIgnores) return v;
+          const nodes = v.nodes.filter((node) => {
+            const last = node.target[node.target.length - 1];
+            const sel = (Array.isArray(last) ? last[last.length - 1] : last) ?? "";
+            return !ignores.some((e) => e.ruleId === v.id && e.selector === sel);
+          });
+          return nodes.length > 0 ? { ...v, nodes } : null;
+        })
+        .filter((v): v is NonNullable<typeof v> => v !== null);
       return results;
     })
     .finally(() => {

@@ -438,6 +438,193 @@
   outline-offset: 1px;
 }
 
+.btn-ignore-rule {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--a11y-hud-font);
+  color: var(--a11y-hud-text-muted);
+  cursor: pointer;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+
+.btn-ignore-rule svg {
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+
+.btn-ignore-rule:hover {
+  background: var(--a11y-hud-bg-elevated);
+  color: var(--a11y-hud-critical);
+}
+
+.btn-ignore-rule:focus-visible {
+  outline: 2px solid var(--a11y-hud-focus-ring);
+  outline-offset: 1px;
+}
+
+/* ── Ignored rules section ──────────────────────────────────────────────────── */
+
+.ignored-section {
+  border-top: 1px solid var(--a11y-hud-border);
+  margin-top: 8px;
+}
+
+.ignored-section-toggle {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-family: var(--a11y-hud-font);
+  font-weight: 600;
+  color: var(--a11y-hud-text-muted);
+  cursor: pointer;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.ignored-section-toggle:hover {
+  color: var(--a11y-hud-text);
+}
+
+.ignored-section-toggle:focus-visible {
+  outline: 2px solid var(--a11y-hud-focus-ring);
+  outline-offset: 1px;
+}
+
+.ignored-section-toggle .chevron-icon {
+  width: 12px;
+  height: 12px;
+  transition: transform 120ms;
+  flex-shrink: 0;
+}
+
+.ignored-section-toggle[aria-expanded="true"] .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.ignored-section-body {
+  display: none;
+  padding: 0 12px 10px;
+}
+
+.ignored-section-body[data-open] {
+  display: block;
+}
+
+.ignored-empty {
+  font-size: 11px;
+  color: var(--a11y-hud-text-muted);
+  margin: 0 0 8px;
+}
+
+.ignored-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.ignored-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.ignored-rule-id {
+  font-weight: 600;
+  color: var(--a11y-hud-text);
+}
+
+.ignored-selector {
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: var(--a11y-hud-text-muted);
+  background: var(--a11y-hud-bg-elevated);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.btn-remove-ignore {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--a11y-hud-text-muted);
+  margin-left: auto;
+  padding: 2px;
+  border-radius: 3px;
+  transition: color 120ms;
+}
+
+.btn-remove-ignore svg {
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+
+.btn-remove-ignore:hover {
+  color: var(--a11y-hud-critical);
+}
+
+.btn-remove-ignore:focus-visible {
+  outline: 2px solid var(--a11y-hud-focus-ring);
+  outline-offset: 1px;
+}
+
+.ignored-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--a11y-hud-font);
+  color: var(--a11y-hud-text-muted);
+  border: 1px solid var(--a11y-hud-border);
+  cursor: pointer;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+
+.btn-sm svg {
+  width: 11px;
+  height: 11px;
+  pointer-events: none;
+}
+
+.btn-sm:hover {
+  background: var(--a11y-hud-bg-elevated);
+  color: var(--a11y-hud-text);
+}
+
+.btn-sm:focus-visible {
+  outline: 2px solid var(--a11y-hud-focus-ring);
+  outline-offset: 1px;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;

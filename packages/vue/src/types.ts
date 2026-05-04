@@ -1,4 +1,4 @@
-import type { AxeResults, Theme } from "a11y-hud";
+import type { AxeResults, IgnoreEntry, Theme } from "a11y-hud";
 
 export interface UseA11yHudOptions {
   theme?: Theme;
@@ -15,4 +15,12 @@ export interface UseA11yHudReturn {
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
   exportResults(): string | null;
+  ignores: {
+    add(ruleId: string, selector?: string): void;
+    remove(ruleId: string, selector?: string): void;
+    clear(): void;
+    list(): IgnoreEntry[];
+    exportJson(): string;
+    importJson(json: string): void;
+  };
 }

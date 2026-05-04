@@ -72,6 +72,30 @@ export class A11yHudService implements OnDestroy {
     return this.instance?.exportResults() ?? null;
   }
 
+  get ignores() {
+    const inst = this.instance;
+    return {
+      add(ruleId: string, selector?: string): void {
+        inst?.ignores.add(ruleId, selector);
+      },
+      remove(ruleId: string, selector?: string): void {
+        inst?.ignores.remove(ruleId, selector);
+      },
+      clear(): void {
+        inst?.ignores.clear();
+      },
+      list() {
+        return inst?.ignores.list() ?? [];
+      },
+      exportJson(): string {
+        return inst?.ignores.exportJson() ?? "[]";
+      },
+      importJson(json: string): void {
+        inst?.ignores.importJson(json);
+      },
+    };
+  }
+
   get initialized(): boolean {
     return this.instance !== null;
   }

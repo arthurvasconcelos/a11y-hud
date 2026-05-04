@@ -12,6 +12,8 @@ import minus from "./minus.svg";
 import moon from "./moon.svg";
 import refreshCw from "./refresh-cw.svg";
 import sun from "./sun.svg";
+import trash2 from "./trash-2.svg";
+import upload from "./upload.svg";
 import x from "./x.svg";
 
 const registry: Record<string, string> = {
@@ -29,6 +31,8 @@ const registry: Record<string, string> = {
   moon,
   "refresh-cw": refreshCw,
   sun,
+  "trash-2": trash2,
+  upload,
   x,
 };
 

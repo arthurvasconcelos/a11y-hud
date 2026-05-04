@@ -1,6 +1,6 @@
 import type { A11yHudElement, A11yHudInstance, AxeResults, Theme } from "a11y-hud";
 import { mount } from "a11y-hud";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { UseA11yHudOptions, UseA11yHudReturn } from "./types.js";
 
 export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
@@ -86,5 +86,29 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
     return instanceRef.current?.exportResults() ?? null;
   }, []);
 
-  return { runScan, setTheme, setRunOnly, exportResults };
+  const ignores = useMemo(
+    () => ({
+      add(ruleId: string, selector?: string): void {
+        instanceRef.current?.ignores.add(ruleId, selector);
+      },
+      remove(ruleId: string, selector?: string): void {
+        instanceRef.current?.ignores.remove(ruleId, selector);
+      },
+      clear(): void {
+        instanceRef.current?.ignores.clear();
+      },
+      list() {
+        return instanceRef.current?.ignores.list() ?? [];
+      },
+      exportJson(): string {
+        return instanceRef.current?.ignores.exportJson() ?? "[]";
+      },
+      importJson(json: string): void {
+        instanceRef.current?.ignores.importJson(json);
+      },
+    }),
+    []
+  );
+
+  return { runScan, setTheme, setRunOnly, exportResults, ignores };
 }

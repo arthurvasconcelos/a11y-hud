@@ -84,4 +84,8 @@ export class A11yHudComponent implements AfterViewInit, OnChanges {
   exportResults(): string | null {
     return this.service.exportResults();
   }
+
+  get ignores() {
+    return this.service.ignores;
+  }
 }

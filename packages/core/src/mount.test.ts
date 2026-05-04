@@ -100,4 +100,45 @@ describe("mount()", () => {
     const hud = mount();
     expect(hud.exportResults()).toBeNull();
   });
+
+  it("ignores.list() returns the current ignore list", () => {
+    const hud = mount();
+    expect(hud.ignores.list()).toEqual([]);
+  });
+
+  it("ignores.add() persists the entry", () => {
+    const hud = mount();
+    hud.ignores.add("color-contrast");
+    expect(hud.ignores.list()).toEqual([{ ruleId: "color-contrast" }]);
+  });
+
+  it("ignores.remove() removes the entry", () => {
+    const hud = mount();
+    hud.ignores.add("color-contrast");
+    hud.ignores.remove("color-contrast");
+    expect(hud.ignores.list()).toEqual([]);
+  });
+
+  it("ignores.clear() empties the list", () => {
+    const hud = mount();
+    hud.ignores.add("color-contrast");
+    hud.ignores.add("image-alt");
+    hud.ignores.clear();
+    expect(hud.ignores.list()).toEqual([]);
+  });
+
+  it("ignores.exportJson() returns valid JSON", () => {
+    const hud = mount();
+    hud.ignores.add("color-contrast");
+    const json = hud.ignores.exportJson();
+    expect(() => JSON.parse(json)).not.toThrow();
+    expect(JSON.parse(json)).toContainEqual({ ruleId: "color-contrast" });
+  });
+
+  it("ignores.importJson() replaces the list", () => {
+    const hud = mount();
+    hud.ignores.add("image-alt");
+    hud.ignores.importJson(JSON.stringify([{ ruleId: "color-contrast" }]));
+    expect(hud.ignores.list()).toEqual([{ ruleId: "color-contrast" }]);
+  });
 });

@@ -95,5 +95,26 @@ export function useA11yHud(getOptions: () => UseA11yHudOptions = () => ({})): Us
     return instanceRef?.exportResults() ?? null;
   }
 
-  return { runScan, setTheme, setRunOnly, exportResults };
+  const ignores = {
+    add(ruleId: string, selector?: string): void {
+      instanceRef?.ignores.add(ruleId, selector);
+    },
+    remove(ruleId: string, selector?: string): void {
+      instanceRef?.ignores.remove(ruleId, selector);
+    },
+    clear(): void {
+      instanceRef?.ignores.clear();
+    },
+    list() {
+      return instanceRef?.ignores.list() ?? [];
+    },
+    exportJson(): string {
+      return instanceRef?.ignores.exportJson() ?? "[]";
+    },
+    importJson(json: string): void {
+      instanceRef?.ignores.importJson(json);
+    },
+  };
+
+  return { runScan, setTheme, setRunOnly, exportResults, ignores };
 }

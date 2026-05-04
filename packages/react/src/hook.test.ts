@@ -7,12 +7,22 @@ vi.mock("a11y-hud", () => ({
   mount: vi.fn(),
 }));
 
+type MockIgnores = {
+  add: ReturnType<typeof vi.fn>;
+  remove: ReturnType<typeof vi.fn>;
+  clear: ReturnType<typeof vi.fn>;
+  list: ReturnType<typeof vi.fn>;
+  exportJson: ReturnType<typeof vi.fn>;
+  importJson: ReturnType<typeof vi.fn>;
+};
+
 type MockInstance = {
   unmount: ReturnType<typeof vi.fn>;
   setTheme: ReturnType<typeof vi.fn>;
   setRunOnly: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
   exportResults: ReturnType<typeof vi.fn>;
+  ignores: MockIgnores;
 };
 
 function makeMockElement() {
@@ -38,6 +48,14 @@ beforeEach(() => {
     setRunOnly: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
     exportResults: vi.fn().mockReturnValue(null),
+    ignores: {
+      add: vi.fn(),
+      remove: vi.fn(),
+      clear: vi.fn(),
+      list: vi.fn().mockReturnValue([]),
+      exportJson: vi.fn().mockReturnValue("[]"),
+      importJson: vi.fn(),
+    },
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
     document.body.appendChild(mockEl);
@@ -203,6 +221,21 @@ describe("useA11yHud", () => {
     const json = result.current.exportResults();
     expect(mockInstance.exportResults).toHaveBeenCalledOnce();
     expect(json).toBe('{"version":"1"}');
+  });
+
+  it("returned ignores.add() delegates to instance.ignores.add()", async () => {
+    const { result } = renderHook(() => useA11yHud());
+    await act(async () => {});
+    result.current.ignores.add("color-contrast");
+    expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
+  });
+
+  it("returned ignores.list() delegates to instance.ignores.list()", async () => {
+    mockInstance.ignores.list.mockReturnValue([{ ruleId: "image-alt" }]);
+    const { result } = renderHook(() => useA11yHud());
+    await act(async () => {});
+    const list = result.current.ignores.list();
+    expect(list).toEqual([{ ruleId: "image-alt" }]);
   });
 
   it("returned runScan and setTheme are stable references across re-renders", async () => {

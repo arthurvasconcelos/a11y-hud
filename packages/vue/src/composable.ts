@@ -102,5 +102,26 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
     return instanceRef.value?.exportResults() ?? null;
   }
 
-  return { runScan, setTheme, setRunOnly, exportResults };
+  const ignores = {
+    add(ruleId: string, selector?: string): void {
+      instanceRef.value?.ignores.add(ruleId, selector);
+    },
+    remove(ruleId: string, selector?: string): void {
+      instanceRef.value?.ignores.remove(ruleId, selector);
+    },
+    clear(): void {
+      instanceRef.value?.ignores.clear();
+    },
+    list() {
+      return instanceRef.value?.ignores.list() ?? [];
+    },
+    exportJson(): string {
+      return instanceRef.value?.ignores.exportJson() ?? "[]";
+    },
+    importJson(json: string): void {
+      instanceRef.value?.ignores.importJson(json);
+    },
+  };
+
+  return { runScan, setTheme, setRunOnly, exportResults, ignores };
 }
