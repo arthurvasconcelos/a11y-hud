@@ -1,5 +1,13 @@
 # @a11y-hud/example-angular
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [b93668c]
+- Updated dependencies [4afefd4]
+  - @a11y-hud/angular@0.4.0
+
 ## 0.0.4
 
 ### Patch Changes

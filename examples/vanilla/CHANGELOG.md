@@ -1,5 +1,15 @@
 # @a11y-hud/example-vanilla
 
+## 0.0.6
+
+### Patch Changes
+
+- Updated dependencies [33644fc]
+- Updated dependencies [b93668c]
+- Updated dependencies [4afefd4]
+- Updated dependencies [7de8c9d]
+  - a11y-hud@0.4.0
+
 ## 0.0.5
 
 ### Patch Changes
