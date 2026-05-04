@@ -105,6 +105,7 @@ export class A11yHudElement extends HTMLElement {
   private _keyboardCleanup: (() => void) | undefined;
   private _kbElements: FocusableElementInfo[] = [];
   private _filtersOpen = false;
+  private _ignoredSectionOpen = false;
 
   constructor() {
     super();
@@ -476,11 +477,11 @@ export class A11yHudElement extends HTMLElement {
             .join("")}</ul>`;
     return `
       <div class="ignored-section">
-        <button class="ignored-section-toggle" aria-expanded="false" aria-controls="ignored-section-body">
+        <button class="ignored-section-toggle" aria-expanded="${this._ignoredSectionOpen}" aria-controls="ignored-section-body">
           <span>Ignored rules (${entries.length})</span>
           <span class="chevron-icon" aria-hidden="true">${icon("chevron-down")}</span>
         </button>
-        <div id="ignored-section-body" class="ignored-section-body">
+        <div id="ignored-section-body" class="ignored-section-body" ${this._ignoredSectionOpen ? "data-open" : ""}>
           ${listHtml}
           <div class="ignored-actions">
             <button class="btn-export-ignores btn-sm" aria-label="Export ignored rules as JSON" title="Export ignores">
@@ -662,13 +663,12 @@ export class A11yHudElement extends HTMLElement {
 
     const ignoredToggle = target.closest(".ignored-section-toggle") as HTMLElement | null;
     if (ignoredToggle) {
-      const expanded = ignoredToggle.getAttribute("aria-expanded") === "true";
-      ignoredToggle.setAttribute("aria-expanded", String(!expanded));
+      this._ignoredSectionOpen = !this._ignoredSectionOpen;
+      ignoredToggle.setAttribute("aria-expanded", String(this._ignoredSectionOpen));
       const bodyId = ignoredToggle.getAttribute("aria-controls");
       const sectionBody = bodyId ? this._shadow.getElementById(bodyId) : null;
       if (sectionBody) {
-        if (expanded) sectionBody.removeAttribute("data-open");
-        else sectionBody.setAttribute("data-open", "");
+        sectionBody.toggleAttribute("data-open", this._ignoredSectionOpen);
       }
       return;
     }
