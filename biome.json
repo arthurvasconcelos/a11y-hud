@@ -54,7 +54,18 @@
             "noPositiveTabindex": "off",
             "useAnchorContent": "off",
             "useHtmlLang": "off",
-            "noSvgWithoutTitle": "off"
+            "noSvgWithoutTitle": "off",
+            "useMediaCaption": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/*.spec.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
           }
         }
       }
