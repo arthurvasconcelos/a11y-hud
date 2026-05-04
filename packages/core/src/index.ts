@@ -8,6 +8,12 @@ export {
   listIgnores,
   removeIgnore,
 } from "./ignores.js";
+export type { FocusableElementInfo, KeyboardViolation } from "./keyboard.js";
+export {
+  detectKeyboardViolations,
+  getFocusableElements,
+  injectFocusOrderOverlay,
+} from "./keyboard.js";
 export { mount, runScan } from "./mount.js";
 export type {
   A11yHudExport,

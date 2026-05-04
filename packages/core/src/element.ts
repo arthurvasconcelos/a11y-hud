@@ -8,6 +8,13 @@ import {
   listIgnores,
   removeIgnore,
 } from "./ignores.js";
+import {
+  detectKeyboardViolations,
+  type FocusableElementInfo,
+  getFocusableElements,
+  injectFocusOrderOverlay,
+  type KeyboardViolation,
+} from "./keyboard.js";
 import { debounce } from "./observer.js";
 import { runScan } from "./scan.js";
 import baseCss from "./styles/base.css";
@@ -61,6 +68,10 @@ function ensureHighlightStyle(doc: Document): void {
   doc.head.appendChild(style);
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function buildStyleSheet(css: string): CSSStyleSheet | null {
   try {
     const sheet = new CSSStyleSheet();
@@ -90,6 +101,9 @@ export class A11yHudElement extends HTMLElement {
   private _activeLevels = new Set<string>(["A", "AA", "AAA"]);
   private _runOnly: string[] = [];
   private _debouncedScan: ((...args: never[]) => void) & { cancel(): void };
+  private _keyboardMode = false;
+  private _keyboardCleanup: (() => void) | undefined;
+  private _kbElements: FocusableElementInfo[] = [];
 
   constructor() {
     super();
@@ -130,6 +144,8 @@ export class A11yHudElement extends HTMLElement {
     this._unwatchTheme?.();
     this._removeHighlight?.();
     this._removeHighlight = undefined;
+    this._keyboardCleanup?.();
+    this._keyboardCleanup = undefined;
     this._debouncedScan.cancel();
   }
 
@@ -309,13 +325,15 @@ export class A11yHudElement extends HTMLElement {
       fabCountEl.setAttribute("data-count", String(total));
     }
 
-    const body = panel.querySelector(".panel-body");
-    if (body) body.innerHTML = this._renderBody(filtered);
-
-    this._bindHighlightEvents();
+    if (!this._keyboardMode) {
+      const body = panel.querySelector(".panel-body");
+      if (body) body.innerHTML = this._renderBody(filtered);
+      this._bindHighlightEvents();
+    }
   }
 
   private _renderScanning(): void {
+    if (this._keyboardMode) return;
     const body = this._shadow.querySelector(".panel-body");
     if (body) {
       body.innerHTML = `
@@ -346,6 +364,9 @@ export class A11yHudElement extends HTMLElement {
             </button>
             <button class="btn-icon" id="btn-rescan" aria-label="Re-scan page" title="Re-scan">
               ${icon("refresh-cw")}
+            </button>
+            <button class="btn-icon" id="btn-keyboard" aria-label="Toggle keyboard mode" title="Keyboard mode" aria-pressed="false">
+              ${icon("keyboard")}
             </button>
             <button class="btn-icon" id="btn-minimize" aria-label="Minimize panel" title="Minimize">
               ${icon("minus")}
@@ -532,6 +553,9 @@ export class A11yHudElement extends HTMLElement {
     });
     panel.querySelector("#btn-copy-all")?.addEventListener("click", () => void this._copyAll());
     panel.querySelector("#btn-export")?.addEventListener("click", () => this._exportJson());
+    panel
+      .querySelector("#btn-keyboard")
+      ?.addEventListener("click", () => this._toggleKeyboardMode());
 
     panel.addEventListener("click", (e) => this._handlePanelClick(e));
     panel.addEventListener("keydown", (e) => this._handlePanelKeydown(e as KeyboardEvent));
@@ -577,6 +601,21 @@ export class A11yHudElement extends HTMLElement {
     if (copyBtn) {
       const vIdx = Number.parseInt(copyBtn.dataset.copyViolation ?? "", 10);
       void this._copySingle(vIdx);
+      return;
+    }
+
+    const kbdElementBtn = target.closest(".btn-kbd-element") as HTMLElement | null;
+    if (kbdElementBtn) {
+      const idx = Number.parseInt(kbdElementBtn.dataset.kbdElement ?? "", 10);
+      const info = this._kbElements.find((e) => e.index === idx);
+      if (info) {
+        this._removeHighlight?.();
+        ensureHighlightStyle(document);
+        const el = info.element as HTMLElement;
+        el.setAttribute(HIGHLIGHT_ATTR, "");
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        this._removeHighlight = () => el.removeAttribute(HIGHLIGHT_ATTR);
+      }
       return;
     }
 
@@ -769,6 +808,100 @@ export class A11yHudElement extends HTMLElement {
     const violation = this._getFilteredViolations()[violationIndex];
     if (!violation) return;
     await this._copyToClipboard(this._formatViolationsAsMarkdown([violation]));
+  }
+
+  private _toggleKeyboardMode(): void {
+    this._keyboardMode = !this._keyboardMode;
+    const btn = this._shadow.querySelector<HTMLButtonElement>("#btn-keyboard");
+    if (btn) btn.setAttribute("aria-pressed", String(this._keyboardMode));
+    this._shadow.querySelector(".panel")?.toggleAttribute("data-kbd-mode", this._keyboardMode);
+    if (this._keyboardMode) {
+      this._activateKeyboardMode();
+    } else {
+      this._deactivateKeyboardMode();
+    }
+  }
+
+  private _activateKeyboardMode(): void {
+    const scope = this._getScopeTarget();
+    this._kbElements = getFocusableElements(scope);
+    const violations = detectKeyboardViolations(this._kbElements, scope);
+    this._keyboardCleanup = injectFocusOrderOverlay(this._kbElements);
+    const body = this._shadow.querySelector(".panel-body");
+    if (body) body.innerHTML = this._renderKeyboardView(this._kbElements, violations);
+  }
+
+  private _deactivateKeyboardMode(): void {
+    this._keyboardCleanup?.();
+    this._keyboardCleanup = undefined;
+    this._kbElements = [];
+    this._removeHighlight?.();
+    this._removeHighlight = undefined;
+    const body = this._shadow.querySelector(".panel-body");
+    if (body) {
+      body.innerHTML = this._renderBody(this._getFilteredViolations());
+      this._bindHighlightEvents();
+    }
+  }
+
+  private _renderKeyboardView(
+    elements: FocusableElementInfo[],
+    violations: KeyboardViolation[]
+  ): string {
+    const elementItems = elements
+      .map(
+        (info) => `
+        <li class="kbd-element-item">
+          <button class="btn-kbd-element" data-kbd-element="${info.index}" aria-label="Highlight element ${info.index}: ${escapeHtml(info.selector)}">
+            <span class="kbd-element-index" aria-hidden="true">${info.index}</span>
+            <code class="kbd-element-selector">${escapeHtml(info.selector)}</code>
+            <span class="kbd-element-tag">&lt;${info.element.tagName.toLowerCase()}&gt;</span>
+            ${info.tabIndex > 0 ? `<span class="kbd-tabindex-badge">tabindex=${info.tabIndex}</span>` : ""}
+          </button>
+        </li>`
+      )
+      .join("");
+
+    const violationItems = violations
+      .map(
+        (v) => `
+        <li class="kbd-violation-item">
+          <span class="severity-icon" data-severity="serious" aria-hidden="true">${icon("alert-circle")}</span>
+          <span class="kbd-violation-msg">${escapeHtml(v.message)}</span>
+        </li>`
+      )
+      .join("");
+
+    return `
+      <div class="kbd-mode-view">
+        <div class="kbd-mode-header">
+          <span class="kbd-mode-stat">
+            <span aria-hidden="true">${icon("keyboard")}</span>
+            ${elements.length} focusable element${elements.length !== 1 ? "s" : ""}
+          </span>
+          ${
+            violations.length > 0
+              ? `<span class="kbd-mode-stat kbd-mode-stat--warn">
+                  <span aria-hidden="true">${icon("alert-circle")}</span>
+                  ${violations.length} issue${violations.length !== 1 ? "s" : ""}
+                </span>`
+              : `<span class="kbd-mode-stat kbd-mode-stat--ok">
+                  <span aria-hidden="true">${icon("check-circle")}</span>
+                  No issues
+                </span>`
+          }
+        </div>
+        ${
+          violations.length > 0
+            ? `<ul class="kbd-violation-list" aria-label="Keyboard issues">${violationItems}</ul>`
+            : ""
+        }
+        ${
+          elements.length > 0
+            ? `<ul class="kbd-element-list" aria-label="Focusable elements in tab order">${elementItems}</ul>`
+            : `<p class="kbd-empty">No focusable elements found in the scoped area.</p>`
+        }
+      </div>`;
   }
 
   private _exportIgnoresJson(): void {

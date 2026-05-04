@@ -1048,6 +1048,168 @@ describe("A11yHudElement — ignore rules UI", () => {
   });
 });
 
+describe("A11yHudElement — keyboard mode", () => {
+  beforeEach(async () => {
+    await setupMock();
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    for (const el of document.querySelectorAll("a11y-hud")) el.remove();
+    document.getElementById("a11y-hud-kbd-overlay")?.remove();
+    document.getElementById("a11y-hud-kbd-style")?.remove();
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it("renders the keyboard mode toggle button in the panel toolbar", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.remove();
+  });
+
+  it("keyboard button starts with aria-pressed='false'", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    expect(el.shadowRoot?.querySelector("#btn-keyboard")?.getAttribute("aria-pressed")).toBe(
+      "false"
+    );
+    el.remove();
+  });
+
+  it("clicking the keyboard button sets aria-pressed='true' and shows keyboard view", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+    expect(el.shadowRoot?.querySelector("#btn-keyboard")?.getAttribute("aria-pressed")).toBe(
+      "true"
+    );
+    expect(el.shadowRoot?.querySelector(".kbd-mode-view")).not.toBeNull();
+    el.remove();
+  });
+
+  it("clicking the keyboard button again deactivates keyboard mode", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    const btn = el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard");
+    btn?.click(); // activate
+    btn?.click(); // deactivate
+    expect(btn?.getAttribute("aria-pressed")).toBe("false");
+    expect(el.shadowRoot?.querySelector(".kbd-mode-view")).toBeNull();
+    el.remove();
+  });
+
+  it("deactivating keyboard mode restores the normal violation view", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".ignored-section")).not.toBeNull());
+    const btn = el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard");
+    btn?.click(); // activate
+    expect(el.shadowRoot?.querySelector(".kbd-mode-view")).not.toBeNull();
+    btn?.click(); // deactivate
+    expect(el.shadowRoot?.querySelector(".kbd-mode-view")).toBeNull();
+    expect(el.shadowRoot?.querySelector(".ignored-section")).not.toBeNull();
+    el.remove();
+  });
+
+  it("keyboard mode injects the overlay into the host page", async () => {
+    const btn = document.createElement("button");
+    document.body.appendChild(btn);
+
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+    expect(document.getElementById("a11y-hud-kbd-overlay")).not.toBeNull();
+
+    btn.remove();
+    el.remove();
+  });
+
+  it("keyboard view shows 'No focusable elements' when scope has none", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+    expect(el.shadowRoot?.querySelector(".kbd-empty")).not.toBeNull();
+    el.remove();
+  });
+
+  it("keyboard view shows 'No issues' stat when there are no violations", async () => {
+    const btn = document.createElement("button");
+    document.body.appendChild(btn);
+
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+    expect(el.shadowRoot?.querySelector(".kbd-mode-stat--ok")).not.toBeNull();
+
+    btn.remove();
+    el.remove();
+  });
+
+  it("clicking a kbd-element button highlights that element on the page", async () => {
+    const btn = document.createElement("button");
+    document.body.appendChild(btn);
+
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".btn-kbd-element")).not.toBeNull());
+
+    el.shadowRoot?.querySelector<HTMLButtonElement>(".btn-kbd-element")?.click();
+    expect(document.getElementById("a11y-hud-highlight-style")).not.toBeNull();
+
+    btn.remove();
+    el.remove();
+  });
+
+  it("clicking a kbd-element button with a non-existent index is a no-op", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+
+    const panel = el.shadowRoot?.querySelector(".panel");
+    const fake = document.createElement("button");
+    fake.className = "btn-kbd-element";
+    fake.dataset.kbdElement = "9999";
+    panel?.appendChild(fake);
+    expect(() => fake.click()).not.toThrow();
+    el.remove();
+  });
+
+  it("rescan while keyboard mode is active does not overwrite the keyboard view", async () => {
+    const axe = (await import("axe-core")).default as unknown as {
+      run: ReturnType<typeof vi.fn>;
+    };
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+    expect(el.shadowRoot?.querySelector(".kbd-mode-view")).not.toBeNull();
+
+    const callsBefore = axe.run.mock.calls.length;
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-rescan")?.click();
+    await vi.waitFor(() => expect(axe.run.mock.calls.length).toBeGreaterThan(callsBefore));
+
+    expect(el.shadowRoot?.querySelector(".kbd-mode-view")).not.toBeNull();
+    expect(el.shadowRoot?.querySelector(".violation-list")).toBeNull();
+    el.remove();
+  });
+
+  it("removing the element cleans up the keyboard overlay", async () => {
+    const btn = document.createElement("button");
+    document.body.appendChild(btn);
+
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+    expect(document.getElementById("a11y-hud-kbd-overlay")).not.toBeNull();
+
+    el.remove();
+    expect(document.getElementById("a11y-hud-kbd-overlay")).toBeNull();
+
+    btn.remove();
+  });
+});
+
 describe("A11yHudElement — CSSStyleSheet fallback", () => {
   afterEach(() => {
     for (const el of document.querySelectorAll("a11y-hud")) el.remove();
