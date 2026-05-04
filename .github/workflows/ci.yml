@@ -43,7 +43,20 @@ jobs:
         run: pnpm typecheck
 
       - name: Unit tests
-        run: pnpm test
+        run: pnpm -r --filter='./packages/*' exec vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=test-report.junit.xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.node-version == '24'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && matrix.node-version == '24' }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/core/test-report.junit.xml,packages/angular/test-report.junit.xml,packages/react/test-report.junit.xml,packages/vue/test-report.junit.xml,packages/svelte/test-report.junit.xml,packages/solid/test-report.junit.xml
 
       - name: Build packages
         run: pnpm build

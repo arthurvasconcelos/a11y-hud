@@ -2,14 +2,13 @@
 
 **Framework-agnostic dev overlay that runs axe-core accessibility audits in your running app — no DevTools required.**
 
-[![npm version](https://img.shields.io/npm/v/a11y-hud.svg)](https://www.npmjs.com/package/a11y-hud)
-[![@a11y-hud/react](https://img.shields.io/npm/v/@a11y-hud/react.svg?label=%40a11y-hud%2Freact)](https://www.npmjs.com/package/@a11y-hud/react)
-[![@a11y-hud/vue](https://img.shields.io/npm/v/@a11y-hud/vue.svg?label=%40a11y-hud%2Fvue)](https://www.npmjs.com/package/@a11y-hud/vue)
-[![@a11y-hud/angular](https://img.shields.io/npm/v/@a11y-hud/angular.svg?label=%40a11y-hud%2Fangular)](https://www.npmjs.com/package/@a11y-hud/angular)
-[![@a11y-hud/svelte](https://img.shields.io/npm/v/@a11y-hud/svelte.svg?label=%40a11y-hud%2Fsvelte)](https://www.npmjs.com/package/@a11y-hud/svelte)
-[![@a11y-hud/solid](https://img.shields.io/npm/v/@a11y-hud/solid.svg?label=%40a11y-hud%2Fsolid)](https://www.npmjs.com/package/@a11y-hud/solid)
-[![CI](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml/badge.svg)](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm version](https://img.shields.io/npm/v/a11y-hud.svg)](https://www.npmjs.com/package/a11y-hud) [![npm downloads](https://img.shields.io/npm/dm/a11y-hud.svg)](https://www.npmjs.com/package/a11y-hud)<br>
+[![@a11y-hud/react](https://img.shields.io/npm/v/@a11y-hud/react.svg?label=%40a11y-hud%2Freact)](https://www.npmjs.com/package/@a11y-hud/react) [![react downloads](https://img.shields.io/npm/dm/@a11y-hud/react.svg?label=downloads)](https://www.npmjs.com/package/@a11y-hud/react)<br>
+[![@a11y-hud/vue](https://img.shields.io/npm/v/@a11y-hud/vue.svg?label=%40a11y-hud%2Fvue)](https://www.npmjs.com/package/@a11y-hud/vue) [![vue downloads](https://img.shields.io/npm/dm/@a11y-hud/vue.svg?label=downloads)](https://www.npmjs.com/package/@a11y-hud/vue)<br>
+[![@a11y-hud/angular](https://img.shields.io/npm/v/@a11y-hud/angular.svg?label=%40a11y-hud%2Fangular)](https://www.npmjs.com/package/@a11y-hud/angular) [![angular downloads](https://img.shields.io/npm/dm/@a11y-hud/angular.svg?label=downloads)](https://www.npmjs.com/package/@a11y-hud/angular)<br>
+[![@a11y-hud/svelte](https://img.shields.io/npm/v/@a11y-hud/svelte.svg?label=%40a11y-hud%2Fsvelte)](https://www.npmjs.com/package/@a11y-hud/svelte) [![svelte downloads](https://img.shields.io/npm/dm/@a11y-hud/svelte.svg?label=downloads)](https://www.npmjs.com/package/@a11y-hud/svelte)<br>
+[![@a11y-hud/solid](https://img.shields.io/npm/v/@a11y-hud/solid.svg?label=%40a11y-hud%2Fsolid)](https://www.npmjs.com/package/@a11y-hud/solid) [![solid downloads](https://img.shields.io/npm/dm/@a11y-hud/solid.svg?label=downloads)](https://www.npmjs.com/package/@a11y-hud/solid)<br>
+[![CI](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml/badge.svg)](https://github.com/arthurvasconcelos/a11y-hud/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/arthurvasconcelos/a11y-hud/graph/badge.svg)](https://codecov.io/gh/arthurvasconcelos/a11y-hud) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Drop an interactive accessibility HUD into any web app during development. No browser extension, no build-step magic, no framework lock-in — just a `<script>` tag or an `import`.
 
