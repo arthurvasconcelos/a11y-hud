@@ -1,5 +1,14 @@
 # a11y-hud
 
+## 0.3.0
+
+### Minor Changes
+
+- 33644fc: Add `generateBookmarklet(version?)` — returns a `javascript:` bookmarklet URL that loads the UMD bundle from jsDelivr and calls `window.A11yHud.mount()`. Defaults to `"latest"`; pass a version string to pin to a specific release. Build now generates `dist/bookmarklet.html`, a self-contained drag-to-bookmark page.
+- b93668c: Add ignore-rules persistence. Violations matching an ignored rule are silently dropped from every scan result. Ignores are stored in `localStorage` under `"a11y-hud:ignores"`. New panel UI: an "Ignore this rule" button inside each violation detail, and a collapsible "Ignored rules" section with per-entry remove buttons plus Export/Import/Clear-all actions. New `A11yHudInstance.ignores` sub-object exposes `add`, `remove`, `clear`, `list`, `exportJson`, and `importJson` programmatically; all adapters surface the same sub-object in their hook/composable returns. Standalone `addIgnore`, `removeIgnore`, `clearIgnores`, `listIgnores`, `exportIgnores`, and `importIgnores` functions are also exported from `a11y-hud` for headless use. New vendored Lucide icons: `trash-2`, `upload`.
+- 4afefd4: Add JSON export feature. A download button in the panel toolbar exports current scan results as a structured JSON file (`a11y-hud-results.json`). The exported format wraps `AxeResults` in an `A11yHudExport` envelope with `version`, `timestamp`, `url`, and `scope` fields. New `exportResults(): string | null` method on `A11yHudInstance` and all adapter hooks returns the same JSON string for programmatic use. New `A11yHudExport` type is exported from `a11y-hud`. Includes a new vendored Lucide `download` icon.
+- 7de8c9d: Add keyboard-only mode (tab-order visualization). A keyboard icon button in the panel toolbar activates the mode. When active, the panel body switches to a keyboard view listing all naturally-focusable elements in tab order with numbered badges overlaid on the live page. The view also surfaces keyboard violations: `no-focusable-elements`, `positive-tabindex`, and `interactive-excluded`. Deactivating the mode removes the overlay and restores the normal violation view. New exports from `a11y-hud`: `getFocusableElements`, `injectFocusOrderOverlay`, `detectKeyboardViolations`, and types `FocusableElementInfo`, `KeyboardViolation`. No adapter changes — keyboard mode is HUD-UI-only.
+
 ## 0.2.0
 
 ### Minor Changes

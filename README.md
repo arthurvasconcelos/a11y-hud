@@ -26,6 +26,18 @@ npm install --save-dev a11y-hud
 <script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js"></script>
 ```
 
+**Bookmarklet** — inject into any page without touching its build:
+
+```js
+import { generateBookmarklet } from "a11y-hud";
+
+// Returns a javascript: URL — drag it to your bookmarks bar
+const url = generateBookmarklet();          // always latest
+const pinned = generateBookmarklet("0.3.0"); // pinned version
+```
+
+A pre-built drag-to-bookmark page ships at `dist/bookmarklet.html` inside the npm package.
+
 ## Quick start
 
 **Imperative (any framework)**
@@ -62,22 +74,76 @@ Mounts the HUD panel into the page.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `theme` | `'auto' \| 'default' \| 'light' \| 'high-contrast'` | `'auto'` | Visual theme. `auto` respects `prefers-color-scheme`. |
+| `theme` | `Theme` | `'auto'` | Visual theme. `auto` respects `prefers-color-scheme`. |
 | `scope` | `string \| Element` | `document.body` | CSS selector or element to restrict scans to. |
 | `autoScan` | `boolean` | `true` | Re-scan when the DOM changes. |
 | `debounce` | `number` | `500` | Milliseconds to debounce auto-scan. |
+| `runOnly` | `string[]` | `[]` | Restrict axe to specific rule-set tags (e.g. `['wcag2a', 'wcag2aa']`). Empty array runs all rules. |
 
-### `runScan(target?: Element): Promise<AxeResults>`
+The returned `A11yHudInstance` exposes:
+
+```ts
+instance.unmount()                     // remove the HUD from the page
+instance.setTheme(theme)               // switch theme at runtime
+instance.setRunOnly(tags)              // change active rule sets
+instance.runScan()                     // trigger a manual scan
+instance.exportResults()               // current scan as JSON string (or null)
+
+// Ignore-rules persistence (stored in localStorage)
+instance.ignores.add(ruleId, selector?)
+instance.ignores.remove(ruleId, selector?)
+instance.ignores.clear()
+instance.ignores.list()                // IgnoreEntry[]
+instance.ignores.exportJson()          // JSON string
+instance.ignores.importJson(json)
+```
+
+### `runScan(target?, runOnly?): Promise<AxeResults>`
 
 Runs an axe-core scan without rendering any UI. Returns raw axe results.
 
+### Ignore-rules headless API
+
+These functions read/write the same `localStorage` key as the HUD panel, so headless scripts and the UI share one ignore list.
+
+```js
+import { addIgnore, removeIgnore, clearIgnores, listIgnores,
+         exportIgnores, importIgnores } from "a11y-hud";
+```
+
+### Keyboard mode
+
+Click the keyboard icon in the HUD toolbar to activate keyboard-only mode. The panel switches to a tab-order view: focusable elements are listed and numbered badges are overlaid on the page showing their tab position. Clicking an element in the list highlights it. Detected issues (missing tab stops, positive `tabindex` values, elements removed from the tab order) are surfaced at the top of the view.
+
+The underlying helpers are also exported for headless use:
+
+```js
+import { getFocusableElements, injectFocusOrderOverlay,
+         detectKeyboardViolations } from "a11y-hud";
+```
+
+### `generateBookmarklet(version?): string`
+
+Returns a `javascript:` URL that loads the UMD bundle from jsDelivr and calls `window.A11yHud.mount()`. Defaults to `"latest"`.
+
 ### `<a11y-hud>` element
 
-Attributes: `theme`, `scope`, `auto-scan`, `debounce`.
+Attributes: `theme`, `scope`, `auto-scan`, `debounce`, `run-only`.
 
 ### Themes
 
-Three built-in themes: `default` (dark), `light`, `high-contrast`. `auto` switches between `default` and `light` based on `prefers-color-scheme`. If `prefers-contrast: more` is set, any theme auto-promotes to `high-contrast`.
+Eight built-in themes:
+
+| Name | Style |
+|------|-------|
+| `auto` *(default)* | Follows `prefers-color-scheme`; promotes to `high-contrast` when `prefers-contrast: more` |
+| `default` | Dark (Catppuccin Mocha) |
+| `light` | Light (Catppuccin Latte) |
+| `high-contrast` | Black/white, WCAG AAA |
+| `github-dark` | GitHub dark |
+| `github-light` | GitHub light |
+| `tokyo-night` | Tokyo Night |
+| `solarized-dark` | Solarized Dark |
 
 ### CSS custom properties
 
@@ -91,8 +157,6 @@ a11y-hud {
 }
 ```
 
-See the [full token reference](https://github.com/arthurvasconcelos/a11y-hud/blob/main/docs/theming.md) for the complete list.
-
 ## Framework adapters
 
 | Adapter | Package | Install |
@@ -102,6 +166,8 @@ See the [full token reference](https://github.com/arthurvasconcelos/a11y-hud/blo
 | Angular | [`@a11y-hud/angular`](https://www.npmjs.com/package/@a11y-hud/angular) | `npm i -D @a11y-hud/angular` |
 | Svelte | [`@a11y-hud/svelte`](https://www.npmjs.com/package/@a11y-hud/svelte) | `npm i -D @a11y-hud/svelte` |
 | Solid | [`@a11y-hud/solid`](https://www.npmjs.com/package/@a11y-hud/solid) | `npm i -D @a11y-hud/solid` |
+
+All adapters expose the same surface as `A11yHudInstance` (above) through their hook/composable return value.
 
 ## Framework quick starts
 

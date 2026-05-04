@@ -1,6 +1,6 @@
 {
   "name": "@a11y-hud/vue",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Vue adapter for a11y-hud — run axe-core accessibility audits in your Vue app with no DevTools required.",
   "type": "module",
   "exports": {
