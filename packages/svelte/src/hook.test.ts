@@ -118,6 +118,51 @@ describe("useA11yHud hook", () => {
     expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
   });
 
+  it("returned ignores.remove() delegates to instance.ignores.remove()", async () => {
+    const hook = mountHook();
+    await tick();
+    hook.ignores.remove("color-contrast");
+    expect(mockInstance.ignores.remove).toHaveBeenCalledWith("color-contrast", undefined);
+  });
+
+  it("returned ignores.clear() delegates to instance.ignores.clear()", async () => {
+    const hook = mountHook();
+    await tick();
+    hook.ignores.clear();
+    expect(mockInstance.ignores.clear).toHaveBeenCalledOnce();
+  });
+
+  it("returned ignores.exportJson() delegates to instance.ignores.exportJson()", async () => {
+    mockInstance.ignores.exportJson.mockReturnValue('[{"ruleId":"image-alt"}]');
+    const hook = mountHook();
+    await tick();
+    const json = hook.ignores.exportJson();
+    expect(json).toBe('[{"ruleId":"image-alt"}]');
+  });
+
+  it("returned ignores.importJson() delegates to instance.ignores.importJson()", async () => {
+    const hook = mountHook();
+    await tick();
+    hook.ignores.importJson('[{"ruleId":"image-alt"}]');
+    expect(mockInstance.ignores.importJson).toHaveBeenCalledWith('[{"ruleId":"image-alt"}]');
+  });
+
+  it("ignores.list() returns [] and exportJson returns '[]' before instance mounts", () => {
+    let earlyList: unknown[] | undefined;
+    let earlyJson: string | undefined;
+    render(HookWrapper, {
+      props: {
+        onResult: (r) => {
+          earlyList = r.ignores.list();
+          earlyJson = r.ignores.exportJson();
+        },
+      },
+    });
+    expect(earlyList).toEqual([]);
+    expect(earlyJson).toBe("[]");
+    cleanup();
+  });
+
   it("returned exportResults() delegates to instance.exportResults()", async () => {
     mockInstance.exportResults.mockReturnValue('{"version":"1"}');
     const hook = mountHook();

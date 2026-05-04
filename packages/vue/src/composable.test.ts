@@ -340,6 +340,62 @@ describe("useA11yHud", () => {
     wrapper.unmount();
   });
 
+  it("returned ignores.remove() delegates to instance.ignores.remove()", async () => {
+    const wrapper = mountComposable();
+    await nextTick();
+    (wrapper.vm as unknown as { ignores: { remove: (id: string) => void } }).ignores.remove(
+      "color-contrast"
+    );
+    expect(mockInstance.ignores.remove).toHaveBeenCalledWith("color-contrast", undefined);
+    wrapper.unmount();
+  });
+
+  it("returned ignores.clear() delegates to instance.ignores.clear()", async () => {
+    const wrapper = mountComposable();
+    await nextTick();
+    (wrapper.vm as unknown as { ignores: { clear: () => void } }).ignores.clear();
+    expect(mockInstance.ignores.clear).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("returned ignores.exportJson() delegates to instance.ignores.exportJson()", async () => {
+    mockInstance.ignores.exportJson.mockReturnValue('[{"ruleId":"image-alt"}]');
+    const wrapper = mountComposable();
+    await nextTick();
+    const json = (
+      wrapper.vm as unknown as { ignores: { exportJson: () => string } }
+    ).ignores.exportJson();
+    expect(json).toBe('[{"ruleId":"image-alt"}]');
+    wrapper.unmount();
+  });
+
+  it("returned ignores.importJson() delegates to instance.ignores.importJson()", async () => {
+    const wrapper = mountComposable();
+    await nextTick();
+    (wrapper.vm as unknown as { ignores: { importJson: (j: string) => void } }).ignores.importJson(
+      '[{"ruleId":"image-alt"}]'
+    );
+    expect(mockInstance.ignores.importJson).toHaveBeenCalledWith('[{"ruleId":"image-alt"}]');
+    wrapper.unmount();
+  });
+
+  it("ignores.list() returns [] and exportJson returns '[]' before instance mounts", () => {
+    let earlyList: unknown[] | undefined;
+    let earlyJson: string | undefined;
+    vueMount(
+      defineComponent({
+        setup() {
+          const { ignores } = useA11yHud();
+          earlyList = ignores.list();
+          earlyJson = ignores.exportJson();
+          return () => null;
+        },
+      })
+    );
+    expect(earlyList).toEqual([]);
+    expect(earlyJson).toBe("[]");
+  });
+
   it("returned runScan and setTheme are stable references across re-renders", async () => {
     const opts = reactive<UseA11yHudOptions>({});
     const captured: { runScan?: unknown; setTheme?: unknown } = {};

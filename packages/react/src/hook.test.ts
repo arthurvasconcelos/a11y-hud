@@ -238,6 +238,36 @@ describe("useA11yHud", () => {
     expect(list).toEqual([{ ruleId: "image-alt" }]);
   });
 
+  it("returned ignores.remove() delegates to instance.ignores.remove()", async () => {
+    const { result } = renderHook(() => useA11yHud());
+    await act(async () => {});
+    result.current.ignores.remove("color-contrast");
+    expect(mockInstance.ignores.remove).toHaveBeenCalledWith("color-contrast", undefined);
+  });
+
+  it("returned ignores.clear() delegates to instance.ignores.clear()", async () => {
+    const { result } = renderHook(() => useA11yHud());
+    await act(async () => {});
+    result.current.ignores.clear();
+    expect(mockInstance.ignores.clear).toHaveBeenCalledOnce();
+  });
+
+  it("returned ignores.exportJson() delegates to instance.ignores.exportJson()", async () => {
+    mockInstance.ignores.exportJson.mockReturnValue('[{"ruleId":"image-alt"}]');
+    const { result } = renderHook(() => useA11yHud());
+    await act(async () => {});
+    const json = result.current.ignores.exportJson();
+    expect(mockInstance.ignores.exportJson).toHaveBeenCalledOnce();
+    expect(json).toBe('[{"ruleId":"image-alt"}]');
+  });
+
+  it("returned ignores.importJson() delegates to instance.ignores.importJson()", async () => {
+    const { result } = renderHook(() => useA11yHud());
+    await act(async () => {});
+    result.current.ignores.importJson('[{"ruleId":"image-alt"}]');
+    expect(mockInstance.ignores.importJson).toHaveBeenCalledWith('[{"ruleId":"image-alt"}]');
+  });
+
   it("returned runScan and setTheme are stable references across re-renders", async () => {
     const { result, rerender } = renderHook(() => useA11yHud());
     await act(async () => {});

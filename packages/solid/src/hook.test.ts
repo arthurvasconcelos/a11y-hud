@@ -334,6 +334,61 @@ describe("createA11yHud", () => {
     expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
   });
 
+  it("returned ignores.remove() delegates to instance.ignores.remove()", () => {
+    let result!: ReturnType<typeof createA11yHud>;
+    render(() => {
+      result = createA11yHud({});
+      return null;
+    });
+    result.ignores.remove("color-contrast");
+    expect(mockInstance.ignores.remove).toHaveBeenCalledWith("color-contrast", undefined);
+  });
+
+  it("returned ignores.clear() delegates to instance.ignores.clear()", () => {
+    let result!: ReturnType<typeof createA11yHud>;
+    render(() => {
+      result = createA11yHud({});
+      return null;
+    });
+    result.ignores.clear();
+    expect(mockInstance.ignores.clear).toHaveBeenCalledOnce();
+  });
+
+  it("returned ignores.exportJson() delegates to instance.ignores.exportJson()", () => {
+    mockInstance.ignores.exportJson.mockReturnValue('[{"ruleId":"image-alt"}]');
+    let result!: ReturnType<typeof createA11yHud>;
+    render(() => {
+      result = createA11yHud({});
+      return null;
+    });
+    const json = result.ignores.exportJson();
+    expect(json).toBe('[{"ruleId":"image-alt"}]');
+  });
+
+  it("returned ignores.importJson() delegates to instance.ignores.importJson()", () => {
+    let result!: ReturnType<typeof createA11yHud>;
+    render(() => {
+      result = createA11yHud({});
+      return null;
+    });
+    result.ignores.importJson('[{"ruleId":"image-alt"}]');
+    expect(mockInstance.ignores.importJson).toHaveBeenCalledWith('[{"ruleId":"image-alt"}]');
+  });
+
+  it("ignores.list() returns [] and exportJson returns '[]' before instance mounts", () => {
+    let earlyList: unknown[] | undefined;
+    let earlyJson: string | undefined;
+    render(() => {
+      const { ignores } = createA11yHud({});
+      earlyList = ignores.list();
+      earlyJson = ignores.exportJson();
+      return null;
+    });
+    expect(earlyList).toEqual([]);
+    expect(earlyJson).toBe("[]");
+    cleanup();
+  });
+
   it("returned exportResults() delegates to instance.exportResults()", () => {
     mockInstance.exportResults.mockReturnValue('{"version":"1"}');
     let result!: ReturnType<typeof createA11yHud>;
