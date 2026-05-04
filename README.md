@@ -12,6 +12,8 @@
 
 Drop an interactive accessibility HUD into any web app during development. No browser extension, no build-step magic, no framework lock-in — just a `<script>` tag or an `import`.
 
+![a11y-hud panel showing accessibility violations alongside a dev fixture page](https://raw.githubusercontent.com/arthurvasconcelos/a11y-hud/main/docs/public/img/hero.png)
+
 ## Install
 
 **npm / pnpm / yarn**

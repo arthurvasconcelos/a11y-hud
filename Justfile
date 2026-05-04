@@ -171,6 +171,42 @@ changeset:
 version:
     pnpm version-packages
 
+# ─── docs ─────────────────────────────────────────────────────────────────────
+
+# Start the VitePress docs dev server
+docs:
+    pnpm docs:dev
+
+# Build the docs site
+docs-build:
+    pnpm docs:build
+
+# Preview the built docs site locally
+docs-preview:
+    pnpm docs:preview
+
+# Archive the current docs as a versioned snapshot on the gh-pages branch.
+# Run this BEFORE shipping a new major version, e.g.: just docs-archive v1
+# Then add the version folder to clean-exclude in docs.yml before the next deploy.
+docs-archive version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Building docs with base /a11y-hud/{{version}}/ ..."
+    DOCS_BASE="/a11y-hud/{{version}}/" pnpm docs:build
+    echo "Checking out gh-pages branch ..."
+    git fetch origin gh-pages
+    git worktree add /tmp/gh-pages-archive gh-pages
+    echo "Copying build output to /tmp/gh-pages-archive/{{version}}/ ..."
+    mkdir -p /tmp/gh-pages-archive/{{version}}
+    cp -r docs/.vitepress/dist/. /tmp/gh-pages-archive/{{version}}/
+    cd /tmp/gh-pages-archive
+    git add {{version}}/
+    git commit -m "docs: archive {{version}} docs"
+    git push origin gh-pages
+    cd -
+    git worktree remove /tmp/gh-pages-archive
+    echo "Done. Remember to add '{{version}}/' to clean-exclude in docs.yml."
+
 # ─── setup ────────────────────────────────────────────────────────────────────
 
 # Install all workspace dependencies

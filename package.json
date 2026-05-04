@@ -22,7 +22,10 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
-    "prepare": "simple-git-hooks"
+    "prepare": "simple-git-hooks",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.14",
@@ -31,7 +34,8 @@
     "@commitlint/config-conventional": "^20.5.3",
     "lint-staged": "^16.4.0",
     "simple-git-hooks": "^2.11.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitepress": "^1.6.3"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged",
