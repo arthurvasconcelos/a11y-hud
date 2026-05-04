@@ -87,6 +87,12 @@ importers:
         specifier: ~6.0.3
         version: 6.0.3
 
+  examples/bookmarklet:
+    devDependencies:
+      vite:
+        specifier: ^8.0.10
+        version: 8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(less@4.6.4)(sass@1.99.0)(yaml@2.8.4)
+
   examples/react:
     dependencies:
       '@a11y-hud/react':

@@ -52,7 +52,9 @@
           "a11y": {
             "useAltText": "off",
             "noPositiveTabindex": "off",
-            "useAnchorContent": "off"
+            "useAnchorContent": "off",
+            "useHtmlLang": "off",
+            "noSvgWithoutTitle": "off"
           }
         }
       }
