@@ -178,7 +178,7 @@
   outline-offset: -1px;
 }
 
-.btn-icon[data-scanning] {
+.btn-icon[data-scanning] svg {
   animation: spin 1s linear infinite;
 }
 
@@ -528,8 +528,11 @@
 /* ── Ignored rules section ──────────────────────────────────────────────────── */
 
 .ignored-section {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--a11y-hud-bg);
   border-top: 1px solid var(--a11y-hud-border);
-  margin-top: 8px;
 }
 
 .ignored-section-toggle {

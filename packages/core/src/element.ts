@@ -527,7 +527,7 @@ export class A11yHudElement extends HTMLElement {
           <p class="violation-description">${violation.description}</p>
           <ul class="violation-nodes-list" aria-label="Affected elements">${nodes}</ul>
           <div class="violation-footer">
-            <a class="violation-help-link" href="${violation.helpUrl}" target="_blank" rel="noopener noreferrer">
+            <a class="violation-help-link" href="${violation.helpUrl}" target="_blank" rel="noopener noreferrer" aria-label="Learn more about ${violation.id}, opens in new tab">
               Learn more ↗
             </a>
             <button class="btn-copy-single" data-copy-violation="${index}" aria-label="Copy ${violation.id} to clipboard" title="Copy violation">
