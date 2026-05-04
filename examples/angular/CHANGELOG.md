@@ -1,5 +1,11 @@
 # @a11y-hud/example-angular
 
+## 0.0.6
+
+### Patch Changes
+
+- @a11y-hud/angular@0.4.1
+
 ## 0.0.5
 
 ### Patch Changes

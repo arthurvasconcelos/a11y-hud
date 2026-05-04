@@ -1,5 +1,11 @@
 # @a11y-hud/example-svelte
 
+## 0.0.4
+
+### Patch Changes
+
+- @a11y-hud/svelte@0.4.1
+
 ## 0.0.3
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @a11y-hud/example-solid
 
+## 0.0.4
+
+### Patch Changes
+
+- @a11y-hud/solid@0.4.1
+
 ## 0.0.3
 
 ### Patch Changes

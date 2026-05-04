@@ -1,5 +1,12 @@
 # @a11y-hud/react
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies
+  - a11y-hud@0.4.1
+
 ## 0.5.0
 
 ### Minor Changes

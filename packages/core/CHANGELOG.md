@@ -1,5 +1,11 @@
 # a11y-hud
 
+## 0.4.1
+
+### Patch Changes
+
+- Fix rescan button spin (animation now targets the icon SVG only), pin the Ignored rules section to the panel footer so it's always visible regardless of violation list length, and add an accessible label to violation help links announcing they open in a new tab.
+
 ## 0.4.0
 
 ### Minor Changes
