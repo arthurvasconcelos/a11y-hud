@@ -171,6 +171,10 @@ changeset:
 version:
     pnpm version-packages
 
+# Build all packages and publish changed ones to npm
+release:
+    pnpm release
+
 # ─── docs ─────────────────────────────────────────────────────────────────────
 
 # Start the VitePress docs dev server
