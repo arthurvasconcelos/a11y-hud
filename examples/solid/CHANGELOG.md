@@ -1,5 +1,13 @@
 # @a11y-hud/example-solid
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [b93668c]
+- Updated dependencies [4afefd4]
+  - @a11y-hud/solid@0.4.0
+
 ## 0.0.2
 
 ### Patch Changes
