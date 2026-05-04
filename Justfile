@@ -35,6 +35,10 @@ dev-solid:
     pnpm --filter=@a11y-hud/solid build
     pnpm --filter=@a11y-hud/example-solid dev
 
+# Start the bookmarklet test fixture (no a11y-hud pre-installed — use the bookmarklet to inject it)
+dev-bookmarklet:
+    pnpm --filter=@a11y-hud/example-bookmarklet dev
+
 # Start all example dev servers concurrently (builds first)
 dev-all:
     #!/usr/bin/env bash

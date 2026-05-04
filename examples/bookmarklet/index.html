@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bookmarklet test fixture</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 780px;
+        margin: 40px auto;
+        padding: 0 24px 120px;
+        line-height: 1.6;
+        color: #111;
+      }
+
+      .banner {
+        background: #f0f4ff;
+        border: 1px solid #c3d0f5;
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 40px;
+      }
+      .banner h1 { margin: 0 0 8px; font-size: 1.3rem; }
+      .banner p { margin: 0 0 16px; color: #444; font-size: 0.95rem; }
+
+      .bookmarklet-btn {
+        display: inline-block;
+        background: #4f46e5;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: move;
+        user-select: none;
+      }
+      .bookmarklet-btn:hover { background: #4338ca; }
+
+      .hint { font-size: 0.8rem; color: #666; margin-top: 8px; }
+
+      h2 { font-size: 1.05rem; margin: 2.5rem 0 0.8rem; border-top: 1px solid #e5e5e5; padding-top: 1.2rem; color: #333; }
+      .violation-box { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; padding: 12px 16px; margin-bottom: 10px; }
+      .label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-bottom: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="banner">
+      <h1>Bookmarklet test fixture</h1>
+      <p>
+        This page has <strong>no a11y-hud installed</strong> — it is intentionally full of
+        accessibility violations. Drag the button below to your bookmarks bar, then click it
+        to inject the a11y-hud overlay.
+      </p>
+      <a
+        class="bookmarklet-btn"
+        href="javascript:(function(){if(window.A11yHud){window.A11yHud.mount();return;}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/a11y-hud@latest/dist/index.umd.js';s.onload=function(){window.A11yHud.mount();};document.head.appendChild(s);})()"
+      >
+        a11y-hud
+      </a>
+      <p class="hint">Drag to your bookmarks bar → navigate to any page → click to scan.</p>
+    </div>
+
+    <!-- ── Intentional violations below ────────────────────────────────── -->
+
+    <h2>Images without alt text</h2>
+    <div class="violation-box">
+      <div class="label">Violation: image-alt (critical)</div>
+      <img src="https://via.placeholder.com/120x80" width="120" height="80" />
+      <img src="https://via.placeholder.com/80x80" width="80" height="80" />
+    </div>
+
+    <h2>Buttons without accessible names</h2>
+    <div class="violation-box">
+      <div class="label">Violation: button-name (critical)</div>
+      <button type="button" style="padding:6px 12px; margin-right:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+      <button type="button" style="padding:6px 12px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/>
+        </svg>
+      </button>
+    </div>
+
+    <h2>Form inputs without labels</h2>
+    <div class="violation-box">
+      <div class="label">Violation: label (critical)</div>
+      <input type="text" placeholder="First name" style="padding:6px 10px; margin-right:8px;" />
+      <input type="email" placeholder="Email address" style="padding:6px 10px;" />
+    </div>
+
+    <h2>Low-contrast text</h2>
+    <div class="violation-box">
+      <div class="label">Violation: color-contrast (serious)</div>
+      <p style="color:#aaa; background:#fff; margin:0;">
+        This paragraph has insufficient colour contrast — #aaa on white is about 2.3:1, well below the 4.5:1 WCAG AA minimum.
+      </p>
+    </div>
+
+    <h2>Links without discernible text</h2>
+    <div class="violation-box">
+      <div class="label">Violation: link-name (serious)</div>
+      <a href="https://example.com" style="margin-right:12px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </a>
+      <a href="https://example.com/2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </a>
+    </div>
+
+    <h2>Interactive element removed from tab order</h2>
+    <div class="violation-box">
+      <div class="label">Keyboard violation: tabindex="-1" on interactive element</div>
+      <button type="button" tabindex="-1" style="padding:6px 14px;">
+        Unreachable by Tab key
+      </button>
+    </div>
+
+    <h2>Element with positive tabindex</h2>
+    <div class="violation-box">
+      <div class="label">Keyboard violation: positive tabindex disrupts tab order</div>
+      <button type="button" tabindex="5" style="padding:6px 14px; margin-right:8px;">tabindex=5</button>
+      <button type="button" style="padding:6px 14px; margin-right:8px;">tabindex=0</button>
+      <button type="button" style="padding:6px 14px;">tabindex=0</button>
+    </div>
+
+    <h2>Missing region landmarks</h2>
+    <div class="violation-box">
+      <div class="label">Violation: region (moderate) — page content not within landmark regions</div>
+      <p style="margin:0; color:#555;">The entire page body is outside any <code>main</code>, <code>nav</code>, <code>aside</code>, or other landmark region.</p>
+    </div>
+  </body>
+</html>
