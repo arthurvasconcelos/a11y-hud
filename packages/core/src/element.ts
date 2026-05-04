@@ -5,7 +5,7 @@ import { runScan } from "./scan.js";
 import baseCss from "./styles/base.css";
 import themesCss from "./styles/themes.css";
 import { resolveTheme, watchTheme } from "./theme.js";
-import type { Severity, Theme } from "./types.js";
+import type { A11yHudExport, Severity, Theme } from "./types.js";
 
 const HIGHLIGHT_ATTR = "data-a11y-hud-highlighted";
 const HIGHLIGHT_STYLE_ID = "a11y-hud-highlight-style";
@@ -332,6 +332,9 @@ export class A11yHudElement extends HTMLElement {
             <button class="btn-icon" id="btn-copy-all" aria-label="Copy all violations to clipboard" title="Copy all">
               ${icon("copy")}
             </button>
+            <button class="btn-icon" id="btn-export" aria-label="Export results as JSON" title="Export JSON">
+              ${icon("download")}
+            </button>
             <button class="btn-icon" id="btn-rescan" aria-label="Re-scan page" title="Re-scan">
               ${icon("refresh-cw")}
             </button>
@@ -472,6 +475,7 @@ export class A11yHudElement extends HTMLElement {
       this.setAttribute("data-minimized", "");
     });
     panel.querySelector("#btn-copy-all")?.addEventListener("click", () => void this._copyAll());
+    panel.querySelector("#btn-export")?.addEventListener("click", () => this._exportJson());
 
     panel.addEventListener("click", (e) => this._handlePanelClick(e));
     panel.addEventListener("keydown", (e) => this._handlePanelKeydown(e as KeyboardEvent));
@@ -659,6 +663,45 @@ export class A11yHudElement extends HTMLElement {
     const violation = this._getFilteredViolations()[violationIndex];
     if (!violation) return;
     await this._copyToClipboard(this._formatViolationsAsMarkdown([violation]));
+  }
+
+  private _getScopeString(): string {
+    if (this._scopeSelector) return this._scopeSelector;
+    if (this._scopeElement) {
+      const el = this._scopeElement;
+      if (el.id) return `#${el.id}`;
+      return el.tagName.toLowerCase();
+    }
+    return "document.body";
+  }
+
+  private _buildExport(): A11yHudExport | null {
+    if (!this._results) return null;
+    return {
+      version: "1",
+      timestamp: new Date().toISOString(),
+      url: location.href,
+      scope: this._getScopeString(),
+      results: this._results,
+    };
+  }
+
+  private _exportJson(): void {
+    const data = this._buildExport();
+    if (!data) return;
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "a11y-hud-results.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  exportResults(): string | null {
+    const data = this._buildExport();
+    return data ? JSON.stringify(data, null, 2) : null;
   }
 
   private _highlightNode(violationIndex: number, nodeIndex: number): void {

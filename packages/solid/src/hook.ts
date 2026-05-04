@@ -84,5 +84,9 @@ export function createA11yHud(options: CreateA11yHudOptions = {}): CreateA11yHud
     instanceRef?.setRunOnly(tags);
   }
 
-  return { runScan, setTheme, setRunOnly };
+  function exportResults(): string | null {
+    return instanceRef?.exportResults() ?? null;
+  }
+
+  return { runScan, setTheme, setRunOnly, exportResults };
 }

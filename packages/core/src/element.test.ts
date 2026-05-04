@@ -789,6 +789,125 @@ describe("A11yHudElement — clipboard and copy", () => {
   });
 });
 
+describe("A11yHudElement — JSON export", () => {
+  let createObjectURL: ReturnType<typeof vi.fn>;
+  let revokeObjectURL: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    createObjectURL = vi.fn().mockReturnValue("blob:mock-url");
+    revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, "createObjectURL", {
+      value: createObjectURL,
+      configurable: true,
+      writable: true,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      value: revokeObjectURL,
+      configurable: true,
+      writable: true,
+    });
+    await setupMock();
+  });
+
+  afterEach(() => {
+    for (const el of document.querySelectorAll("a11y-hud")) el.remove();
+    vi.clearAllMocks();
+  });
+
+  it("export button is present in the panel toolbar", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-export")).not.toBeNull());
+    el.remove();
+  });
+
+  it("exportResults() returns null before first scan resolves", () => {
+    const el = document.createElement("a11y-hud") as A11yHudElement;
+    expect(el.exportResults()).toBeNull();
+  });
+
+  it("exportResults() returns a JSON string with correct shape after scan", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    const json = el.exportResults();
+    expect(json).not.toBeNull();
+    const parsed = JSON.parse(json!) as Record<string, unknown>;
+    expect(parsed.version).toBe("1");
+    expect(typeof parsed.timestamp).toBe("string");
+    expect(typeof parsed.url).toBe("string");
+    expect(parsed.scope).toBe("document.body");
+    expect(parsed.results).toBeDefined();
+    el.remove();
+  });
+
+  it("exportResults() reflects scope selector when set", async () => {
+    const section = document.createElement("section");
+    section.id = "scoped";
+    document.body.appendChild(section);
+
+    const el = document.createElement("a11y-hud") as A11yHudElement;
+    el.setAttribute("scope", "#scoped");
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+
+    const parsed = JSON.parse(el.exportResults()!) as Record<string, unknown>;
+    expect(parsed.scope).toBe("#scoped");
+
+    section.remove();
+    el.remove();
+  });
+
+  it("exportResults() falls back to tagName when scopeElement has no id", async () => {
+    const section = document.createElement("section");
+    document.body.appendChild(section);
+
+    const el = document.createElement("a11y-hud") as A11yHudElement;
+    el.scopeElement = section;
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+
+    const parsed = JSON.parse(el.exportResults()!) as Record<string, unknown>;
+    expect(parsed.scope).toBe("section");
+
+    section.remove();
+    el.remove();
+  });
+
+  it("exportResults() uses id selector when scopeElement has an id", async () => {
+    const section = document.createElement("section");
+    section.id = "my-section";
+    document.body.appendChild(section);
+
+    const el = document.createElement("a11y-hud") as A11yHudElement;
+    el.scopeElement = section;
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+
+    const parsed = JSON.parse(el.exportResults()!) as Record<string, unknown>;
+    expect(parsed.scope).toBe("#my-section");
+
+    section.remove();
+    el.remove();
+  });
+
+  it("export button click calls URL.createObjectURL with a Blob", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-export")?.click();
+    expect(createObjectURL).toHaveBeenCalledOnce();
+    expect(createObjectURL.mock.calls[0]?.[0]).toBeInstanceOf(Blob);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+    el.remove();
+  });
+
+  it("export button click is a no-op when no scan results are available", () => {
+    const el = document.createElement("a11y-hud") as A11yHudElement;
+    document.body.appendChild(el);
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-export")?.click();
+    expect(createObjectURL).not.toHaveBeenCalled();
+    el.remove();
+  });
+});
+
 describe("A11yHudElement — CSSStyleSheet fallback", () => {
   afterEach(() => {
     for (const el of document.querySelectorAll("a11y-hud")) el.remove();

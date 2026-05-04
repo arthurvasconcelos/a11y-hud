@@ -34,6 +34,7 @@ The following Lucide icons are vendored in `packages/core/src/icons/`:
 | `chevron-down.svg` | `chevron-down` |
 | `chevron-up.svg` | `chevron-up` |
 | `copy.svg` | `copy` |
+| `download.svg` | `download` |
 | `filter.svg` | `filter` |
 | `info.svg` | `info` |
 | `keyboard.svg` | `keyboard` |

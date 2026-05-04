@@ -95,4 +95,9 @@ describe("mount()", () => {
     const results = await hud.runScan();
     expect(Array.isArray(results.violations)).toBe(true);
   });
+
+  it("exportResults() on the instance returns null before scan resolves", () => {
+    const hud = mount();
+    expect(hud.exportResults()).toBeNull();
+  });
 });

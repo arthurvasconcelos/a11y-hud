@@ -82,5 +82,9 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
     instanceRef.current?.setRunOnly(tags);
   }, []);
 
-  return { runScan, setTheme, setRunOnly };
+  const exportResults = useCallback((): string | null => {
+    return instanceRef.current?.exportResults() ?? null;
+  }, []);
+
+  return { runScan, setTheme, setRunOnly, exportResults };
 }

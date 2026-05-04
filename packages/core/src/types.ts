@@ -1,5 +1,13 @@
 import type { AxeResults } from "axe-core";
 
+export interface A11yHudExport {
+  version: "1";
+  timestamp: string;
+  url: string;
+  scope: string;
+  results: AxeResults;
+}
+
 export type Theme =
   | "auto"
   | "default"
@@ -25,6 +33,7 @@ export interface A11yHudInstance {
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
   runScan(): Promise<AxeResults>;
+  exportResults(): string | null;
 }
 
 export type { AxeResults };

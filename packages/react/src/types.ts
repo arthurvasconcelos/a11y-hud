@@ -15,4 +15,5 @@ export interface UseA11yHudReturn {
   runScan(): Promise<AxeResults>;
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
+  exportResults(): string | null;
 }

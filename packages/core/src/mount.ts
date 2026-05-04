@@ -48,6 +48,9 @@ export function mount(options: MountOptions = {}): A11yHudInstance {
     async runScan(): Promise<AxeResults> {
       return el.runScan();
     },
+    exportResults(): string | null {
+      return el.exportResults();
+    },
   };
 }
 

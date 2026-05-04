@@ -91,5 +91,9 @@ export function useA11yHud(getOptions: () => UseA11yHudOptions = () => ({})): Us
     instanceRef?.setRunOnly(tags);
   }
 
-  return { runScan, setTheme, setRunOnly };
+  function exportResults(): string | null {
+    return instanceRef?.exportResults() ?? null;
+  }
+
+  return { runScan, setTheme, setRunOnly, exportResults };
 }

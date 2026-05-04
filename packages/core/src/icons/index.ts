@@ -4,6 +4,7 @@ import checkCircle from "./check-circle.svg";
 import chevronDown from "./chevron-down.svg";
 import chevronUp from "./chevron-up.svg";
 import copy from "./copy.svg";
+import download from "./download.svg";
 import filter from "./filter.svg";
 import info from "./info.svg";
 import keyboard from "./keyboard.svg";
@@ -20,6 +21,7 @@ const registry: Record<string, string> = {
   "chevron-down": chevronDown,
   "chevron-up": chevronUp,
   copy,
+  download,
   filter,
   info,
   keyboard,

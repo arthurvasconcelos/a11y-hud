@@ -11,6 +11,7 @@ type MockInstance = {
   unmount: ReturnType<typeof vi.fn>;
   setTheme: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
+  exportResults: ReturnType<typeof vi.fn>;
 };
 
 function makeMockElement() {
@@ -34,6 +35,7 @@ beforeEach(() => {
     unmount: vi.fn(() => mockEl.remove()),
     setTheme: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
+    exportResults: vi.fn().mockReturnValue(null),
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
     document.body.appendChild(mockEl);
@@ -188,6 +190,20 @@ describe("A11yHudService", () => {
     service.init({});
     service.setTheme("light");
     expect(mockInstance.setTheme).toHaveBeenCalledWith("light");
+  });
+
+  it("exportResults() delegates to instance.exportResults()", () => {
+    const service = TestBed.inject(A11yHudService);
+    service.init({});
+    mockInstance.exportResults.mockReturnValue('{"version":"1"}');
+    const json = service.exportResults();
+    expect(mockInstance.exportResults).toHaveBeenCalledOnce();
+    expect(json).toBe('{"version":"1"}');
+  });
+
+  it("exportResults() returns null when not initialized", () => {
+    const service = TestBed.inject(A11yHudService);
+    expect(service.exportResults()).toBeNull();
   });
 
   it("ngOnDestroy() calls instance.unmount()", () => {

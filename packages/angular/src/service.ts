@@ -68,6 +68,10 @@ export class A11yHudService implements OnDestroy {
     this.instance?.setRunOnly(tags);
   }
 
+  exportResults(): string | null {
+    return this.instance?.exportResults() ?? null;
+  }
+
   get initialized(): boolean {
     return this.instance !== null;
   }

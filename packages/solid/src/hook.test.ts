@@ -12,6 +12,7 @@ type MockInstance = {
   setTheme: ReturnType<typeof vi.fn>;
   setRunOnly: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
+  exportResults: ReturnType<typeof vi.fn>;
 };
 
 function makeMockElement() {
@@ -36,6 +37,7 @@ beforeEach(() => {
     setTheme: vi.fn(),
     setRunOnly: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
+    exportResults: vi.fn().mockReturnValue(null),
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
     document.body.appendChild(mockEl);
@@ -300,6 +302,20 @@ describe("createA11yHud", () => {
 
     result.setRunOnly(["best-practice"]);
     expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["best-practice"]);
+  });
+
+  it("returned exportResults() delegates to instance.exportResults()", () => {
+    mockInstance.exportResults.mockReturnValue('{"version":"1"}');
+    let result!: ReturnType<typeof createA11yHud>;
+
+    render(() => {
+      result = createA11yHud({});
+      return null;
+    });
+
+    const json = result.exportResults();
+    expect(mockInstance.exportResults).toHaveBeenCalledOnce();
+    expect(json).toBe('{"version":"1"}');
   });
 
   it("runScan() returns a resolved promise when no instance", () => {

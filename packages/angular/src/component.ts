@@ -80,4 +80,8 @@ export class A11yHudComponent implements AfterViewInit, OnChanges {
   setRunOnly(tags: string[]): void {
     this.service.setRunOnly(tags);
   }
+
+  exportResults(): string | null {
+    return this.service.exportResults();
+  }
 }

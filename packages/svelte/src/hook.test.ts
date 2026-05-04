@@ -13,6 +13,7 @@ type MockInstance = {
   unmount: ReturnType<typeof vi.fn>;
   setTheme: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
+  exportResults: ReturnType<typeof vi.fn>;
 };
 
 function makeMockElement() {
@@ -36,6 +37,7 @@ beforeEach(() => {
     unmount: vi.fn(() => mockEl.remove()),
     setTheme: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
+    exportResults: vi.fn().mockReturnValue(null),
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
     document.body.appendChild(mockEl);
@@ -89,5 +91,14 @@ describe("useA11yHud hook", () => {
     await tick();
     expect(() => hook.setTheme("high-contrast")).not.toThrow();
     expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
+  });
+
+  it("returned exportResults() delegates to instance.exportResults()", async () => {
+    mockInstance.exportResults.mockReturnValue('{"version":"1"}');
+    const hook = mountHook();
+    await tick();
+    const json = hook.exportResults();
+    expect(mockInstance.exportResults).toHaveBeenCalledOnce();
+    expect(json).toBe('{"version":"1"}');
   });
 });

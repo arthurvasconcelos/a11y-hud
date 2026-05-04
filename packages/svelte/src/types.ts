@@ -14,6 +14,7 @@ export interface UseA11yHudReturn {
   runScan(): Promise<AxeResults>;
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
+  exportResults(): string | null;
 }
 
 export declare function useA11yHud(getOptions?: () => UseA11yHudOptions): UseA11yHudReturn;
