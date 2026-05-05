@@ -46,6 +46,11 @@ function dismiss() {
 
 <style scoped>
 .rc-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: calc(var(--vp-z-index-nav) + 1);
   display: flex;
   align-items: center;
   justify-content: center;
