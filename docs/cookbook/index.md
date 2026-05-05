@@ -31,3 +31,7 @@ How to mute rules or specific nodes in the panel UI, export ignore lists as JSON
 ### [Keyboard mode](/cookbook/keyboard-mode)
 
 Reading the tab-order overlay, understanding keyboard violations, and using the headless keyboard helpers in tests.
+
+### [Security model](/cookbook/security-model)
+
+The dev-only trust model, scope injection behavior, ignore-rules validation, violation HTML rendering context, and Shadow DOM isolation.
