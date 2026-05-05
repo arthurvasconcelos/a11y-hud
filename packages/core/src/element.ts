@@ -224,7 +224,11 @@ export class A11yHudElement extends HTMLElement {
   private _getScopeTarget(): Element {
     if (this._scopeElement) return this._scopeElement;
     if (this._scopeSelector) {
-      return document.querySelector(this._scopeSelector) ?? document.body;
+      try {
+        return document.querySelector(this._scopeSelector) ?? document.body;
+      } catch {
+        return document.body;
+      }
     }
     return document.body;
   }
@@ -504,7 +508,7 @@ export class A11yHudElement extends HTMLElement {
 
     const nodes = violation.nodes
       .map((node, ni) => {
-        const selector = this._nodeSelector(node.target);
+        const selector = escapeHtml(this._nodeSelector(node.target));
         return `
           <li class="violation-node-item">
             <button class="btn-highlight" data-violation="${index}" data-node="${ni}" aria-label="Highlight: ${selector}">

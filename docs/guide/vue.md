@@ -72,7 +72,7 @@ const hud = useA11yHud({ theme: "auto" });
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `theme` | `Theme` | `"auto"` | Visual theme |
-| `scope` | `Ref<Element \| null>` | — | Reactive ref for scan scope |
+| `scope` | `Element \| null` | — | Scan scope element. Pass a template ref directly (`:scope="myRef"`) — Vue templates auto-unwrap refs. |
 | `autoScan` | `boolean` | `true` | Re-scan on DOM mutations |
 | `debounce` | `number` | `500` | Auto-scan debounce in ms |
 | `runOnly` | `string[]` | — | axe rule tags to run |

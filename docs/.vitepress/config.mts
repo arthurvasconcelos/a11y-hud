@@ -78,6 +78,7 @@ export default defineConfig({
             { text: "Bookmarklet usage", link: "/cookbook/bookmarklet" },
             { text: "Ignore-rules workflow", link: "/cookbook/ignore-rules" },
             { text: "Keyboard mode", link: "/cookbook/keyboard-mode" },
+            { text: "Security model", link: "/cookbook/security-model" },
           ],
         },
       ],

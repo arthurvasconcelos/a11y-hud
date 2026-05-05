@@ -135,10 +135,10 @@ interface FocusableElementInfo {
 
 **`injectFocusOrderOverlay(elements)`**
 
-Injects numbered badge overlays onto the page showing each element's tab position. Badges use page-relative absolute positioning so they remain stable during scroll.
+Injects numbered badge overlays onto the page showing each element's tab position. Badges use page-relative absolute positioning so they remain stable during scroll. Returns a cleanup function that removes the overlay.
 
 ```ts
-function injectFocusOrderOverlay(elements: FocusableElementInfo[]): void
+function injectFocusOrderOverlay(elements: FocusableElementInfo[]): () => void
 ```
 
 **`detectKeyboardViolations(elements, scope?)`**
@@ -264,12 +264,24 @@ function useA11yHud(options?: UseA11yHudOptions): UseA11yHudReturn
 ```ts
 interface UseA11yHudOptions {
   theme?: Theme;
-  scope?: Ref<Element | null>;
+  scope?: Element | null;
   autoScan?: boolean;
   debounce?: number;
   runOnly?: string[];
 }
 ```
+
+::: tip Template refs
+When using the component, pass a Vue template ref directly (`:scope="myRef"`). Vue templates auto-unwrap refs in attribute bindings, so the component receives the underlying `Element | null`.
+
+When calling `useA11yHud()` directly, pass the element value or use a getter for reactivity:
+
+```ts
+// Reactive getter pattern (recommended for composable usage with template refs)
+const container = ref<HTMLElement | null>(null)
+useA11yHud({ get scope() { return container.value } })
+```
+:::
 
 ---
 
