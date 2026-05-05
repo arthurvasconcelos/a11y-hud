@@ -13,7 +13,8 @@
       "!**/node_modules",
       "!**/coverage",
       "!**/.vitepress",
-      "!**/.angular"
+      "!**/.angular",
+      "!**/scripts"
     ]
   },
   "formatter": {
