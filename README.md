@@ -134,6 +134,8 @@ Attributes: `theme`, `scope`, `auto-scan`, `debounce`, `run-only`.
 
 ### Themes
 
+![Seven a11y-hud panels side by side showing all built-in themes: default, light, github-dark, github-light, tokyo-night, solarized-dark, and high-contrast](https://raw.githubusercontent.com/arthurvasconcelos/a11y-hud/main/docs/public/img/themes.png)
+
 Eight built-in themes:
 
 | Name | Style |
