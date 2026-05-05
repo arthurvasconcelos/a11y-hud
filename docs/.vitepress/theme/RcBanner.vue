@@ -26,9 +26,9 @@ function dismiss() {
 <template>
   <div v-if="visible" class="rc-banner" role="banner">
     <span class="rc-banner-text">
-      <strong>1.0.0-rc1</strong> is live — 30-day soak window in progress.
+      <strong>1.0.0-rc.0</strong> is live — 30-day soak window in progress.
       <a
-        href="https://github.com/arthurvasconcelos/a11y-hud/issues"
+        href="https://github.com/arthurvasconcelos/a11y-hud/issues/18"
         target="_blank"
         rel="noopener noreferrer"
       >File feedback on GitHub ↗</a>
