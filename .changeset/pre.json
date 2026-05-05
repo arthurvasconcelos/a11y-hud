@@ -1,0 +1,20 @@
+{
+  "mode": "pre",
+  "tag": "rc",
+  "initialVersions": {
+    "@a11y-hud/example-angular": "0.0.6",
+    "@a11y-hud/example-bookmarklet": "0.0.1",
+    "@a11y-hud/example-react": "0.0.8",
+    "@a11y-hud/example-solid": "0.0.4",
+    "@a11y-hud/example-svelte": "0.0.4",
+    "@a11y-hud/example-vanilla": "0.0.7",
+    "@a11y-hud/example-vue": "0.0.8",
+    "@a11y-hud/angular": "0.4.1",
+    "a11y-hud": "0.4.1",
+    "@a11y-hud/react": "0.5.1",
+    "@a11y-hud/solid": "0.4.1",
+    "@a11y-hud/svelte": "0.4.1",
+    "@a11y-hud/vue": "0.5.1"
+  },
+  "changesets": ["every-cups-sell"]
+}
