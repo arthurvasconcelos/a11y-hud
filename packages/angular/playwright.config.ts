@@ -19,6 +19,6 @@ export default defineConfig({
     command: "pnpm --filter=@a11y-hud/example-angular dev",
     url: "http://localhost:5176",
     reuseExistingServer: !process.env.CI,
-    timeout: 60000,
+    timeout: 120000,
   },
 });
