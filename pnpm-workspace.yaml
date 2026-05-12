@@ -1,3 +1,11 @@
 packages:
   - "packages/*"
   - "examples/*"
+patchedDependencies:
+  ng-packagr@21.2.3: patches/ng-packagr@21.2.3.patch
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  simple-git-hooks: true
