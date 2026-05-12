@@ -51,6 +51,13 @@
     ]
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild",
+      "lmdb",
+      "msgpackr-extract",
+      "simple-git-hooks"
+    ],
     "patchedDependencies": {
       "ng-packagr@21.2.3": "patches/ng-packagr@21.2.3.patch"
     }
