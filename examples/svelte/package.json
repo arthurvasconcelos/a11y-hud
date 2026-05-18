@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@a11y-hud/svelte": "workspace:*",
-    "svelte": "^5.55.5"
+    "svelte": "^5.55.7"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
