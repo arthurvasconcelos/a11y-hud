@@ -37,7 +37,7 @@
     "@angular/compiler": "^21.0.0",
     "@angular/compiler-cli": "^21.0.0",
     "@angular/core": "^21.0.0",
-    "@angular/platform-browser": "^21.0.0",
+    "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.13",
     "@playwright/test": "^1.60.0",
     "@vitest/coverage-v8": "^4.1.7",
