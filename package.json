@@ -36,7 +36,9 @@
     "lint-staged": "^17.0.5",
     "simple-git-hooks": "^2.11.1",
     "typescript": "^6.0.3",
-    "vitepress": "^1.6.3"
+    "vitepress": "^1.6.3",
+    "vitepress-plugin-group-icons": "^1.7.5",
+    "vitepress-plugin-llms": "^1.13.0"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged",

@@ -1,17 +1,32 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "vitepress";
+import llmstxt, { copyOrDownloadAsMarkdownButtons } from "vitepress-plugin-llms";
+import { groupIconMdPlugin, groupIconVitePlugin } from "vitepress-plugin-group-icons";
 
 const { version } = JSON.parse(
   readFileSync(resolve(__dirname, "../../packages/core/package.json"), "utf-8")
 ) as { version: string };
 
+const base = process.env.DOCS_BASE ?? "/a11y-hud/";
+
 export default defineConfig({
   title: "a11y-hud",
+  vite: {
+    plugins: [llmstxt(), groupIconVitePlugin()],
+  },
+
+  markdown: {
+    config(md) {
+      md.use(groupIconMdPlugin);
+      md.use(copyOrDownloadAsMarkdownButtons);
+    },
+  },
+
   description:
     "Framework-agnostic dev overlay that runs axe-core accessibility audits in your running app — no DevTools required.",
   lang: "en-US",
-  base: process.env.DOCS_BASE ?? "/a11y-hud/",
+  base,
 
   head: [
     ["link", { rel: "icon", href: "/a11y-hud/favicon.svg", type: "image/svg+xml" }],
@@ -38,6 +53,7 @@ export default defineConfig({
           },
         ],
       },
+      { text: "For LLMs", link: "/llms" },
     ],
 
     sidebar: {
