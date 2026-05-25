@@ -1,0 +1,39 @@
+# a11y-hud
+
+> Accessibility audits, right in the page.
+
+No DevTools required. Drop in with a script tag or an import. Works in every framework.
+
+## Table of Contents
+
+### Framework Guides
+
+- [Vanilla / Script tag](/a11y-hud/guide/vanilla.md)
+- [React](/a11y-hud/guide/react.md)
+- [Vue 3](/a11y-hud/guide/vue.md)
+- [Angular](/a11y-hud/guide/angular.md)
+- [Svelte 5](/a11y-hud/guide/svelte.md)
+- [Solid](/a11y-hud/guide/solid.md)
+- [Astro](/a11y-hud/guide/astro.md)
+- [Qwik](/a11y-hud/guide/qwik.md)
+
+### Reference
+
+- [API Reference](/a11y-hud/reference/api.md)
+- [Theming](/a11y-hud/reference/theming.md)
+
+### Cookbook
+
+- [Cookbook](/a11y-hud/cookbook.md)
+- [Route-change rescans](/a11y-hud/cookbook/route-change-rescans.md)
+- [CI integration](/a11y-hud/cookbook/ci-integration.md)
+- [Custom severity colors](/a11y-hud/cookbook/custom-severity-colors.md)
+- [CSP compatibility](/a11y-hud/cookbook/csp-compatibility.md)
+- [Bookmarklet usage](/a11y-hud/cookbook/bookmarklet.md)
+- [Ignore-rules workflow](/a11y-hud/cookbook/ignore-rules.md)
+- [Keyboard mode](/a11y-hud/cookbook/keyboard-mode.md)
+- [Security model](/a11y-hud/cookbook/security-model.md)
+
+### Other
+
+- [Getting Started](/a11y-hud/guide.md)

@@ -1,0 +1,2720 @@
+---
+url: /a11y-hud/guide.md
+---
+# Getting Started
+
+a11y-hud is a dev-only overlay that runs [axe-core](https://github.com/dequelabs/axe-core) accessibility audits inside your running web app. It renders a floating panel listing every detected violation — no browser extension, no build-time transformation, no framework lock-in.
+
+![a11y-hud panel open showing violations, with filter chips expanded](/img/filter-ux.gif)
+
+## Who it's for
+
+* **App developers** doing local a11y work during development.
+* **QA / a11y reviewers** poking at staging without installing axe DevTools.
+
+## Installation
+
+::: code-group
+
+```bash [npm]
+npm install --save-dev a11y-hud
+```
+
+```bash [pnpm]
+pnpm add -D a11y-hud
+```
+
+```bash [yarn]
+yarn add -D a11y-hud
+```
+
+:::
+
+**CDN / script tag** — no install needed:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js"></script>
+```
+
+## First mount
+
+### Imperative (any framework)
+
+```js
+import { mount } from "a11y-hud";
+
+// Gate behind DEV check so it never ships to production
+if (import.meta.env.DEV) {
+  mount({ theme: "auto" });
+}
+```
+
+### Declarative (script-tag path)
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js"></script>
+<a11y-hud theme="auto"></a11y-hud>
+```
+
+### Click to highlight
+
+Clicking a node selector in the panel outlines the corresponding element on the page.
+
+![Clicking a violation node highlights the element on the page with a purple outline](/img/click-to-highlight.gif)
+
+### Headless (CI / programmatic)
+
+```js
+import { runScan } from "a11y-hud";
+
+const results = await runScan(document.body);
+if (results.violations.length > 0) {
+  console.error("Accessibility violations found:", results.violations);
+  process.exit(1);
+}
+```
+
+## Framework adapters
+
+If you're using a framework, pick the matching adapter for a tighter integration that rescans automatically when your component tree re-renders.
+
+| Framework | Package |
+|-----------|---------|
+| React | [`@a11y-hud/react`](/guide/react) |
+| Vue 3 | [`@a11y-hud/vue`](/guide/vue) |
+| Angular | [`@a11y-hud/angular`](/guide/angular) |
+| Svelte 5 | [`@a11y-hud/svelte`](/guide/svelte) |
+| Solid | [`@a11y-hud/solid`](/guide/solid) |
+| Astro | [Guide (no separate package)](/guide/astro) |
+| Qwik | [Guide (no separate package)](/guide/qwik) |
+
+## What not to use it for
+
+* **Production sites** — mount only in development. The HUD adds axe-core (~300KB) to the page.
+* **Storybook** — `@storybook/addon-a11y` is purpose-built for that workflow.
+* **Server-side rendering** — axe-core requires a live DOM. Mount after hydration.
+
+---
+
+---
+url: /a11y-hud/guide/vanilla.md
+---
+# Vanilla / Script tag
+
+The vanilla core (`a11y-hud`) is a complete product on its own — no framework required.
+
+## Install
+
+::: code-group
+
+```bash [npm]
+npm install --save-dev a11y-hud
+```
+
+```html [CDN]
+<script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js"></script>
+```
+
+:::
+
+## Quick start
+
+### With a bundler (ESM)
+
+```js
+import { mount } from "a11y-hud";
+
+if (import.meta.env.DEV) {
+  mount({ theme: "auto" });
+}
+```
+
+### Script tag (declarative)
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js"></script>
+  </head>
+  <body>
+    <a11y-hud theme="auto"></a11y-hud>
+    <!-- your content -->
+  </body>
+</html>
+```
+
+### Script tag (imperative)
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js"></script>
+<script>
+  window.A11yHud.mount({ theme: "auto" });
+</script>
+```
+
+## Minimize to FAB
+
+Pressing **−** or **Escape** collapses the panel to a small pill. Clicking the pill reopens it.
+
+![Minimizing the panel to a floating action button and reopening it](/img/minimize-fab.gif)
+
+## Mount options
+
+```js
+const hud = mount({
+  theme: "auto",           // visual theme (default: "auto")
+  scope: "#main-content", // CSS selector or Element to restrict scans
+  autoScan: true,          // re-scan on DOM mutations (default: true)
+  debounce: 500,           // debounce delay in ms (default: 500)
+  runOnly: ["wcag2a", "wcag2aa"], // restrict to specific axe rule tags
+});
+```
+
+`mount()` returns an [`A11yHudInstance`](/reference/api#a11yhudinstance) for runtime control.
+
+## Scoping scans
+
+Pass any CSS selector or `Element` reference to restrict axe to a subtree:
+
+```js
+mount({ scope: "#app" });
+// or
+mount({ scope: document.getElementById("app") });
+```
+
+## Runtime control
+
+```js
+const hud = mount({ theme: "github-dark" });
+
+// Switch themes
+hud.setTheme("tokyo-night");
+
+// Change which axe rule sets run
+hud.setRunOnly(["wcag2a"]);
+
+// Trigger a manual scan
+const results = await hud.runScan();
+
+// Export results as JSON string
+const json = hud.exportResults();
+
+// Remove the HUD from the page
+hud.unmount();
+```
+
+## Ignore rules
+
+The ignore list is stored in `localStorage` and survives page reloads.
+
+```js
+// Ignore all violations for a rule
+hud.ignores.add("color-contrast");
+
+// Ignore a specific node
+hud.ignores.add("label", "#my-input");
+
+// List active ignores
+console.log(hud.ignores.list());
+
+// Export / import as JSON (for sharing across team members)
+const json = hud.ignores.exportJson();
+hud.ignores.importJson(json);
+
+// Clear all ignores
+hud.ignores.clear();
+```
+
+## Headless scan (no UI)
+
+```js
+import { runScan } from "a11y-hud";
+
+const results = await runScan(document.querySelector("#app"));
+console.log(results.violations);
+```
+
+## Bookmarklet
+
+For QA reviewers on staging without build access, use the bookmarklet:
+
+```js
+import { generateBookmarklet } from "a11y-hud";
+
+// Always latest CDN version
+const url = generateBookmarklet();
+
+// Pin to a specific version
+const pinned = generateBookmarklet("0.4.0");
+```
+
+A pre-built drag-to-bookmark page is included in the npm package at `dist/bookmarklet.html`. See the [Bookmarklet cookbook](/cookbook/bookmarklet) for the full workflow.
+
+## `<a11y-hud>` element attributes
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `theme` | `Theme` | `"auto"` | Visual theme |
+| `scope` | `string` | — | CSS selector for scan scope |
+| `auto-scan` | presence | enabled | Remove attribute to disable auto-scan |
+| `debounce` | `number` | `500` | Auto-scan debounce delay in ms |
+| `run-only` | JSON string | — | Array of axe rule tags, e.g. `'["wcag2a"]'` |
+
+---
+
+---
+url: /a11y-hud/guide/react.md
+---
+# React
+
+`@a11y-hud/react` is a thin React adapter that mounts the a11y-hud Custom Element and re-runs axe after every React render commit.
+
+## Requirements
+
+* React 18 or later
+* `a11y-hud` (installed automatically as a dependency)
+
+## Install
+
+::: code-group
+
+```bash [npm]
+npm install --save-dev @a11y-hud/react
+```
+
+```bash [pnpm]
+pnpm add -D @a11y-hud/react
+```
+
+```bash [yarn]
+yarn add -D @a11y-hud/react
+```
+
+:::
+
+## Quick start — component
+
+Add `<A11yHud>` to your root component so it mounts once for the entire app:
+
+```tsx
+// App.tsx
+import { A11yHud } from "@a11y-hud/react";
+
+export default function App() {
+  return (
+    <>
+      {import.meta.env.DEV && <A11yHud theme="auto" />}
+      {/* rest of app */}
+    </>
+  );
+}
+```
+
+The component mounts the `<a11y-hud>` Custom Element to `document.body` and triggers a rescan after every React commit via `useEffect`.
+
+## Quick start — hook
+
+Use `useA11yHud` when you need imperative access to the instance:
+
+```tsx
+import { useEffect } from "react";
+import { useA11yHud } from "@a11y-hud/react";
+
+function DevTools() {
+  const hud = useA11yHud({ theme: "auto" });
+
+  useEffect(() => {
+    // Export results on demand
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "e" && e.ctrlKey) {
+        console.log(hud.exportResults());
+      }
+    });
+  }, [hud]);
+
+  return null;
+}
+```
+
+## Props / options
+
+Both `<A11yHud>` props and `useA11yHud` options accept the same fields:
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `theme` | `Theme` | `"auto"` | Visual theme |
+| `scope` | `RefObject<Element \| null>` | — | Ref to restrict scan scope |
+| `autoScan` | `boolean` | `true` | Re-scan on DOM mutations |
+| `debounce` | `number` | `500` | Auto-scan debounce in ms |
+| `runOnly` | `string[]` | — | axe rule tags to run |
+
+## Scoping to a subtree
+
+```tsx
+import { useRef } from "react";
+import { A11yHud } from "@a11y-hud/react";
+
+export default function App() {
+  const scopeRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <>
+      <A11yHud theme="auto" scope={scopeRef} />
+      <div ref={scopeRef}>
+        {/* only this subtree is scanned */}
+      </div>
+    </>
+  );
+}
+```
+
+## Route-change rescans
+
+The adapter rescans after every React commit, which covers most route-change cases automatically when using React Router or TanStack Router. If you need explicit control, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
+
+## Instance API
+
+`useA11yHud` returns the same [`UseA11yHudReturn`](/reference/api#useahudreturn) object across all adapters:
+
+```ts
+const hud = useA11yHud({ theme: "auto" });
+
+hud.runScan()              // Promise<AxeResults>
+hud.setTheme("github-dark")
+hud.setRunOnly(["wcag2a"])
+hud.exportResults()        // JSON string | null
+hud.ignores.add("color-contrast")
+hud.ignores.list()         // IgnoreEntry[]
+hud.ignores.exportJson()
+hud.ignores.importJson(json)
+hud.ignores.clear()
+```
+
+---
+
+---
+url: /a11y-hud/guide/vue.md
+---
+# Vue 3
+
+`@a11y-hud/vue` is a thin Vue 3 adapter that mounts the a11y-hud Custom Element and re-runs axe after every Vue render via `watchPostEffect`.
+
+## Requirements
+
+* Vue 3.4 or later
+* `a11y-hud` (installed automatically as a dependency)
+
+## Install
+
+::: code-group
+
+```bash [npm]
+npm install --save-dev @a11y-hud/vue
+```
+
+```bash [pnpm]
+pnpm add -D @a11y-hud/vue
+```
+
+```bash [yarn]
+yarn add -D @a11y-hud/vue
+```
+
+:::
+
+## Quick start — component
+
+```vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { A11yHud } from "@a11y-hud/vue";
+</script>
+
+<template>
+  <A11yHud v-if="isDev" theme="auto" />
+  <!-- rest of app -->
+</template>
+
+<script lang="ts">
+const isDev = import.meta.env.DEV;
+</script>
+```
+
+Or with `<script setup>` only:
+
+```vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { A11yHud } from "@a11y-hud/vue";
+
+const isDev = import.meta.env.DEV;
+</script>
+
+<template>
+  <A11yHud v-if="isDev" theme="auto" />
+  <!-- rest of app -->
+</template>
+```
+
+## Quick start — composable
+
+```ts
+import { useA11yHud } from "@a11y-hud/vue";
+
+const hud = useA11yHud({ theme: "auto" });
+```
+
+## Props / options
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `theme` | `Theme` | `"auto"` | Visual theme |
+| `scope` | `Element \| null` | — | Scan scope element. Pass a template ref directly (`:scope="myRef"`) — Vue templates auto-unwrap refs. |
+| `autoScan` | `boolean` | `true` | Re-scan on DOM mutations |
+| `debounce` | `number` | `500` | Auto-scan debounce in ms |
+| `runOnly` | `string[]` | — | axe rule tags to run |
+
+## Scoping to a subtree
+
+Pass a Vue template ref as `scope`:
+
+```vue
+<script setup lang="ts">
+import { ref } from "vue";
+import { A11yHud } from "@a11y-hud/vue";
+
+const appRoot = ref<HTMLDivElement | null>(null);
+</script>
+
+<template>
+  <A11yHud theme="auto" :scope="appRoot" />
+  <div ref="appRoot">
+    <!-- only this subtree is scanned -->
+  </div>
+</template>
+```
+
+## Route-change rescans
+
+`watchPostEffect` fires after every Vue DOM commit, covering Vue Router navigations automatically. For explicit control, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
+
+## Instance API
+
+```ts
+const hud = useA11yHud({ theme: "auto" });
+
+hud.runScan()
+hud.setTheme("github-dark")
+hud.setRunOnly(["wcag2a"])
+hud.exportResults()
+hud.ignores.add("color-contrast")
+hud.ignores.list()
+hud.ignores.exportJson()
+hud.ignores.importJson(json)
+hud.ignores.clear()
+```
+
+See [`UseA11yHudReturn`](/reference/api#useahudreturn) for full type details.
+
+---
+
+---
+url: /a11y-hud/guide/angular.md
+---
+# Angular
+
+`@a11y-hud/angular` provides a standalone Angular component and injectable service for the a11y-hud Custom Element.
+
+## Requirements
+
+* Angular 20 or 21 (two most recent minors supported)
+* `a11y-hud` (installed automatically as a dependency)
+
+## Install
+
+::: code-group
+
+```bash [npm]
+npm install --save-dev @a11y-hud/angular
+```
+
+```bash [pnpm]
+pnpm add -D @a11y-hud/angular
+```
+
+```bash [yarn]
+yarn add -D @a11y-hud/angular
+```
+
+:::
+
+## Quick start — component
+
+`A11yHudComponent` is a standalone component with selector `a11y-hud-angular`.
+
+```typescript
+// app.component.ts
+import { Component, isDevMode } from "@angular/core";
+import { A11yHudComponent } from "@a11y-hud/angular";
+
+@Component({
+  standalone: true,
+  imports: [A11yHudComponent],
+  template: `
+    <a11y-hud-angular *ngIf="isDev" [theme]="'auto'" />
+    <!-- rest of app -->
+  `,
+})
+export class AppComponent {
+  readonly isDev = isDevMode();
+}
+```
+
+## Quick start — service
+
+`A11yHudService` is injectable for imperative control:
+
+```typescript
+import { Component, OnInit, inject } from "@angular/core";
+import { A11yHudService } from "@a11y-hud/angular";
+
+@Component({ standalone: true, template: "" })
+export class DevComponent implements OnInit {
+  private hud = inject(A11yHudService);
+
+  ngOnInit() {
+    this.hud.mount({ theme: "auto" });
+  }
+}
+```
+
+## Inputs
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `theme` | `Theme` | `"auto"` | Visual theme |
+| `scope` | `ElementRef<Element> \| Element \| null` | — | Element or ref for scan scope |
+| `autoScan` | `boolean` | `true` | Re-scan on DOM mutations |
+| `debounce` | `number` | `500` | Auto-scan debounce in ms |
+| `runOnly` | `string[]` | — | axe rule tags to run |
+
+`scope` accepts Angular's `@ViewChild` result directly:
+
+```typescript
+@ViewChild("mainContent") mainContent!: ElementRef<HTMLElement>;
+
+// Pass to component via binding
+template: `<a11y-hud-angular [scope]="mainContent" />`
+```
+
+## Route-change rescans
+
+Angular's change detection triggers a rescan via `ngOnChanges` whenever inputs update. For router-driven rescans, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
+
+## Instance API (via service)
+
+```typescript
+const hud = this.hud; // A11yHudService instance
+// Same API as UseA11yHudReturn:
+await hud.runScan();
+hud.setTheme("tokyo-night");
+hud.exportResults();
+hud.ignores.add("color-contrast");
+```
+
+See [`UseA11yHudReturn`](/reference/api#useahudreturn) for full type details.
+
+---
+
+---
+url: /a11y-hud/guide/svelte.md
+---
+# Svelte 5
+
+`@a11y-hud/svelte` is a Svelte 5 adapter using runes that mounts the a11y-hud Custom Element and re-runs axe after DOM updates.
+
+## Requirements
+
+* Svelte 5 (runes required)
+* `a11y-hud` (installed automatically as a dependency)
+
+## Install
+
+::: code-group
+
+```bash [npm]
+npm install --save-dev @a11y-hud/svelte
+```
+
+```bash [pnpm]
+pnpm add -D @a11y-hud/svelte
+```
+
+```bash [yarn]
+yarn add -D @a11y-hud/svelte
+```
+
+:::
+
+## Quick start — component
+
+```svelte
+<!-- App.svelte -->
+<script lang="ts">
+  import { A11yHud } from "@a11y-hud/svelte";
+
+  const isDev = import.meta.env.DEV;
+</script>
+
+{#if isDev}
+  <A11yHud theme="auto" />
+{/if}
+<!-- rest of app -->
+```
+
+## Quick start — hook
+
+`useA11yHud` accepts a getter function (not a plain object) so Svelte's `$effect` can track reactive `$props()` values:
+
+```svelte
+<script lang="ts">
+  import { useA11yHud } from "@a11y-hud/svelte";
+
+  const hud = useA11yHud(() => ({ theme: "auto" }));
+</script>
+```
+
+## Props / options
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `theme` | `Theme` | `"auto"` | Visual theme |
+| `scope` | `Element \| null` | — | Element for scan scope (use `bind:this`) |
+| `autoScan` | `boolean` | `true` | Re-scan on DOM mutations |
+| `debounce` | `number` | `500` | Auto-scan debounce in ms |
+| `runOnly` | `string[]` | — | axe rule tags to run |
+
+## Scoping to a subtree
+
+Use `bind:this` to get an element reference:
+
+```svelte
+<script lang="ts">
+  import { A11yHud } from "@a11y-hud/svelte";
+
+  let appRoot: HTMLDivElement | null = null;
+</script>
+
+<A11yHud theme="auto" scope={appRoot} />
+<div bind:this={appRoot}>
+  <!-- only this subtree is scanned -->
+</div>
+```
+
+## Why a getter function for `useA11yHud`
+
+Svelte 5's `$effect` tracks reactive reads that happen during execution. If you spread `$props()` into a plain object before passing it, the effect cannot track the individual reactive property reads. Passing a getter closure preserves reactivity:
+
+```ts
+// ✅ reactive — $effect tracks reads through the closure
+useA11yHud(() => ({ theme: props.theme }));
+
+// ❌ not reactive — spread loses prop reactivity
+const opts = { theme: props.theme };
+useA11yHud(() => opts);
+```
+
+## Route-change rescans
+
+`$effect` fires after Svelte DOM updates, covering router-driven re-renders automatically. For explicit control, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
+
+## Instance API
+
+```ts
+const hud = useA11yHud(() => ({ theme: "auto" }));
+
+hud.runScan()
+hud.setTheme("solarized-dark")
+hud.setRunOnly(["wcag2a"])
+hud.exportResults()
+hud.ignores.add("color-contrast")
+hud.ignores.list()
+```
+
+See [`UseA11yHudReturn`](/reference/api#useahudreturn) for full type details.
+
+---
+
+---
+url: /a11y-hud/guide/solid.md
+---
+# Solid
+
+`@a11y-hud/solid` is a Solid adapter that mounts the a11y-hud Custom Element and re-runs axe via `createEffect` after reactive updates.
+
+## Requirements
+
+* solid-js 1.8 or later
+* `a11y-hud` (installed automatically as a dependency)
+
+## Install
+
+::: code-group
+
+```bash [npm]
+npm install --save-dev @a11y-hud/solid
+```
+
+```bash [pnpm]
+pnpm add -D @a11y-hud/solid
+```
+
+```bash [yarn]
+yarn add -D @a11y-hud/solid
+```
+
+:::
+
+## Quick start — component
+
+```tsx
+// App.tsx
+import { A11yHud } from "@a11y-hud/solid";
+
+export default function App() {
+  return (
+    <>
+      {import.meta.env.DEV && <A11yHud theme="auto" />}
+      {/* rest of app */}
+    </>
+  );
+}
+```
+
+## Quick start — primitive
+
+`createA11yHud` follows Solid's `create*` naming convention for reactive primitives:
+
+```tsx
+import { createA11yHud } from "@a11y-hud/solid";
+
+function DevTools() {
+  const hud = createA11yHud({ theme: "auto" });
+  return null;
+}
+```
+
+For reactive options (e.g., a theme signal), pass getter properties:
+
+```tsx
+import { createSignal } from "solid-js";
+import { createA11yHud } from "@a11y-hud/solid";
+
+const [theme, setTheme] = createSignal("auto");
+
+const hud = createA11yHud({
+  get theme() { return theme(); },
+});
+```
+
+## Props / options
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `theme` | `Theme` | `"auto"` | Visual theme |
+| `scope` | `Element \| null` | — | Element for scan scope |
+| `autoScan` | `boolean` | `true` | Re-scan on DOM mutations |
+| `debounce` | `number` | `500` | Auto-scan debounce in ms |
+| `runOnly` | `string[]` | — | axe rule tags to run |
+
+## Scoping to a subtree
+
+```tsx
+import { createSignal } from "solid-js";
+import { A11yHud } from "@a11y-hud/solid";
+
+export default function App() {
+  let appRoot: HTMLDivElement | undefined;
+
+  return (
+    <>
+      <A11yHud theme="auto" scope={appRoot} />
+      <div ref={appRoot}>
+        {/* only this subtree is scanned */}
+      </div>
+    </>
+  );
+}
+```
+
+## Route-change rescans
+
+`createEffect` tracks Solid's reactive graph, so rescans happen automatically after reactive updates including router navigations. For explicit control, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
+
+## Instance API
+
+```ts
+const hud = createA11yHud({ theme: "auto" });
+
+hud.runScan()
+hud.setTheme("github-dark")
+hud.setRunOnly(["wcag2aa"])
+hud.exportResults()
+hud.ignores.add("label")
+hud.ignores.list()
+```
+
+See [`CreateA11yHudReturn`](/reference/api#createa11yhudreturn) for full type details.
+
+---
+
+---
+url: /a11y-hud/guide/astro.md
+---
+# Astro
+
+Astro doesn't have a dedicated `@a11y-hud/astro` package because Astro delegates its UI to component islands (React, Vue, Svelte, Solid). a11y-hud works in Astro via two complementary paths.
+
+## Path 1 — Vanilla core on the global page
+
+For Astro sites without islands (or to audit the full page including static content), use the vanilla core directly in a layout component:
+
+```astro
+---
+// layouts/BaseLayout.astro
+const isDev = import.meta.env.DEV;
+---
+
+<html lang="en">
+  <head><!-- ... --></head>
+  <body>
+    <slot />
+    {isDev && <a11y-hud theme="auto"></a11y-hud>}
+    {isDev && (
+      <script>
+        import { mount } from "a11y-hud";
+        mount({ theme: "auto" });
+      </script>
+    )}
+  </body>
+</html>
+```
+
+Or with the CDN script tag:
+
+```astro
+---
+const isDev = import.meta.env.DEV;
+---
+
+{isDev && (
+  <>
+    <script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js" />
+    <script>window.A11yHud?.mount({ theme: "auto" });</script>
+  </>
+)}
+```
+
+The vanilla core mounts once and auto-rescans on DOM mutations — it picks up island hydration automatically.
+
+## Path 2 — Adapter inside an island
+
+If you want rescans tied to a specific island's render lifecycle, use the matching framework adapter inside that island:
+
+```tsx
+// src/components/DevTools.tsx  (React island)
+import { A11yHud } from "@a11y-hud/react";
+
+export default function DevTools() {
+  if (!import.meta.env.DEV) return null;
+  return <A11yHud theme="auto" />;
+}
+```
+
+```astro
+---
+// layouts/BaseLayout.astro
+import DevTools from "../components/DevTools.tsx";
+---
+
+<body>
+  <slot />
+  <DevTools client:only="react" />
+</body>
+```
+
+Use `client:only` so the HUD never renders server-side.
+
+## Which path to use?
+
+| Situation | Recommendation |
+|-----------|----------------|
+| Mostly static Astro pages, few or no islands | Vanilla core in the layout |
+| Heavy React/Vue/Svelte app inside Astro | Framework adapter inside the main island |
+| Multiple islands of different frameworks | Vanilla core — one HUD for the whole page |
+
+## Limitations
+
+* **Pre-hydration DOM**: axe runs on the live DOM. Static HTML rendered server-side is still valid DOM — violations in static content are caught once the page loads.
+* **Island isolation**: If island content is inside a Shadow DOM (unlikely with standard Astro islands), axe may not reach it. Standard Astro islands render into the regular DOM, so there is no issue.
+
+## Rescanning after island hydration
+
+The vanilla core's `MutationObserver` catches DOM changes from island hydration automatically. No manual rescan is needed. If you need to rescan explicitly (e.g., after a user interaction loads new content), call:
+
+```js
+import { mount } from "a11y-hud";
+
+const hud = mount({ theme: "auto" });
+
+// Later, after content loads:
+await hud.runScan();
+```
+
+---
+
+---
+url: /a11y-hud/guide/qwik.md
+---
+# Qwik
+
+There is no dedicated `@a11y-hud/qwik` package. The vanilla core (`a11y-hud`) works directly with Qwik's resumable DOM — with one important trade-off to understand.
+
+## How Qwik's resumable model affects axe
+
+Qwik serializes event listeners to HTML and resumes them lazily. On initial load, interactive elements may not yet have their event handlers attached. axe-core rules that depend on interactive behaviour (e.g., keyboard event handlers for custom widgets) may not fire as expected until the relevant island has resumed.
+
+Rules that inspect DOM structure, ARIA attributes, color contrast, and label associations work correctly at any point.
+
+## Quick start
+
+Use the vanilla core in your root layout:
+
+```tsx
+// src/routes/layout.tsx
+import { component$ } from "@builder.io/qwik";
+import { isDev } from "@builder.io/qwik/build";
+
+export default component$(() => {
+  return (
+    <>
+      <slot />
+      {isDev && (
+        <script
+          dangerouslySetInnerHTML={`
+            import('https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js')
+              .then(() => window.A11yHud.mount({ theme: 'auto' }));
+          `}
+          type="module"
+        />
+      )}
+    </>
+  );
+});
+```
+
+Or, if you have a bundler setup that supports npm imports in Qwik:
+
+```ts
+// src/entry.dev.ts  (or any dev-only entry point)
+import { mount } from "a11y-hud";
+
+if (typeof window !== "undefined") {
+  mount({ theme: "auto" });
+}
+```
+
+## Rescanning after interaction
+
+Because Qwik resumes components lazily, you may want to trigger a manual rescan after the user interacts with a component that was previously un-resumed:
+
+```ts
+import { mount } from "a11y-hud";
+
+const hud = mount({ theme: "auto" });
+
+// After a user interaction that resumes a component:
+someElement.addEventListener("click", async () => {
+  await hud.runScan();
+});
+```
+
+The HUD's built-in `MutationObserver` catches DOM changes from resumed components automatically. A manual rescan is only needed for violations that depend on interactive event handlers being attached.
+
+## What works well
+
+| Rule category | Works out of the box? |
+|---------------|----------------------|
+| Color contrast | ✅ Yes |
+| ARIA labels, roles, attributes | ✅ Yes |
+| Image alt text | ✅ Yes |
+| Form label associations | ✅ Yes |
+| Landmark regions | ✅ Yes |
+| Custom widget keyboard patterns | ⚠️ Only after component resumption |
+| Focus management after interaction | ⚠️ Only after component resumption |
+
+## Headless scan for CI
+
+```ts
+import { runScan } from "a11y-hud";
+
+// Run structural checks in a Playwright test after page load
+const results = await runScan(document.body);
+```
+
+For CI integration details, see the [CI integration cookbook](/cookbook/ci-integration).
+
+## Dedicated package
+
+There is currently no `@a11y-hud/qwik` package. The vanilla core covers the primary use case. If community demand surfaces a clear need for deeper integration (e.g., tracking Qwik component resume lifecycle), a dedicated adapter may be added post-1.0.
+
+---
+
+---
+url: /a11y-hud/reference/api.md
+---
+# API Reference
+
+## Core (`a11y-hud`)
+
+### `mount(options?)`
+
+Mounts the `<a11y-hud>` Custom Element and returns an instance for runtime control. If a `<a11y-hud>` element already exists in the document, it is reused.
+
+```ts
+function mount(options?: MountOptions): A11yHudInstance
+```
+
+**`MountOptions`**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `theme` | `Theme` | `"auto"` | Visual theme. `"auto"` respects `prefers-color-scheme` and promotes to `"high-contrast"` when `prefers-contrast: more` is set. |
+| `scope` | `string \| Element` | `document.body` | CSS selector or `Element` to restrict axe scans to a subtree. |
+| `autoScan` | `boolean` | `true` | Attach a `MutationObserver` that rescans when the DOM changes. |
+| `debounce` | `number` | `500` | Milliseconds to debounce auto-scan triggers. |
+| `runOnly` | `string[]` | `[]` | Restrict axe to specific rule-set tags (e.g. `["wcag2a", "wcag2aa"]`). Empty array runs all rules. |
+
+***
+
+### `A11yHudInstance` {#a11yhudinstance}
+
+Returned by `mount()` and by all framework adapter hooks/composables.
+
+```ts
+interface A11yHudInstance {
+  unmount(): void;
+  setTheme(theme: Theme): void;
+  setRunOnly(tags: string[]): void;
+  runScan(): Promise<AxeResults>;
+  exportResults(): string | null;
+  ignores: {
+    add(ruleId: string, selector?: string): void;
+    remove(ruleId: string, selector?: string): void;
+    clear(): void;
+    list(): IgnoreEntry[];
+    exportJson(): string;
+    importJson(json: string): void;
+  };
+}
+```
+
+| Method | Description |
+|--------|-------------|
+| `unmount()` | Removes the `<a11y-hud>` element from the DOM. |
+| `setTheme(theme)` | Switches the active theme at runtime. |
+| `setRunOnly(tags)` | Changes which axe rule-set tags are active. |
+| `runScan()` | Triggers a manual scan. Returns the raw axe results. |
+| `exportResults()` | Returns the most recent scan as a JSON string (or `null` if no scan has run yet). |
+| `ignores.add(ruleId, selector?)` | Adds a rule (or rule + selector) to the ignore list and triggers a rescan. Persisted to `localStorage`. |
+| `ignores.remove(ruleId, selector?)` | Removes a specific ignore entry and triggers a rescan. |
+| `ignores.clear()` | Clears all ignores and triggers a rescan. |
+| `ignores.list()` | Returns the current `IgnoreEntry[]`. |
+| `ignores.exportJson()` | Returns the ignore list as a JSON string. |
+| `ignores.importJson(json)` | Replaces the ignore list with the parsed JSON and triggers a rescan. |
+
+***
+
+### `runScan(target?, runOnly?)`
+
+Runs an axe-core scan without rendering any UI. Concurrent calls are serialized — a second call waits for the first to finish.
+
+```ts
+function runScan(
+  target?: Element,       // default: document.body
+  runOnly?: string[]      // axe rule tags
+): Promise<AxeResults>
+```
+
+***
+
+### `generateBookmarklet(version?)`
+
+Returns a `javascript:` URL that loads the UMD bundle from jsDelivr and calls `window.A11yHud.mount()`.
+
+```ts
+function generateBookmarklet(version?: string): string
+// version defaults to "latest"
+```
+
+***
+
+### Ignore-rules headless API
+
+These functions read/write the same `localStorage` key (`a11y-hud:ignores`) as the HUD panel, so headless scripts and the UI share a single ignore list.
+
+```ts
+import {
+  addIgnore,
+  removeIgnore,
+  clearIgnores,
+  listIgnores,
+  exportIgnores,
+  importIgnores,
+} from "a11y-hud";
+
+addIgnore(ruleId: string, selector?: string): void
+removeIgnore(ruleId: string, selector?: string): void
+clearIgnores(): void
+listIgnores(): IgnoreEntry[]
+exportIgnores(): string      // JSON string
+importIgnores(json: string): void
+```
+
+***
+
+### Keyboard mode helpers
+
+```ts
+import {
+  getFocusableElements,
+  injectFocusOrderOverlay,
+  detectKeyboardViolations,
+} from "a11y-hud";
+```
+
+**`getFocusableElements(scope)`**
+
+Returns all focusable elements in `scope`, sorted by tab order (positive `tabindex` values first, then natural document order).
+
+```ts
+function getFocusableElements(scope: Element): FocusableElementInfo[]
+
+interface FocusableElementInfo {
+  element: Element;
+  index: number;       // 1-based tab position
+  selector: string;    // generated CSS selector
+  tabIndex: number;    // resolved tabIndex value
+}
+```
+
+**`injectFocusOrderOverlay(elements)`**
+
+Injects numbered badge overlays onto the page showing each element's tab position. Badges use page-relative absolute positioning so they remain stable during scroll. Returns a cleanup function that removes the overlay.
+
+```ts
+function injectFocusOrderOverlay(elements: FocusableElementInfo[]): () => void
+```
+
+**`detectKeyboardViolations(elements, scope?)`**
+
+Checks a focusable element list for common keyboard navigation issues. `elements` is the output of `getFocusableElements`. `scope` defaults to `document.body` and is used to find interactive elements excluded from the tab order via `tabindex="-1"`.
+
+```ts
+function detectKeyboardViolations(
+  elements: FocusableElementInfo[],
+  scope?: Element
+): KeyboardViolation[]
+
+interface KeyboardViolation {
+  type: "positive-tabindex" | "interactive-excluded" | "no-focusable-elements";
+  element?: Element;
+  selector?: string;
+  message: string;
+}
+```
+
+Violation types:
+
+* `positive-tabindex` — element has `tabindex` > 0, which breaks natural tab order.
+* `interactive-excluded` — an interactive element has `tabindex="-1"`, removing it from keyboard navigation.
+* `no-focusable-elements` — the scope contains no focusable elements at all.
+
+***
+
+### `A11yHudElement`
+
+The underlying Custom Element class. Exported for advanced use (e.g., type narrowing after `querySelector`).
+
+```ts
+import { A11yHudElement } from "a11y-hud";
+
+const el = document.querySelector("a11y-hud") as A11yHudElement;
+el.setTheme("github-dark");
+el.runScan();
+```
+
+***
+
+### Types
+
+```ts
+type Theme =
+  | "auto"
+  | "default"
+  | "light"
+  | "high-contrast"
+  | "github-dark"
+  | "github-light"
+  | "tokyo-night"
+  | "solarized-dark";
+
+type ResolvedTheme = Exclude<Theme, "auto">;
+
+type Severity = "minor" | "moderate" | "serious" | "critical";
+
+interface IgnoreEntry {
+  ruleId: string;
+  selector?: string;
+}
+
+interface A11yHudExport {
+  version: "1";
+  timestamp: string;     // ISO 8601
+  url: string;           // window.location.href at scan time
+  scope: string;         // selector or "document.body"
+  results: AxeResults;   // raw axe-core results object
+}
+```
+
+***
+
+## `@a11y-hud/react`
+
+### `<A11yHud>`
+
+Mounts the HUD inside a React tree. Props are identical to `UseA11yHudOptions`.
+
+```tsx
+import { A11yHud } from "@a11y-hud/react";
+
+<A11yHud theme="auto" scope={ref} autoScan debounce={300} />
+```
+
+### `useA11yHud(options)`
+
+```ts
+function useA11yHud(options?: UseA11yHudOptions): UseA11yHudReturn
+```
+
+**`UseA11yHudOptions`**
+
+```ts
+interface UseA11yHudOptions {
+  theme?: Theme;
+  scope?: RefObject<Element | null>;
+  autoScan?: boolean;
+  debounce?: number;
+  runOnly?: string[];
+}
+```
+
+***
+
+## `@a11y-hud/vue`
+
+### `<A11yHud>`
+
+```vue
+<A11yHud theme="auto" :scope="templateRef" />
+```
+
+### `useA11yHud(options)`
+
+```ts
+function useA11yHud(options?: UseA11yHudOptions): UseA11yHudReturn
+```
+
+**`UseA11yHudOptions`**
+
+```ts
+interface UseA11yHudOptions {
+  theme?: Theme;
+  scope?: Element | null;
+  autoScan?: boolean;
+  debounce?: number;
+  runOnly?: string[];
+}
+```
+
+::: tip Template refs
+When using the component, pass a Vue template ref directly (`:scope="myRef"`). Vue templates auto-unwrap refs in attribute bindings, so the component receives the underlying `Element | null`.
+
+When calling `useA11yHud()` directly, pass the element value or use a getter for reactivity:
+
+```ts
+// Reactive getter pattern (recommended for composable usage with template refs)
+const container = ref<HTMLElement | null>(null)
+useA11yHud({ get scope() { return container.value } })
+```
+
+:::
+
+***
+
+## `@a11y-hud/angular`
+
+### `A11yHudComponent`
+
+Selector: `a11y-hud-angular`. Standalone component.
+
+```html
+<a11y-hud-angular [theme]="'auto'" [scope]="viewChildRef" />
+```
+
+### `A11yHudService`
+
+Injectable service. Call `mount(options)` in `ngOnInit` / `ngAfterViewInit`.
+
+```ts
+interface ScopeInput = ElementRef<Element> | Element | null | undefined;
+
+interface UseA11yHudOptions {
+  theme?: Theme;
+  scope?: ScopeInput;
+  autoScan?: boolean;
+  debounce?: number;
+  runOnly?: string[];
+}
+```
+
+***
+
+## `@a11y-hud/svelte`
+
+### `<A11yHud>`
+
+```svelte
+<A11yHud theme="auto" scope={element} />
+```
+
+### `useA11yHud(getOptions)`
+
+Accepts a getter function — required for Svelte 5 `$effect` reactivity.
+
+```ts
+function useA11yHud(getOptions: () => UseA11yHudOptions): UseA11yHudReturn
+```
+
+**`UseA11yHudOptions`**
+
+```ts
+interface UseA11yHudOptions {
+  theme?: Theme;
+  scope?: Element | null;
+  autoScan?: boolean;
+  debounce?: number;
+  runOnly?: string[];
+}
+```
+
+***
+
+## `@a11y-hud/solid`
+
+### `<A11yHud>`
+
+```tsx
+<A11yHud theme="auto" scope={element} />
+```
+
+### `createA11yHud(options)` {#createa11yhudreturn}
+
+```ts
+function createA11yHud(options?: CreateA11yHudOptions): CreateA11yHudReturn
+```
+
+For reactive options, use getter properties so Solid's `createEffect` tracks them:
+
+```ts
+const hud = createA11yHud({
+  get theme() { return themeSignal(); },
+});
+```
+
+**`CreateA11yHudOptions`**
+
+```ts
+interface CreateA11yHudOptions {
+  theme?: Theme;
+  scope?: Element | null;
+  autoScan?: boolean;
+  debounce?: number;
+  runOnly?: string[];
+}
+```
+
+***
+
+## `UseA11yHudReturn` {#useahudreturn}
+
+All framework adapters (React, Vue, Angular, Svelte, Solid) return this shape from their hook / composable / service:
+
+```ts
+interface UseA11yHudReturn {
+  runScan(): Promise<AxeResults>;
+  setTheme(theme: Theme): void;
+  setRunOnly(tags: string[]): void;
+  exportResults(): string | null;
+  ignores: {
+    add(ruleId: string, selector?: string): void;
+    remove(ruleId: string, selector?: string): void;
+    clear(): void;
+    list(): IgnoreEntry[];
+    exportJson(): string;
+    importJson(json: string): void;
+  };
+}
+```
+
+Note: `unmount()` is intentionally omitted from adapters — the adapter lifecycle handles cleanup when the component unmounts.
+
+---
+
+---
+url: /a11y-hud/reference/theming.md
+---
+# Theming
+
+a11y-hud's visual design is fully driven by CSS custom properties on the `<a11y-hud>` host element. Custom properties pierce the Shadow DOM boundary by design, so you can override any token from the host page's CSS.
+
+## Built-in themes
+
+![Four HUD panels side by side showing the default, light, github-dark, and github-light themes](/img/themes.png)
+
+| Theme name | Style | Notes |
+|------------|-------|-------|
+| `auto` *(default)* | Follows `prefers-color-scheme` | Promotes to `high-contrast` when `prefers-contrast: more` is detected |
+| `default` | Dark (Catppuccin Mocha) | Default fallback when `auto` resolves to dark |
+| `light` | Light (Catppuccin Latte) | Default fallback when `auto` resolves to light |
+| `high-contrast` | Black/white, WCAG AAA | Triggered by OS high-contrast preference |
+| `github-dark` | GitHub dark mode | |
+| `github-light` | GitHub light mode | |
+| `tokyo-night` | Tokyo Night editor theme | |
+| `solarized-dark` | Solarized Dark | |
+
+Set the theme via mount option, attribute, or runtime API:
+
+```js
+// Mount option
+mount({ theme: "github-dark" });
+
+// HTML attribute
+// <a11y-hud theme="tokyo-night"></a11y-hud>
+
+// Runtime switch
+hud.setTheme("solarized-dark");
+```
+
+## CSS custom properties
+
+Override any token on the `a11y-hud` element. Custom properties take precedence over built-in theme values.
+
+```css
+a11y-hud {
+  --a11y-hud-bg: #0a0a0a;
+  --a11y-hud-critical: #ff3333;
+}
+```
+
+### Color tokens
+
+| Property | Default (dark) | Description |
+|----------|---------------|-------------|
+| `--a11y-hud-bg` | `#1e1e2e` | Panel background |
+| `--a11y-hud-bg-elevated` | `#313244` | Elevated surfaces (header, filter area) |
+| `--a11y-hud-bg-hover` | `#45475a` | Hover state background |
+| `--a11y-hud-border` | `#45475a` | Border color |
+| `--a11y-hud-text` | `#cdd6f4` | Primary text color |
+| `--a11y-hud-text-muted` | `#a6adc8` | Secondary / muted text |
+| `--a11y-hud-critical` | `#f38ba8` | Critical severity (red family) |
+| `--a11y-hud-serious` | `#fab387` | Serious severity (orange family) |
+| `--a11y-hud-moderate` | `#f9e2af` | Moderate severity (yellow family) |
+| `--a11y-hud-minor` | `#89b4fa` | Minor severity (blue family) |
+| `--a11y-hud-highlight` | `#cba6f7` | WCAG-level filter chip active color (purple) |
+| `--a11y-hud-tag` | `#94e2d5` | Rule-set filter chip active color (teal) |
+| `--a11y-hud-focus-ring` | `#89b4fa` | Keyboard focus ring |
+
+### Layout tokens
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `--a11y-hud-radius` | `8px` | Border radius for panel and chips |
+| `--a11y-hud-font` | `ui-monospace, "Cascadia Code", …` | Font family (monospace stack) |
+| `--a11y-hud-z-index` | `999999` | z-index for the floating panel |
+| `--a11y-hud-panel-width` | `380px` | Panel width |
+
+## Token semantics
+
+### Severity colors
+
+Severity colors carry semantic meaning across all themes. The mapping is intentional and locked:
+
+| Severity | Semantic family | Rationale |
+|----------|----------------|-----------|
+| `critical` | Red / danger | Universal danger signal |
+| `serious` | Orange / warning | Warning / high priority |
+| `moderate` | Yellow / caution | Caution / medium priority |
+| `minor` | Blue / info | Informational / low priority |
+
+Themes shift hue and saturation within each family, but the semantic mapping never changes. `critical` cannot be green.
+
+### `--a11y-hud-highlight` (purple)
+
+Used for WCAG-level filter chip active state (`A`, `AA`, `AAA`, `AA Large`, `AAA Large`). Purple is the accent color family.
+
+### `--a11y-hud-tag` (teal)
+
+Used for rule-set filter chip active state (e.g., `wcag2a`, `best-practice`). Each theme defines this independently with WCAG AA-verified contrast against `--a11y-hud-bg`.
+
+## Theme architecture rules
+
+These are locked for 1.0 — community themes must follow them:
+
+1. Themes are **pure CSS, no JS**. A theme overrides custom properties in a `[data-theme="name"]` block.
+2. Themes change **colors only** — no layout, typography, or component structure changes.
+3. **Severity colors keep semantic meaning** across themes (critical = red family, etc.).
+4. **Theme names are public API**. Renaming or removing a theme after 1.0 is a breaking change.
+5. Custom themes via CSS overrides remain first-class — built-in themes don't deprecate the override path.
+
+## Per-theme color values
+
+### `default` (dark, Catppuccin Mocha)
+
+| Property | Value |
+|----------|-------|
+| `--a11y-hud-bg` | `#1e1e2e` |
+| `--a11y-hud-bg-elevated` | `#313244` |
+| `--a11y-hud-text` | `#cdd6f4` |
+| `--a11y-hud-critical` | `#f38ba8` |
+| `--a11y-hud-serious` | `#fab387` |
+| `--a11y-hud-moderate` | `#f9e2af` |
+| `--a11y-hud-minor` | `#89b4fa` |
+| `--a11y-hud-highlight` | `#cba6f7` |
+| `--a11y-hud-tag` | `#94e2d5` |
+
+### `light` (Catppuccin Latte)
+
+| Property | Value |
+|----------|-------|
+| `--a11y-hud-bg` | `#eff1f5` |
+| `--a11y-hud-bg-elevated` | `#e6e9ef` |
+| `--a11y-hud-text` | `#4c4f69` |
+| `--a11y-hud-critical` | `#d20f39` |
+| `--a11y-hud-serious` | `#fe640b` |
+| `--a11y-hud-moderate` | `#df8e1d` |
+| `--a11y-hud-minor` | `#1452c7` |
+| `--a11y-hud-highlight` | `#8839ef` |
+| `--a11y-hud-tag` | `#0d7d80` |
+
+### `github-dark`
+
+| Property | Value |
+|----------|-------|
+| `--a11y-hud-bg` | `#0d1117` |
+| `--a11y-hud-text` | `#e6edf3` |
+| `--a11y-hud-critical` | `#ff7b72` |
+| `--a11y-hud-serious` | `#ffa657` |
+| `--a11y-hud-moderate` | `#e3b341` |
+| `--a11y-hud-minor` | `#79c0ff` |
+| `--a11y-hud-highlight` | `#d2a8ff` |
+| `--a11y-hud-tag` | `#56d364` |
+
+### `github-light`
+
+| Property | Value |
+|----------|-------|
+| `--a11y-hud-bg` | `#ffffff` |
+| `--a11y-hud-text` | `#1f2328` |
+| `--a11y-hud-critical` | `#cf222e` |
+| `--a11y-hud-serious` | `#bc4c00` |
+| `--a11y-hud-moderate` | `#8a5e00` |
+| `--a11y-hud-minor` | `#0550ae` |
+| `--a11y-hud-highlight` | `#8250df` |
+| `--a11y-hud-tag` | `#1a7f37` |
+
+### `tokyo-night`
+
+| Property | Value |
+|----------|-------|
+| `--a11y-hud-bg` | `#1a1b26` |
+| `--a11y-hud-text` | `#c0caf5` |
+| `--a11y-hud-critical` | `#f7768e` |
+| `--a11y-hud-serious` | `#ff9e64` |
+| `--a11y-hud-moderate` | `#e0af68` |
+| `--a11y-hud-minor` | `#7aa2f7` |
+| `--a11y-hud-highlight` | `#bb9af7` |
+| `--a11y-hud-tag` | `#73daca` |
+
+### `solarized-dark`
+
+| Property | Value |
+|----------|-------|
+| `--a11y-hud-bg` | `#002b36` |
+| `--a11y-hud-text` | `#eee8d5` |
+| `--a11y-hud-critical` | `#dc322f` |
+| `--a11y-hud-serious` | `#cb4b16` |
+| `--a11y-hud-moderate` | `#b58900` |
+| `--a11y-hud-minor` | `#5ba4cf` |
+| `--a11y-hud-highlight` | `#f06090` |
+| `--a11y-hud-tag` | `#5cccbc` |
+
+### `high-contrast`
+
+| Property | Value |
+|----------|-------|
+| `--a11y-hud-bg` | `#000000` |
+| `--a11y-hud-text` | `#ffffff` |
+| `--a11y-hud-border` | `#ffffff` |
+| `--a11y-hud-critical` | `#ff4444` |
+| `--a11y-hud-serious` | `#ff8800` |
+| `--a11y-hud-moderate` | `#ffcc00` |
+| `--a11y-hud-minor` | `#66aaff` |
+| `--a11y-hud-highlight` | `#ff66ff` |
+| `--a11y-hud-tag` | `#00e5d0` |
+
+## Custom theme example
+
+To create a custom theme, override properties directly on the element:
+
+```css
+/* Custom "dracula" theme */
+a11y-hud {
+  --a11y-hud-bg: #282a36;
+  --a11y-hud-bg-elevated: #44475a;
+  --a11y-hud-bg-hover: #6272a4;
+  --a11y-hud-border: #6272a4;
+  --a11y-hud-text: #f8f8f2;
+  --a11y-hud-text-muted: #bd93f9;
+  --a11y-hud-critical: #ff5555;
+  --a11y-hud-serious: #ffb86c;
+  --a11y-hud-moderate: #f1fa8c;
+  --a11y-hud-minor: #8be9fd;
+  --a11y-hud-highlight: #bd93f9;
+  --a11y-hud-tag: #50fa7b;
+  --a11y-hud-focus-ring: #bd93f9;
+}
+```
+
+See the [Custom severity colors cookbook](/cookbook/custom-severity-colors) for patterns on overriding individual tokens.
+
+---
+
+---
+url: /a11y-hud/cookbook.md
+---
+# Cookbook
+
+Practical recipes for common a11y-hud tasks.
+
+## Recipes
+
+### [Route-change rescans](/cookbook/route-change-rescans)
+
+How to trigger a fresh axe scan after a client-side route change in React Router, Vue Router, Angular Router, SvelteKit, and Solid Router.
+
+### [CI integration](/cookbook/ci-integration)
+
+Use the headless `runScan()` API in Playwright tests or a Node script to fail CI when accessibility violations are detected.
+
+### [Custom severity colors](/cookbook/custom-severity-colors)
+
+Override severity and accent colors via CSS custom properties — including per-page overrides and dynamic theme switching.
+
+### [CSP compatibility](/cookbook/csp-compatibility)
+
+How a11y-hud interacts with Content Security Policy, and what directives you need for the CDN / bookmarklet paths.
+
+### [Bookmarklet usage](/cookbook/bookmarklet)
+
+The end-to-end workflow for QA reviewers on staging: generating, installing, and using the bookmarklet without touching the app's source.
+
+### [Ignore-rules workflow](/cookbook/ignore-rules)
+
+How to mute rules or specific nodes in the panel UI, export ignore lists as JSON, and share them across your team.
+
+### [Keyboard mode](/cookbook/keyboard-mode)
+
+Reading the tab-order overlay, understanding keyboard violations, and using the headless keyboard helpers in tests.
+
+### [Security model](/cookbook/security-model)
+
+The dev-only trust model, scope injection behavior, ignore-rules validation, violation HTML rendering context, and Shadow DOM isolation.
+
+---
+
+---
+url: /a11y-hud/cookbook/route-change-rescans.md
+---
+# Route-change rescans
+
+Framework adapters rescan after every render commit, which covers most route transitions automatically. This recipe shows the explicit patterns for cases where you need finer control.
+
+## Why adapters handle most cases automatically
+
+* **React**: `useEffect` with no deps fires after every commit, including route-change renders.
+* **Vue**: `watchPostEffect` fires after every Vue DOM flush.
+* **Angular**: `ngOnChanges` fires when inputs update after navigation.
+* **Svelte 5**: `$effect` fires after every reactive update.
+* **Solid**: `createEffect` tracks reactive reads, including router signals.
+
+If you mount `<A11yHud>` in your root layout and your router triggers a full re-render on navigation, the rescan happens for free.
+
+## When you need explicit rescans
+
+* The router replaces only the page content region, not the whole tree.
+* You want to rescan after an async data load that follows the navigation.
+* You need to rate-limit rescans during heavy route transitions.
+
+## React Router
+
+```tsx
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { useA11yHud } from "@a11y-hud/react";
+
+function A11yHudWithRouter() {
+  const hud = useA11yHud({ theme: "auto" });
+  const location = useLocation();
+
+  useEffect(() => {
+    // location.pathname changes on every navigation
+    hud.runScan();
+  }, [location.pathname]);
+
+  return null;
+}
+```
+
+## Vue Router
+
+```ts
+import { watch } from "vue";
+import { useRoute } from "vue-router";
+import { useA11yHud } from "@a11y-hud/vue";
+
+const hud = useA11yHud({ theme: "auto" });
+const route = useRoute();
+
+watch(
+  () => route.fullPath,
+  () => hud.runScan(),
+  { flush: "post" }  // after DOM update
+);
+```
+
+## Angular Router
+
+```typescript
+import { Component, OnInit, inject } from "@angular/core";
+import { Router, NavigationEnd } from "@angular/router";
+import { filter } from "rxjs/operators";
+import { A11yHudService } from "@a11y-hud/angular";
+
+@Component({
+  standalone: true,
+  template: "<a11y-hud-angular [theme]=\"'auto'\" />",
+  imports: [],
+})
+export class RootComponent implements OnInit {
+  private hud = inject(A11yHudService);
+  private router = inject(Router);
+
+  ngOnInit() {
+    this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => this.hud.runScan());
+  }
+}
+```
+
+## SvelteKit
+
+```svelte
+<!-- src/routes/+layout.svelte -->
+<script lang="ts">
+  import { page } from "$app/state";
+  import { useA11yHud } from "@a11y-hud/svelte";
+  import { $effect } from "svelte";
+
+  const hud = useA11yHud(() => ({ theme: "auto" }));
+
+  $effect(() => {
+    // track the pathname — re-runs on every navigation
+    page.url.pathname;
+    hud.runScan();
+  });
+</script>
+
+<slot />
+```
+
+## Solid Router
+
+```tsx
+import { createEffect } from "solid-js";
+import { useLocation } from "@solidjs/router";
+import { createA11yHud } from "@a11y-hud/solid";
+
+function A11yHudWithRouter() {
+  const hud = createA11yHud({ theme: "auto" });
+  const location = useLocation();
+
+  createEffect(() => {
+    // location.pathname is a reactive signal
+    location.pathname;
+    hud.runScan();
+  });
+
+  return null;
+}
+```
+
+## Vanilla (any router)
+
+```js
+import { mount } from "a11y-hud";
+
+const hud = mount({ theme: "auto" });
+
+// Listen to the History API
+const originalPushState = history.pushState.bind(history);
+history.pushState = (...args) => {
+  originalPushState(...args);
+  hud.runScan();
+};
+
+window.addEventListener("popstate", () => hud.runScan());
+```
+
+---
+
+---
+url: /a11y-hud/cookbook/ci-integration.md
+---
+# CI integration
+
+Use the headless `runScan()` API to fail CI when accessibility violations are detected — no HUD UI, no browser extension required.
+
+## Playwright (recommended)
+
+Playwright controls a real browser, giving axe-core a full, live DOM to audit.
+
+### Setup
+
+Install the dependency alongside Playwright:
+
+```bash
+npm install --save-dev a11y-hud @playwright/test
+```
+
+### Basic test
+
+```ts
+// tests/a11y.spec.ts
+import { test, expect } from "@playwright/test";
+import { chromium } from "playwright";
+
+test("homepage has no critical accessibility violations", async ({ page }) => {
+  await page.goto("http://localhost:5173");
+
+  const violations = await page.evaluate(async () => {
+    // a11y-hud is not pre-installed on CI — inject it
+    await import("https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js");
+    const results = await window.A11yHud.runScan(document.body);
+    return results.violations;
+  });
+
+  const critical = violations.filter((v) => v.impact === "critical");
+  expect(critical, `Critical violations: ${critical.map((v) => v.id).join(", ")}`).toHaveLength(0);
+});
+```
+
+### Using the npm package in a test app
+
+If a11y-hud is already installed as a dev dependency in your test target app, import it directly:
+
+```ts
+// tests/a11y.spec.ts
+import { test, expect } from "@playwright/test";
+
+test("no critical violations", async ({ page }) => {
+  await page.goto("http://localhost:5173");
+
+  const violations = await page.evaluate(async () => {
+    const { runScan } = await import("/node_modules/a11y-hud/dist/index.js");
+    const results = await runScan(document.body);
+    return results.violations;
+  });
+
+  expect(violations.filter((v) => v.impact === "critical")).toHaveLength(0);
+});
+```
+
+### Full violation report on failure
+
+```ts
+test("no accessibility violations", async ({ page }) => {
+  await page.goto("http://localhost:5173");
+
+  const violations = await page.evaluate(async () => {
+    const { runScan } = await import("/node_modules/a11y-hud/dist/index.js");
+    const { violations } = await runScan(document.body);
+    return violations.map((v) => ({
+      id: v.id,
+      impact: v.impact,
+      description: v.description,
+      nodes: v.nodes.map((n) => n.target),
+    }));
+  });
+
+  if (violations.length > 0) {
+    console.table(violations);
+  }
+  expect(violations).toHaveLength(0);
+});
+```
+
+## Node.js + jsdom (lightweight, no browser)
+
+For environments where Playwright is unavailable:
+
+```ts
+import { JSDOM } from "jsdom";
+import { runScan } from "a11y-hud";
+
+const dom = new JSDOM(`
+  <!doctype html>
+  <html lang="en">
+    <body>
+      <img src="logo.png" />
+      <button>Click me</button>
+    </body>
+  </html>
+`, { url: "http://localhost" });
+
+// axe-core needs window and document globals
+global.window = dom.window as unknown as Window & typeof globalThis;
+global.document = dom.window.document;
+
+const results = await runScan(dom.window.document.body);
+if (results.violations.length > 0) {
+  console.error("Violations:", results.violations.map((v) => v.id));
+  process.exit(1);
+}
+```
+
+::: warning jsdom limitations
+jsdom doesn't compute CSS styles, so color-contrast and focus-indicator rules won't fire. Use Playwright for a comprehensive audit.
+:::
+
+## GitHub Actions example
+
+```yaml
+# .github/workflows/a11y.yml
+name: A11y
+
+on:
+  pull_request:
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Start dev server
+        run: pnpm dev &
+        env:
+          CI: true
+      - name: Wait for server
+        run: npx wait-on http://localhost:5173
+      - name: Run a11y tests
+        run: pnpm exec playwright test tests/a11y.spec.ts
+```
+
+## Restricting to WCAG 2.1 AA only
+
+```ts
+import { runScan } from "a11y-hud";
+
+const results = await runScan(document.body, ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]);
+```
+
+Common axe tag values:
+
+* `wcag2a` / `wcag2aa` / `wcag2aaa` — WCAG 2.0
+* `wcag21a` / `wcag21aa` — WCAG 2.1 additions
+* `wcag22aa` — WCAG 2.2 additions
+* `best-practice` — non-normative best practices
+
+## Respecting the ignore list in CI
+
+The ignore list lives in `localStorage`, which doesn't exist in Node or Playwright by default. If you maintain an ignore list in the HUD panel and want CI to respect it, export the list as JSON and load it before scanning:
+
+```ts
+// ignores.json — export from the HUD panel and commit to the repo
+import ignoreList from "./ignores.json" assert { type: "json" };
+import { importIgnores, runScan } from "a11y-hud";
+
+importIgnores(JSON.stringify(ignoreList));
+const results = await runScan(document.body);
+```
+
+---
+
+---
+url: /a11y-hud/cookbook/custom-severity-colors.md
+---
+# Custom severity colors
+
+Every color in a11y-hud is a CSS custom property. Override any token on the `a11y-hud` element to customize the look.
+
+## Basic override
+
+```css
+a11y-hud {
+  --a11y-hud-critical: #e53e3e;
+  --a11y-hud-serious: #dd6b20;
+  --a11y-hud-moderate: #d69e2e;
+  --a11y-hud-minor: #3182ce;
+}
+```
+
+Custom properties pierce the Shadow DOM boundary — they apply to all components inside the Shadow Root.
+
+## Overriding on top of a built-in theme
+
+You can combine a built-in theme with individual overrides:
+
+```js
+mount({ theme: "github-dark" });
+```
+
+```css
+/* Override just the critical color in github-dark */
+a11y-hud {
+  --a11y-hud-critical: #ff3b30;
+}
+```
+
+The override wins over the theme value because CSS specificity applies to custom properties at cascade time.
+
+## Building a complete custom theme
+
+Override all tokens for a full custom theme:
+
+```css
+a11y-hud {
+  /* Backgrounds */
+  --a11y-hud-bg: #1c1c1e;
+  --a11y-hud-bg-elevated: #2c2c2e;
+  --a11y-hud-bg-hover: #3a3a3c;
+  --a11y-hud-border: #3a3a3c;
+
+  /* Text */
+  --a11y-hud-text: #f5f5f7;
+  --a11y-hud-text-muted: #aeaeb2;
+
+  /* Severity (keep semantic family!) */
+  --a11y-hud-critical: #ff453a;    /* red */
+  --a11y-hud-serious: #ff9f0a;     /* orange */
+  --a11y-hud-moderate: #ffd60a;    /* yellow */
+  --a11y-hud-minor: #0a84ff;       /* blue */
+
+  /* Accents */
+  --a11y-hud-highlight: #bf5af2;   /* purple — WCAG level chips */
+  --a11y-hud-tag: #32d74b;         /* teal/green — rule-set chips */
+  --a11y-hud-focus-ring: #0a84ff;
+
+  /* Layout */
+  --a11y-hud-radius: 6px;
+  --a11y-hud-panel-width: 420px;
+}
+```
+
+## Dynamic theme switching
+
+Switch the built-in theme at runtime and layer overrides:
+
+```js
+const hud = mount({ theme: "auto" });
+
+document.getElementById("switch-theme").addEventListener("change", (e) => {
+  hud.setTheme(e.target.value);
+});
+```
+
+CSS overrides stay in effect regardless of which theme is active, because custom property inheritance resolves at render time.
+
+## Reducing the panel width
+
+```css
+a11y-hud {
+  --a11y-hud-panel-width: 300px;
+}
+```
+
+## Increasing the z-index
+
+If your app has a modal or overlay with a very high z-index, push the HUD above it:
+
+```css
+a11y-hud {
+  --a11y-hud-z-index: 2147483647; /* max int */
+}
+```
+
+## Contrast checking tips
+
+When overriding severity colors, verify they meet WCAG AA (4.5:1 for text, 3:1 for UI components) against the active background tokens.
+
+Good tools for checking:
+
+* [Colour Contrast Analyser (TPGi)](https://www.tpgi.com/color-contrast-checker/)
+* [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
+
+The chip text color uses `--a11y-hud-bg` (the panel background). When the active chip background is a light color (e.g., yellow for moderate), make sure `--a11y-hud-bg` has sufficient contrast against it.
+
+---
+
+---
+url: /a11y-hud/cookbook/csp-compatibility.md
+---
+# CSP compatibility
+
+a11y-hud is a dev tool — it typically runs in environments where CSP is either absent or loosely configured. This guide covers what you need if your development or staging environment enforces a CSP.
+
+## What a11y-hud loads
+
+| Source | When | Description |
+|--------|------|-------------|
+| `https://cdn.jsdelivr.net/npm/a11y-hud/…` | Bookmarklet, CDN script tag | UMD bundle loaded from jsDelivr |
+| `https://cdn.jsdelivr.net/npm/axe-core/…` | (Bundled — no separate load) | axe-core is bundled into `a11y-hud` |
+| Inline styles | Always | HUD styles via Constructable Stylesheets inside Shadow DOM |
+
+## npm + bundler path (no CDN)
+
+When you import from npm (`import { mount } from "a11y-hud"`), nothing is loaded from a CDN at runtime. The bundle is served by your own dev server. **No external `script-src` or `connect-src` directives are needed.**
+
+The HUD applies styles using Constructable Stylesheets (`document.adoptedStyleSheets`), which are internal to the Shadow Root. No `<link>` tags, no external stylesheet requests.
+
+The only CSP consideration for the npm path:
+
+```http
+Content-Security-Policy: style-src 'unsafe-inline';
+```
+
+This is needed because `CSSStyleSheet` with `replaceSync()` is classified as an inline style by some browsers. The fallback path (older Safari) uses a `<style>` element inside Shadow DOM, which also requires `'unsafe-inline'`.
+
+::: tip
+`'unsafe-inline'` only covers inline styles, not inline scripts. It does not weaken your `script-src` directive.
+:::
+
+## CDN script tag path
+
+If you're loading a11y-hud from jsDelivr:
+
+```http
+Content-Security-Policy:
+  script-src 'self' https://cdn.jsdelivr.net;
+  style-src 'self' 'unsafe-inline';
+```
+
+## Bookmarklet path
+
+The bookmarklet injects a `<script>` tag pointing to jsDelivr. This requires:
+
+```http
+Content-Security-Policy:
+  script-src 'self' https://cdn.jsdelivr.net;
+```
+
+On staging environments with a strict CSP that blocks CDN scripts, the bookmarklet will fail silently (the injected `<script>` is blocked). The fix is to either:
+
+1. **Temporarily relax the CSP** for the staging environment only (common practice — staging is not production).
+2. **Use the npm path** instead of the bookmarklet — self-host the bundle and update your bookmarklet URL to point to it.
+3. **Create a custom bookmarklet** that points to a self-hosted copy of the UMD bundle.
+
+## axe-core and iframe inspection
+
+axe-core can inspect `<iframe>` contents if the frame is same-origin. Cross-origin iframes are skipped automatically. This is a browser security constraint unrelated to CSP.
+
+## Summary table
+
+| Path | `script-src` | `style-src` | Notes |
+|------|-------------|-------------|-------|
+| npm + bundler | Not needed | `'unsafe-inline'` | Dev server serves the bundle |
+| CDN `<script>` tag | `https://cdn.jsdelivr.net` | `'unsafe-inline'` | |
+| Bookmarklet | `https://cdn.jsdelivr.net` | `'unsafe-inline'` | May be blocked on strict staging CSP |
+
+---
+
+---
+url: /a11y-hud/cookbook/bookmarklet.md
+---
+# Bookmarklet usage
+
+The bookmarklet lets a QA reviewer inject a11y-hud into any staging site without touching the site's source code or installing a browser extension. Drag it to the bookmarks bar once — then click it on any page.
+
+## What the bookmarklet does
+
+Clicking the bookmarklet runs this code in the page context:
+
+```js
+(function () {
+  if (window.A11yHud) {
+    window.A11yHud.mount();
+    return;
+  }
+  var s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/a11y-hud@latest/dist/index.umd.js";
+  s.onload = function () {
+    window.A11yHud.mount();
+  };
+  document.head.appendChild(s);
+})();
+```
+
+If a11y-hud is already loaded on the page (e.g., you clicked the bookmarklet twice), it calls `mount()` on the existing instance instead of loading the bundle again.
+
+## Path 1 — Pre-built drag-to-bookmark page
+
+![The bookmarklet installer page showing a drag-to-bookmark button and two-step instructions](/img/bookmarklet.png)
+
+The npm package includes a ready-to-use HTML page at `dist/bookmarklet.html`. Open it in a browser and drag the link to your bookmarks bar.
+
+To access it after installing the package:
+
+```bash
+# Open the pre-built page from node_modules
+open node_modules/a11y-hud/dist/bookmarklet.html
+```
+
+Or via the CDN (no install needed):
+
+```
+https://cdn.jsdelivr.net/npm/a11y-hud/dist/bookmarklet.html
+```
+
+## Path 2 — Generate a custom bookmarklet URL
+
+```js
+import { generateBookmarklet } from "a11y-hud";
+
+// Always loads the latest published version
+const url = generateBookmarklet();
+
+// Pin to a specific version (recommended for reproducibility)
+const pinned = generateBookmarklet("0.4.0");
+
+console.log(pinned);
+// → javascript:(function(){if(window.A11yHud){...}})()
+```
+
+Encode the URL into a link and add it to an internal tools page:
+
+```html
+<a href="javascript:(function(){...})()">
+  Inject a11y-hud
+</a>
+```
+
+## Pinning the version
+
+For a stable, reproducible QA workflow, pin the bookmarklet to a specific version:
+
+```js
+const url = generateBookmarklet("0.4.0");
+```
+
+This ensures every reviewer is running the same version of a11y-hud regardless of when they installed the bookmarklet. Update the version when you upgrade a11y-hud.
+
+## CSP considerations
+
+If the staging environment enforces a strict CSP that blocks `https://cdn.jsdelivr.net`, the bookmarklet script injection will be silently blocked. See [CSP compatibility](/cookbook/csp-compatibility) for options.
+
+## Distributing to a QA team
+
+The simplest approach is to host a copy of `bookmarklet.html` on an internal page or share the CDN link:
+
+1. Copy `node_modules/a11y-hud/dist/bookmarklet.html` to your team's internal wiki or intranet.
+2. Team members open the page and drag the link to their bookmarks bar.
+3. They click the bookmark on any staging URL to inject the HUD.
+
+No build tools, no extension install, no npm account required.
+
+## Using the HUD after injection
+
+Once injected, the HUD behaves identically to the npm-installed version:
+
+* Click a violation to highlight the element on the page.
+* Use filter chips to narrow by severity, WCAG level, or rule set.
+* Click the keyboard icon to activate keyboard mode (tab-order overlay).
+* Use the ignore button to mute a rule for the session.
+* Click the download button to export results as JSON.
+
+Ignore rules are stored in `localStorage` keyed to the page origin, so they persist across refreshes on the same staging environment.
+
+---
+
+---
+url: /a11y-hud/cookbook/ignore-rules.md
+---
+# Ignore-rules workflow
+
+The ignore list lets you mute specific rules or specific element-rule combinations. Ignores are stored in `localStorage` and survive page reloads. They can be exported as JSON and shared with teammates.
+
+## Using the panel UI
+
+![Ignoring a rule from the panel — violation disappears, the Ignored rules section updates](/img/ignore-rule.gif)
+
+Each violation in the HUD panel has an "Ignore this rule" button in its footer. Clicking it:
+
+1. Adds an entry to the ignore list.
+2. Triggers an immediate rescan.
+3. The violation disappears from the list.
+
+The "Ignored rules" section is always present at the bottom of the panel, collapsed by default. When there are no ignores it shows "No rules ignored yet." After adding ignores it lists each entry. Click the section header to expand it.
+
+From the Ignored rules section you can:
+
+* **Remove** an individual ignore (the violation reappears on the next scan).
+* **Export** the full ignore list as a JSON file.
+* **Import** a JSON file to replace the current list.
+* **Clear all** ignores at once.
+
+## Headless API
+
+```js
+import {
+  addIgnore,
+  removeIgnore,
+  clearIgnores,
+  listIgnores,
+  exportIgnores,
+  importIgnores,
+} from "a11y-hud";
+```
+
+### Ignore a whole rule
+
+```js
+addIgnore("color-contrast");
+// All color-contrast violations are suppressed across the whole page
+```
+
+### Ignore a rule on a specific element
+
+```js
+addIgnore("label", "#legacy-input");
+// Only suppresses the label rule for #legacy-input; other label violations remain
+```
+
+The selector must match the selector in the violation's target path (shown in the violation detail in the panel).
+
+### List current ignores
+
+```js
+const entries = listIgnores();
+// [{ ruleId: "color-contrast" }, { ruleId: "label", selector: "#legacy-input" }]
+```
+
+### Export and import
+
+```js
+// Export as JSON string
+const json = exportIgnores();
+// '[ {"ruleId":"color-contrast"}, {"ruleId":"label","selector":"#legacy-input"} ]'
+
+// Save to a file (browser)
+const blob = new Blob([json], { type: "application/json" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = "a11y-ignores.json";
+a.click();
+
+// Import from a JSON string
+importIgnores(json);
+```
+
+### Via the instance API
+
+```js
+const hud = mount({ theme: "auto" });
+
+hud.ignores.add("color-contrast");
+hud.ignores.add("label", "#my-input");
+hud.ignores.remove("color-contrast");
+hud.ignores.clear();
+hud.ignores.list();
+hud.ignores.exportJson();
+hud.ignores.importJson(json);
+```
+
+## Sharing ignore lists across a team
+
+A common pattern for a shared staging environment:
+
+1. A QA lead opens the HUD on staging, mutes known false positives using the panel, and exports the ignore list.
+2. The JSON file is committed to the repo at a known path (e.g., `a11y-ignores.json`).
+3. CI loads the file before running headless scans:
+
+```ts
+// ci/a11y.ts
+import ignores from "../a11y-ignores.json" assert { type: "json" };
+import { importIgnores, runScan } from "a11y-hud";
+
+importIgnores(JSON.stringify(ignores));
+const results = await runScan(document.body);
+```
+
+4. Other team members import the same file into their local HUD:
+   * Open the HUD panel.
+   * Scroll to "Ignored rules".
+   * Click "Import" and select `a11y-ignores.json`.
+
+## localStorage key
+
+The ignore list is stored at `localStorage.getItem("a11y-hud:ignores")` on the current origin. Ignores are scoped per origin (not per path), so they apply to all pages on the same domain.
+
+## What ignores don't do
+
+* They don't suppress violations in the exported JSON results (`exportResults()`). The export always reflects the raw scan output.
+* They don't affect Playwright / headless scans unless you explicitly call `importIgnores()` before scanning.
+
+---
+
+---
+url: /a11y-hud/cookbook/keyboard-mode.md
+---
+# Keyboard mode
+
+Keyboard mode switches the HUD panel from the violation list to a tab-order view. Numbered badges appear on the page showing each element's keyboard position, and the panel lists every focusable element in tab order.
+
+## Activating keyboard mode
+
+Click the keyboard icon (⌨) in the HUD toolbar. The panel switches to keyboard mode. Click it again (or press Escape) to return to the violation view.
+
+![Activating keyboard mode — numbered badges appear on the page, panel shows the tab-order list](/img/keyboard-mode.gif)
+
+## Reading the tab-order overlay
+
+Each focusable element on the page gets a numbered badge overlaid at its top-left corner. The number indicates its position in tab order (1-based). Badges use page-relative absolute positioning — they stay in place when you scroll.
+
+The panel lists the same elements by number, along with the element's CSS selector. Clicking an element in the list highlights it on the page.
+
+## Detected violations
+
+Keyboard mode automatically checks for three types of issues:
+
+### `positive-tabindex`
+
+An element has `tabindex` > 0. Positive tabindex values override the natural tab order, making keyboard navigation unpredictable. The fix is almost always to remove the `tabindex` attribute entirely.
+
+### `interactive-excluded`
+
+An interactive element (`<a>`, `<button>`, `<input>`, etc.) has `tabindex="-1"`, removing it from keyboard navigation. Unless this is intentional (e.g., a managed focus pattern), it means keyboard users cannot reach the element.
+
+### `no-focusable-elements`
+
+The scanned scope contains no focusable elements at all. This is only a violation if the scope is expected to contain interactive content.
+
+Detected violations appear at the top of the keyboard panel, separated from the tab-order list.
+
+## Headless API
+
+The keyboard helpers are exported from core for use in tests or scripts.
+
+### `getFocusableElements(scope)`
+
+```ts
+import { getFocusableElements } from "a11y-hud";
+
+const elements = getFocusableElements(document.body);
+// Returns FocusableElementInfo[], sorted by tab order
+// (positive tabindex first, then natural document order)
+
+elements.forEach(({ index, selector, tabIndex }) => {
+  console.log(`Tab ${index}: ${selector} (tabIndex=${tabIndex})`);
+});
+```
+
+### `detectKeyboardViolations(elements, scope?)`
+
+```ts
+import { getFocusableElements, detectKeyboardViolations } from "a11y-hud";
+
+const elements = getFocusableElements(document.body);
+const violations = detectKeyboardViolations(elements, document.body);
+
+violations.forEach(({ type, selector, message }) => {
+  console.warn(`[${type}] ${selector}: ${message}`);
+});
+```
+
+### `injectFocusOrderOverlay(elements)`
+
+```ts
+import { getFocusableElements, injectFocusOrderOverlay } from "a11y-hud";
+
+const elements = getFocusableElements(document.body);
+injectFocusOrderOverlay(elements);
+// Badges are injected into document.body
+// Calling again removes and re-injects them
+```
+
+## Using keyboard helpers in Playwright
+
+```ts
+import { test, expect } from "@playwright/test";
+
+test("tab order has no positive-tabindex violations", async ({ page }) => {
+  await page.goto("http://localhost:5173");
+
+  const violations = await page.evaluate(async () => {
+    const { getFocusableElements, detectKeyboardViolations } = await import(
+      "/node_modules/a11y-hud/dist/index.js"
+    );
+    const elements = getFocusableElements(document.body);
+    return detectKeyboardViolations(elements, document.body).map((v) => v.type);
+  });
+
+  expect(violations.filter((t) => t === "positive-tabindex")).toHaveLength(0);
+});
+```
+
+## What keyboard mode doesn't capture
+
+* **Keyboard trap detection** — whether focus can escape a modal or dialog. axe-core's `scrollable-region-focusable` rule partially covers this.
+* **Focus visibility** — whether the focus indicator is visible. Use axe's `focus-visible` rule set for that.
+* **Arrow-key navigation** — keyboard mode only checks tab order, not ARIA widget patterns (e.g., arrow key navigation inside a listbox). That is covered by axe-core's ARIA rules in the main violation view.
+* **Keystroke capture** — keyboard mode does not intercept keyboard events or simulate key presses.
+
+---
+
+---
+url: /a11y-hud/cookbook/security-model.md
+---
+# Security model
+
+a11y-hud is a **developer-only tool**. It is designed to run in development and staging environments. This page explains the security model, the specific mitigations in place, and the known limitations that are acceptable given the dev-only context.
+
+## Dev-only by design
+
+a11y-hud should never be included in a production build. Bundle it behind a build-time environment check:
+
+```js
+if (import.meta.env.DEV) {
+  const { mount } = await import("a11y-hud");
+  mount();
+}
+```
+
+Or use dead-code elimination so the import is stripped entirely:
+
+```js
+// Vite / Rollup
+if (process.env.NODE_ENV !== "production") {
+  import("a11y-hud").then(({ mount }) => mount());
+}
+```
+
+**Why this matters:** a11y-hud bundles axe-core (~300 KB minified), injects a floating UI, attaches a MutationObserver, and writes to localStorage. None of these belong in a production build.
+
+## Trust model by path
+
+### npm + bundler
+
+When you import from npm, a11y-hud code is bundled by your own build tool and served by your own dev server. The bundle is treated as trusted first-party code, the same as any other npm dependency.
+
+### CDN `<script>` tag
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js"></script>
+```
+
+This loads the UMD bundle from jsDelivr over HTTPS. You are trusting jsDelivr to serve the correct content and trusting that the published npm package has not been compromised. This is the same trust level as any CDN-loaded open-source library.
+
+### Bookmarklet
+
+The bookmarklet loads the UMD bundle from jsDelivr at click time and calls `window.A11yHud.mount()`. The CSP implications are covered in the [CSP compatibility](/cookbook/csp-compatibility) guide.
+
+The bookmarklet trust model is identical to running any developer browser extension or script that loads external code. It is appropriate for poking at staging environments, not for automated testing pipelines.
+
+## Scope injection
+
+The `scope` option accepts a CSS selector string:
+
+```js
+mount({ scope: "#app" });
+// or
+<a11y-hud scope="#app"></a11y-hud>
+```
+
+Internally, the selector is passed to `document.querySelector(selector)`. An invalid CSS selector will throw a `DOMException` at scan time. Since `scope` is a developer-supplied option (not user input from the page), this is acceptable — the developer who configures the tool is responsible for passing a valid selector.
+
+**Mitigation status:** The selector comes from developer configuration, not from page content. It is not sanitized before being passed to `querySelector`, but no sanitization is needed for a dev-tool API that only a developer controls.
+
+## Ignore-rules persistence (`localStorage`)
+
+The ignore list is serialized to `localStorage` under the key `a11y-hud:ignores`. The `importIgnores` function parses JSON from this storage and from user-supplied files. Input validation is applied on import:
+
+* The parsed value must be an array.
+* Each entry must have a `string` `ruleId`.
+* Each entry's `selector` (if present) must be a `string`.
+* Entries that fail validation are silently dropped.
+
+Malformed `localStorage` data (e.g., written by a different tool or corrupted) is silently ignored and does not throw.
+
+## Violation HTML rendering
+
+axe-core results are rendered into the HUD panel's Shadow DOM. The content comes from axe-core's static rule definitions (violation IDs, descriptions, help URLs) and from CSS selectors generated by axe-core for the affected DOM nodes.
+
+**axe-core static content** (violation IDs, descriptions, help text, help URLs) is trusted and not escaped — these are authored strings from a vendored dependency with a known and audited format.
+
+**Node selectors** (the CSS selector paths shown under each violation) are generated by axe-core from the actual DOM. If the inspected page contains element IDs or class names with HTML special characters, those characters will appear unescaped in the panel's Shadow DOM.
+
+**Isolation:** The panel lives entirely inside a Shadow Root (`mode: "open"`). Injected markup cannot escape to the host page via normal DOM traversal. The worst-case outcome is cosmetic corruption of the HUD panel itself, scoped to the developer's own screen.
+
+**Keyboard mode** node selectors are built by a11y-hud's own `buildSelector` helper and ARE escaped via `escapeHtml` before rendering.
+
+## Shadow DOM isolation
+
+The HUD renders inside a Shadow Root. This means:
+
+* Host page CSS cannot style the panel (no unintended visual breakage).
+* Panel CSS cannot leak to the host page.
+* The panel's DOM is not part of the host page's normal DOM tree.
+
+The Shadow Root is created with `mode: "open"`. This is intentional: open mode lets developer tools (e.g., browser DevTools, other a11y tools) inspect the panel's internals. Closed mode would impede debugging and is inappropriate for a dev tool.
+
+## axe-core and cross-origin iframes
+
+axe-core can inspect same-origin `<iframe>` contents. Cross-origin iframes are automatically skipped — this is a browser security constraint enforced by the browser, not by a11y-hud.
+
+## Vulnerability reporting
+
+See [SECURITY.md](https://github.com/arthurvasconcelos/a11y-hud/blob/main/SECURITY.md) for the vulnerability reporting process.
