@@ -1,1 +1,0 @@
-import{_ as t,o as e,c as l,ag as r}from"./chunks/framework.DmiPl2jb.js";const h=JSON.parse('{"title":"For LLMs","description":"","frontmatter":{},"headers":[],"relativePath":"llms.md","filePath":"llms.md"}'),n={name:"llms.md"};function o(s,a,d,i,m,c){return e(),l("div",null,[...a[0]||(a[0]=[r("",12)])])}const u=t(n,[["render",o]]);export{h as __pageData,u as default};
