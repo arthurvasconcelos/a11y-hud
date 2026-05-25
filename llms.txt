@@ -36,4 +36,5 @@ No DevTools required. Drop in with a script tag or an import. Works in every fra
 
 ### Other
 
+- [For LLMs](/a11y-hud/llms.md)
 - [Getting Started](/a11y-hud/guide.md)
