@@ -87,8 +87,8 @@ export default defineConfig({
     socialLinks: [{ icon: "github", link: "https://github.com/arthurvasconcelos/a11y-hud" }],
 
     footer: {
-      message: "Released under the MIT License.",
-      copyright: 'Icons from <a href="https://lucide.dev/">Lucide</a> (MIT).',
+      message: 'Released under the <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>. Icons from <a href="https://lucide.dev/" target="_blank">Lucide</a> (MIT).',
+      copyright: `Copyright © ${new Date().getFullYear()} Arthur Vasconcelos`,
     },
 
     search: {
