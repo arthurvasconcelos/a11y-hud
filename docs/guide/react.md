@@ -29,8 +29,7 @@ yarn add -D @a11y-hud/react
 
 Add `<A11yHud>` to your root component so it mounts once for the entire app:
 
-```tsx
-// App.tsx
+```tsx [App.tsx]
 import { A11yHud } from "@a11y-hud/react";
 
 export default function App() {

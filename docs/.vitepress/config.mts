@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import type { DefaultTheme, HeadConfig, TransformContext } from "vitepress";
 import { defineConfig } from "vitepress";
 import llmstxt, { copyOrDownloadAsMarkdownButtons } from "vitepress-plugin-llms";
 import { groupIconMdPlugin, groupIconVitePlugin } from "vitepress-plugin-group-icons";
@@ -9,9 +10,67 @@ const { version } = JSON.parse(
 ) as { version: string };
 
 const base = process.env.DOCS_BASE ?? "/a11y-hud/";
+const siteUrl = process.env.SITE_URL ?? "https://arthurvasconcelos.github.io";
+
+function sidebarGuide(): DefaultTheme.SidebarItem[] {
+  return [
+    { text: "Getting Started", link: "/guide/" },
+    {
+      text: "Framework Guides",
+      items: [
+        { text: "Vanilla / Script tag", link: "/guide/vanilla" },
+        { text: "React", link: "/guide/react" },
+        { text: "Vue 3", link: "/guide/vue" },
+        { text: "Angular", link: "/guide/angular" },
+        { text: "Svelte 5", link: "/guide/svelte" },
+        { text: "Solid", link: "/guide/solid" },
+        { text: "Astro", link: "/guide/astro" },
+        { text: "Qwik", link: "/guide/qwik" },
+      ],
+    },
+  ];
+}
+
+function sidebarReference(): DefaultTheme.SidebarItem[] {
+  return [
+    {
+      text: "Reference",
+      items: [
+        { text: "API", link: "/reference/api" },
+        { text: "Theming", link: "/reference/theming" },
+      ],
+    },
+  ];
+}
+
+function sidebarCookbook(): DefaultTheme.SidebarItem[] {
+  return [
+    {
+      text: "Cookbook",
+      items: [
+        { text: "Overview", link: "/cookbook/" },
+        { text: "Route-change rescans", link: "/cookbook/route-change-rescans" },
+        { text: "CI integration", link: "/cookbook/ci-integration" },
+        { text: "Custom severity colors", link: "/cookbook/custom-severity-colors" },
+        { text: "CSP compatibility", link: "/cookbook/csp-compatibility" },
+        { text: "Bookmarklet usage", link: "/cookbook/bookmarklet" },
+        { text: "Ignore-rules workflow", link: "/cookbook/ignore-rules" },
+        { text: "Keyboard mode", link: "/cookbook/keyboard-mode" },
+        { text: "Security model", link: "/cookbook/security-model" },
+      ],
+    },
+  ];
+}
 
 export default defineConfig({
   title: "a11y-hud",
+  description:
+    "Framework-agnostic dev overlay that runs axe-core accessibility audits in your running app — no DevTools required.",
+  lang: "en-US",
+  base,
+  cleanUrls: true,
+  lastUpdated: true,
+
   vite: {
     plugins: [llmstxt(), groupIconVitePlugin()],
   },
@@ -23,15 +82,23 @@ export default defineConfig({
     },
   },
 
-  description:
-    "Framework-agnostic dev overlay that runs axe-core accessibility audits in your running app — no DevTools required.",
-  lang: "en-US",
-  base,
-
   head: [
-    ["link", { rel: "icon", href: "/a11y-hud/favicon.svg", type: "image/svg+xml" }],
+    ["link", { rel: "icon", href: `${base}favicon.svg`, type: "image/svg+xml" }],
     ["meta", { name: "theme-color", content: "#cba6f7" }],
   ],
+
+  transformHead({ pageData, page }: TransformContext): HeadConfig[] {
+    const head: HeadConfig[] = [];
+    const pageUrl = page.replace(/\.md$/, "").replace(/index$/, "");
+    const canonicalUrl = `${siteUrl}${base}${pageUrl}`;
+
+    head.push(["link", { rel: "canonical", href: canonicalUrl }]);
+    head.push(["meta", { property: "og:title", content: pageData.title }]);
+    if (pageData.description) {
+      head.push(["meta", { property: "og:description", content: pageData.description }]);
+    }
+    return head;
+  },
 
   themeConfig: {
     logo: { src: "/favicon.svg", alt: "a11y-hud logo" },
@@ -51,64 +118,42 @@ export default defineConfig({
             text: "Contributing",
             link: "https://github.com/arthurvasconcelos/a11y-hud/blob/main/CONTRIBUTING.md",
           },
+          {
+            text: "Releases",
+            link: "https://github.com/arthurvasconcelos/a11y-hud/releases",
+          },
         ],
       },
       { text: "For LLMs", link: "/llms" },
     ],
 
     sidebar: {
-      "/guide/": [
-        { text: "Getting Started", link: "/guide/" },
-        {
-          text: "Framework Guides",
-          items: [
-            { text: "Vanilla / Script tag", link: "/guide/vanilla" },
-            { text: "React", link: "/guide/react" },
-            { text: "Vue 3", link: "/guide/vue" },
-            { text: "Angular", link: "/guide/angular" },
-            { text: "Svelte 5", link: "/guide/svelte" },
-            { text: "Solid", link: "/guide/solid" },
-            { text: "Astro", link: "/guide/astro" },
-            { text: "Qwik", link: "/guide/qwik" },
-          ],
-        },
-      ],
-      "/reference/": [
-        {
-          text: "Reference",
-          items: [
-            { text: "API", link: "/reference/api" },
-            { text: "Theming", link: "/reference/theming" },
-          ],
-        },
-      ],
-      "/cookbook/": [
-        {
-          text: "Cookbook",
-          items: [
-            { text: "Overview", link: "/cookbook/" },
-            { text: "Route-change rescans", link: "/cookbook/route-change-rescans" },
-            { text: "CI integration", link: "/cookbook/ci-integration" },
-            { text: "Custom severity colors", link: "/cookbook/custom-severity-colors" },
-            { text: "CSP compatibility", link: "/cookbook/csp-compatibility" },
-            { text: "Bookmarklet usage", link: "/cookbook/bookmarklet" },
-            { text: "Ignore-rules workflow", link: "/cookbook/ignore-rules" },
-            { text: "Keyboard mode", link: "/cookbook/keyboard-mode" },
-            { text: "Security model", link: "/cookbook/security-model" },
-          ],
-        },
-      ],
+      "/guide/": sidebarGuide(),
+      "/reference/": sidebarReference(),
+      "/cookbook/": sidebarCookbook(),
     },
 
     socialLinks: [{ icon: "github", link: "https://github.com/arthurvasconcelos/a11y-hud" }],
 
     footer: {
-      message: 'Released under the <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>. Icons from <a href="https://lucide.dev/" target="_blank">Lucide</a> (MIT).',
-      copyright: `Copyright © ${new Date().getFullYear()} Arthur Vasconcelos`,
+      message: 'Released under the <a href="https://github.com/arthurvasconcelos/a11y-hud/blob/main/LICENSE" target="_blank">MIT License</a>. Icons from <a href="https://lucide.dev/" target="_blank">Lucide</a> (MIT).',
+      copyright: `Copyright © ${new Date().getFullYear()} <a href="https://github.com/arthurvasconcelos" target="_blank">Arthur Vasconcelos</a>`,
     },
 
     search: {
       provider: "local",
+      options: {
+        miniSearch: {
+          searchOptions: {
+            boostDocument(documentId: string) {
+              if (documentId.includes("/guide/")) return 2;
+              if (documentId.includes("/reference/")) return 1.5;
+              if (documentId.includes("/cookbook/")) return 1.2;
+              return 1;
+            },
+          },
+        },
+      },
     },
 
     editLink: {

@@ -1,3 +1,8 @@
+---
+description: Built-in themes and CSS custom properties for customising a11y-hud's appearance.
+outline: deep
+---
+
 # Theming
 
 a11y-hud's visual design is fully driven by CSS custom properties on the `<a11y-hud>` host element. Custom properties pierce the Shadow DOM boundary by design, so you can override any token from the host page's CSS.

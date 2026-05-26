@@ -1,3 +1,8 @@
+---
+description: Full API reference for a11y-hud — mount options, instance methods, headless scanning, bookmarklet generation, and ignore-rules API.
+outline: deep
+---
+
 # API Reference
 
 ## Core (`a11y-hud`)

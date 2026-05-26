@@ -82,8 +82,7 @@ export class RootComponent implements OnInit {
 
 ## SvelteKit
 
-```svelte
-<!-- src/routes/+layout.svelte -->
+```svelte [src/routes/+layout.svelte]
 <script lang="ts">
   import { page } from "$app/state";
   import { useA11yHud } from "@a11y-hud/svelte";

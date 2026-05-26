@@ -27,8 +27,7 @@ yarn add -D @a11y-hud/svelte
 
 ## Quick start — component
 
-```svelte
-<!-- App.svelte -->
+```svelte [App.svelte]
 <script lang="ts">
   import { A11yHud } from "@a11y-hud/svelte";
 

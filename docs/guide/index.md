@@ -1,3 +1,7 @@
+---
+description: Get started with a11y-hud — install the package, mount the overlay, and run your first accessibility audit in any framework.
+---
+
 # Getting Started
 
 a11y-hud is a dev-only overlay that runs [axe-core](https://github.com/dequelabs/axe-core) accessibility audits inside your running web app. It renders a floating panel listing every detected violation — no browser extension, no build-time transformation, no framework lock-in.

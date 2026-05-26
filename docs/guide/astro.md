@@ -6,9 +6,8 @@ Astro doesn't have a dedicated `@a11y-hud/astro` package because Astro delegates
 
 For Astro sites without islands (or to audit the full page including static content), use the vanilla core directly in a layout component:
 
-```astro
+```astro [layouts/BaseLayout.astro]
 ---
-// layouts/BaseLayout.astro
 const isDev = import.meta.env.DEV;
 ---
 
@@ -46,10 +45,9 @@ The vanilla core mounts once and auto-rescans on DOM mutations — it picks up i
 
 ## Path 2 — Adapter inside an island
 
-If you want rescans tied to a specific island's render lifecycle, use the matching framework adapter inside that island:
+If you want rescans tied to a specific island's render lifecycle, use the matching framework adapter inside that island. This example uses the React adapter — swap in the Vue, Svelte, or Solid adapter to match your island's framework:
 
-```tsx
-// src/components/DevTools.tsx  (React island)
+```tsx [src/components/DevTools.tsx]
 import { A11yHud } from "@a11y-hud/react";
 
 export default function DevTools() {
@@ -58,9 +56,8 @@ export default function DevTools() {
 }
 ```
 
-```astro
+```astro [layouts/BaseLayout.astro]
 ---
-// layouts/BaseLayout.astro
 import DevTools from "../components/DevTools.tsx";
 ---
 

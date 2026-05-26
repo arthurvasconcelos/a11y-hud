@@ -27,8 +27,7 @@ yarn add -D @a11y-hud/vue
 
 ## Quick start — component
 
-```vue
-<!-- App.vue -->
+```vue [App.vue]
 <script setup lang="ts">
 import { A11yHud } from "@a11y-hud/vue";
 </script>
@@ -45,8 +44,7 @@ const isDev = import.meta.env.DEV;
 
 Or with `<script setup>` only:
 
-```vue
-<!-- App.vue -->
+```vue [App.vue]
 <script setup lang="ts">
 import { A11yHud } from "@a11y-hud/vue";
 

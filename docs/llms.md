@@ -1,3 +1,8 @@
+---
+prev: false
+next: false
+---
+
 # For LLMs
 
 a11y-hud provides machine-readable documentation endpoints so AI assistants and LLM-powered tools can understand this library accurately.
