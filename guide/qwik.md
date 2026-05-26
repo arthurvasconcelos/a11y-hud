@@ -37,7 +37,7 @@ export default component$(() => {
 });
 ```
 
-Or, if you have a bundler setup that supports npm imports in Qwik:
+Or, if you have a bundler setup that supports npm imports in Qwik, add it to any dev-only entry point:
 
 ```ts [src/entry.dev.ts]
 import { mount } from "a11y-hud";

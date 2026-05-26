@@ -48,7 +48,7 @@ The vanilla core mounts once and auto-rescans on DOM mutations — it picks up i
 
 ## Path 2 — Adapter inside an island
 
-If you want rescans tied to a specific island's render lifecycle, use the matching framework adapter inside that island:
+If you want rescans tied to a specific island's render lifecycle, use the matching framework adapter inside that island. This example uses the React adapter — swap in the Vue, Svelte, or Solid adapter to match your island's framework:
 
 ```tsx [src/components/DevTools.tsx]
 import { A11yHud } from "@a11y-hud/react";

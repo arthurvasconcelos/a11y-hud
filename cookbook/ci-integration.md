@@ -166,9 +166,9 @@ Common axe tag values:
 
 ## Respecting the ignore list in CI
 
-The ignore list lives in `localStorage`, which doesn't exist in Node or Playwright by default. If you maintain an ignore list in the HUD panel and want CI to respect it, export the list as JSON and load it before scanning:
+The ignore list lives in `localStorage`, which doesn't exist in Node or Playwright by default. If you maintain an ignore list in the HUD panel and want CI to respect it, export the list from the HUD panel as `ignores.json`, commit that file to your repo, then load it before scanning:
 
-```ts [ignores.json]
+```ts
 import ignoreList from "./ignores.json" assert { type: "json" };
 import { importIgnores, runScan } from "a11y-hud";
 

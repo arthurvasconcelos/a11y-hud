@@ -917,7 +917,7 @@ The vanilla core mounts once and auto-rescans on DOM mutations — it picks up i
 
 ## Path 2 — Adapter inside an island
 
-If you want rescans tied to a specific island's render lifecycle, use the matching framework adapter inside that island:
+If you want rescans tied to a specific island's render lifecycle, use the matching framework adapter inside that island. This example uses the React adapter — swap in the Vue, Svelte, or Solid adapter to match your island's framework:
 
 ```tsx [src/components/DevTools.tsx]
 import { A11yHud } from "@a11y-hud/react";
@@ -1008,7 +1008,7 @@ export default component$(() => {
 });
 ```
 
-Or, if you have a bundler setup that supports npm imports in Qwik:
+Or, if you have a bundler setup that supports npm imports in Qwik, add it to any dev-only entry point:
 
 ```ts [src/entry.dev.ts]
 import { mount } from "a11y-hud";
@@ -2072,9 +2072,9 @@ Common axe tag values:
 
 ## Respecting the ignore list in CI
 
-The ignore list lives in `localStorage`, which doesn't exist in Node or Playwright by default. If you maintain an ignore list in the HUD panel and want CI to respect it, export the list as JSON and load it before scanning:
+The ignore list lives in `localStorage`, which doesn't exist in Node or Playwright by default. If you maintain an ignore list in the HUD panel and want CI to respect it, export the list from the HUD panel as `ignores.json`, commit that file to your repo, then load it before scanning:
 
-```ts [ignores.json]
+```ts
 import ignoreList from "./ignores.json" assert { type: "json" };
 import { importIgnores, runScan } from "a11y-hud";
 
