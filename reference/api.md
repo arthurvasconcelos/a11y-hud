@@ -1,6 +1,10 @@
 ---
 url: /a11y-hud/reference/api.md
+description: >-
+  Full API reference for a11y-hud — mount options, instance methods, headless
+  scanning, bookmarklet generation, and ignore-rules API.
 ---
+
 # API Reference
 
 ## Core (`a11y-hud`)

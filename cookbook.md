@@ -1,6 +1,10 @@
 ---
 url: /a11y-hud/cookbook.md
+description: >-
+  Recipes and how-to guides for common a11y-hud use cases — route rescans, CI
+  integration, CSP, theming, and more.
 ---
+
 # Cookbook
 
 Practical recipes for common a11y-hud tasks.

@@ -1,6 +1,10 @@
 ---
 url: /a11y-hud/guide.md
+description: >-
+  Get started with a11y-hud — install the package, mount the overlay, and run
+  your first accessibility audit in any framework.
 ---
+
 # Getting Started
 
 a11y-hud is a dev-only overlay that runs [axe-core](https://github.com/dequelabs/axe-core) accessibility audits inside your running web app. It renders a floating panel listing every detected violation — no browser extension, no build-time transformation, no framework lock-in.
@@ -1073,7 +1077,11 @@ There is currently no `@a11y-hud/qwik` package. The vanilla core covers the prim
 
 ---
 url: /a11y-hud/reference/api.md
+description: >-
+  Full API reference for a11y-hud — mount options, instance methods, headless
+  scanning, bookmarklet generation, and ignore-rules API.
 ---
+
 # API Reference
 
 ## Core (`a11y-hud`)
@@ -1484,7 +1492,11 @@ Note: `unmount()` is intentionally omitted from adapters — the adapter lifecyc
 
 ---
 url: /a11y-hud/reference/theming.md
+description: >-
+  Built-in themes and CSS custom properties for customising a11y-hud's
+  appearance.
 ---
+
 # Theming
 
 a11y-hud's visual design is fully driven by CSS custom properties on the `<a11y-hud>` host element. Custom properties pierce the Shadow DOM boundary by design, so you can override any token from the host page's CSS.
@@ -1713,7 +1725,11 @@ See the [Custom severity colors cookbook](/cookbook/custom-severity-colors) for 
 
 ---
 url: /a11y-hud/cookbook.md
+description: >-
+  Recipes and how-to guides for common a11y-hud use cases — route rescans, CI
+  integration, CSP, theming, and more.
 ---
+
 # Cookbook
 
 Practical recipes for common a11y-hud tasks.

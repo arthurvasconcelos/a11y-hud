@@ -19,12 +19,12 @@ No DevTools required. Drop in with a script tag or an import. Works in every fra
 
 ### Reference
 
-- [API Reference](/a11y-hud/reference/api.md)
-- [Theming](/a11y-hud/reference/theming.md)
+- [API Reference](/a11y-hud/reference/api.md): Full API reference for a11y-hud — mount options, instance methods, headless scanning, bookmarklet generation, and ignore-rules API.
+- [Theming](/a11y-hud/reference/theming.md): Built-in themes and CSS custom properties for customising a11y-hud's appearance.
 
 ### Cookbook
 
-- [Cookbook](/a11y-hud/cookbook.md)
+- [Cookbook](/a11y-hud/cookbook.md): Recipes and how-to guides for common a11y-hud use cases — route rescans, CI integration, CSP, theming, and more.
 - [Route-change rescans](/a11y-hud/cookbook/route-change-rescans.md)
 - [CI integration](/a11y-hud/cookbook/ci-integration.md)
 - [Custom severity colors](/a11y-hud/cookbook/custom-severity-colors.md)
@@ -37,4 +37,4 @@ No DevTools required. Drop in with a script tag or an import. Works in every fra
 ### Other
 
 - [For LLMs](/a11y-hud/llms.md)
-- [Getting Started](/a11y-hud/guide.md)
+- [Getting Started](/a11y-hud/guide.md): Get started with a11y-hud — install the package, mount the overlay, and run your first accessibility audit in any framework.
