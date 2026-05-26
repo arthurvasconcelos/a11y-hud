@@ -878,9 +878,8 @@ Astro doesn't have a dedicated `@a11y-hud/astro` package because Astro delegates
 
 For Astro sites without islands (or to audit the full page including static content), use the vanilla core directly in a layout component:
 
-```astro
+```astro [layouts/BaseLayout.astro]
 ---
-// layouts/BaseLayout.astro
 const isDev = import.meta.env.DEV;
 ---
 
@@ -920,8 +919,7 @@ The vanilla core mounts once and auto-rescans on DOM mutations — it picks up i
 
 If you want rescans tied to a specific island's render lifecycle, use the matching framework adapter inside that island:
 
-```tsx
-// src/components/DevTools.tsx  (React island)
+```tsx [src/components/DevTools.tsx]
 import { A11yHud } from "@a11y-hud/react";
 
 export default function DevTools() {
@@ -930,9 +928,8 @@ export default function DevTools() {
 }
 ```
 
-```astro
+```astro [layouts/BaseLayout.astro]
 ---
-// layouts/BaseLayout.astro
 import DevTools from "../components/DevTools.tsx";
 ---
 
@@ -1013,8 +1010,7 @@ export default component$(() => {
 
 Or, if you have a bundler setup that supports npm imports in Qwik:
 
-```ts
-// src/entry.dev.ts  (or any dev-only entry point)
+```ts [src/entry.dev.ts]
 import { mount } from "a11y-hud";
 
 if (typeof window !== "undefined") {
@@ -2078,8 +2074,7 @@ Common axe tag values:
 
 The ignore list lives in `localStorage`, which doesn't exist in Node or Playwright by default. If you maintain an ignore list in the HUD panel and want CI to respect it, export the list as JSON and load it before scanning:
 
-```ts
-// ignores.json — export from the HUD panel and commit to the repo
+```ts [ignores.json]
 import ignoreList from "./ignores.json" assert { type: "json" };
 import { importIgnores, runScan } from "a11y-hud";
 
