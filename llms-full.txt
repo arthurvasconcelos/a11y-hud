@@ -2740,6 +2740,7 @@ See [SECURITY.md](https://github.com/arthurvasconcelos/a11y-hud/blob/main/SECURI
 ---
 url: /a11y-hud/llms.md
 ---
+
 # For LLMs
 
 a11y-hud provides machine-readable documentation endpoints so AI assistants and LLM-powered tools can understand this library accurately.
