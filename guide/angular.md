@@ -32,8 +32,7 @@ yarn add -D @a11y-hud/angular
 
 `A11yHudComponent` is a standalone component with selector `a11y-hud-angular`.
 
-```typescript
-// app.component.ts
+```typescript [app.component.ts]
 import { Component, isDevMode } from "@angular/core";
 import { A11yHudComponent } from "@a11y-hud/angular";
 

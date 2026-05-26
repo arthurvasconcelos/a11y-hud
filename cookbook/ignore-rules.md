@@ -101,8 +101,7 @@ A common pattern for a shared staging environment:
 2. The JSON file is committed to the repo at a known path (e.g., `a11y-ignores.json`).
 3. CI loads the file before running headless scans:
 
-```ts
-// ci/a11y.ts
+```ts [ci/a11y.ts]
 import ignores from "../a11y-ignores.json" assert { type: "json" };
 import { importIgnores, runScan } from "a11y-hud";
 

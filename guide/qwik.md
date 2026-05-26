@@ -15,8 +15,7 @@ Rules that inspect DOM structure, ARIA attributes, color contrast, and label ass
 
 Use the vanilla core in your root layout:
 
-```tsx
-// src/routes/layout.tsx
+```tsx [src/routes/layout.tsx]
 import { component$ } from "@builder.io/qwik";
 import { isDev } from "@builder.io/qwik/build";
 

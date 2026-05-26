@@ -301,8 +301,7 @@ yarn add -D @a11y-hud/react
 
 Add `<A11yHud>` to your root component so it mounts once for the entire app:
 
-```tsx
-// App.tsx
+```tsx [App.tsx]
 import { A11yHud } from "@a11y-hud/react";
 
 export default function App() {
@@ -429,8 +428,7 @@ yarn add -D @a11y-hud/vue
 
 ## Quick start — component
 
-```vue
-<!-- App.vue -->
+```vue [App.vue]
 <script setup lang="ts">
 import { A11yHud } from "@a11y-hud/vue";
 </script>
@@ -447,8 +445,7 @@ const isDev = import.meta.env.DEV;
 
 Or with `<script setup>` only:
 
-```vue
-<!-- App.vue -->
+```vue [App.vue]
 <script setup lang="ts">
 import { A11yHud } from "@a11y-hud/vue";
 
@@ -557,8 +554,7 @@ yarn add -D @a11y-hud/angular
 
 `A11yHudComponent` is a standalone component with selector `a11y-hud-angular`.
 
-```typescript
-// app.component.ts
+```typescript [app.component.ts]
 import { Component, isDevMode } from "@angular/core";
 import { A11yHudComponent } from "@a11y-hud/angular";
 
@@ -663,8 +659,7 @@ yarn add -D @a11y-hud/svelte
 
 ## Quick start — component
 
-```svelte
-<!-- App.svelte -->
+```svelte [App.svelte]
 <script lang="ts">
   import { A11yHud } from "@a11y-hud/svelte";
 
@@ -782,8 +777,7 @@ yarn add -D @a11y-hud/solid
 
 ## Quick start — component
 
-```tsx
-// App.tsx
+```tsx [App.tsx]
 import { A11yHud } from "@a11y-hud/solid";
 
 export default function App() {
@@ -995,8 +989,7 @@ Rules that inspect DOM structure, ARIA attributes, color contrast, and label ass
 
 Use the vanilla core in your root layout:
 
-```tsx
-// src/routes/layout.tsx
+```tsx [src/routes/layout.tsx]
 import { component$ } from "@builder.io/qwik";
 import { isDev } from "@builder.io/qwik/build";
 
@@ -1857,8 +1850,7 @@ export class RootComponent implements OnInit {
 
 ## SvelteKit
 
-```svelte
-<!-- src/routes/+layout.svelte -->
+```svelte [src/routes/+layout.svelte]
 <script lang="ts">
   import { page } from "$app/state";
   import { useA11yHud } from "@a11y-hud/svelte";
@@ -1937,8 +1929,7 @@ npm install --save-dev a11y-hud @playwright/test
 
 ### Basic test
 
-```ts
-// tests/a11y.spec.ts
+```ts [tests/a11y.spec.ts]
 import { test, expect } from "@playwright/test";
 import { chromium } from "playwright";
 
@@ -1961,8 +1952,7 @@ test("homepage has no critical accessibility violations", async ({ page }) => {
 
 If a11y-hud is already installed as a dev dependency in your test target app, import it directly:
 
-```ts
-// tests/a11y.spec.ts
+```ts [tests/a11y.spec.ts]
 import { test, expect } from "@playwright/test";
 
 test("no critical violations", async ({ page }) => {
@@ -2037,8 +2027,7 @@ jsdom doesn't compute CSS styles, so color-contrast and focus-indicator rules wo
 
 ## GitHub Actions example
 
-```yaml
-# .github/workflows/a11y.yml
+```yaml [.github/workflows/a11y.yml]
 name: A11y
 
 on:
@@ -2498,8 +2487,7 @@ A common pattern for a shared staging environment:
 2. The JSON file is committed to the repo at a known path (e.g., `a11y-ignores.json`).
 3. CI loads the file before running headless scans:
 
-```ts
-// ci/a11y.ts
+```ts [ci/a11y.ts]
 import ignores from "../a11y-ignores.json" assert { type: "json" };
 import { importIgnores, runScan } from "a11y-hud";
 

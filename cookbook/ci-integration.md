@@ -19,8 +19,7 @@ npm install --save-dev a11y-hud @playwright/test
 
 ### Basic test
 
-```ts
-// tests/a11y.spec.ts
+```ts [tests/a11y.spec.ts]
 import { test, expect } from "@playwright/test";
 import { chromium } from "playwright";
 
@@ -43,8 +42,7 @@ test("homepage has no critical accessibility violations", async ({ page }) => {
 
 If a11y-hud is already installed as a dev dependency in your test target app, import it directly:
 
-```ts
-// tests/a11y.spec.ts
+```ts [tests/a11y.spec.ts]
 import { test, expect } from "@playwright/test";
 
 test("no critical violations", async ({ page }) => {
@@ -119,8 +117,7 @@ jsdom doesn't compute CSS styles, so color-contrast and focus-indicator rules wo
 
 ## GitHub Actions example
 
-```yaml
-# .github/workflows/a11y.yml
+```yaml [.github/workflows/a11y.yml]
 name: A11y
 
 on:

@@ -30,8 +30,7 @@ yarn add -D @a11y-hud/solid
 
 ## Quick start — component
 
-```tsx
-// App.tsx
+```tsx [App.tsx]
 import { A11yHud } from "@a11y-hud/solid";
 
 export default function App() {
