@@ -41,7 +41,7 @@
     "svelte": "^5.55.9",
     "svelte-check": "^4.4.7",
     "vite": "^8.0.14",
-    "vite-plugin-dts": "^5.0.0",
+    "vite-plugin-dts": "^5.0.1",
     "vitest": "^4.1.7"
   },
   "engines": {
