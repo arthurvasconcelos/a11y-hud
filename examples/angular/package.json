@@ -25,6 +25,6 @@
     "@angular/build": "^21.2.12",
     "@angular/cli": "^21.2.11",
     "@angular/compiler-cli": "^21.0.0",
-    "typescript": "~6.0.3"
+    "typescript": "~7.0.2"
   }
 }
