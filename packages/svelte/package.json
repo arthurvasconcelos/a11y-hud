@@ -33,16 +33,16 @@
     "svelte": ">=5"
   },
   "devDependencies": {
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.61.1",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@testing-library/svelte": "^5.3.1",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^29.1.1",
     "svelte": "^5.55.9",
     "svelte-check": "^4.4.7",
     "vite": "^8.0.14",
     "vite-plugin-dts": "^5.0.0",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=22"
