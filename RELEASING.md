@@ -19,7 +19,7 @@ The `Release` workflow (`.github/workflows/release.yml`) runs on every push to `
 1. If there are pending changesets on `main`, the action opens (or updates) a **"chore: release packages"** pull request that runs `changeset version` for you — it bumps `package.json` versions and updates each `CHANGELOG.md`.
 2. When that release PR is merged, the next run finds no pending changesets and instead runs `pnpm release` (`pnpm build && changeset publish`), publishing every package whose version is not yet on npm and pushing the git tags.
 
-The workflow needs the `NPM_TOKEN` repository secret for publishing; the GitHub token is provided automatically. After publishing, the action pushes one git tag per package (`a11y-hud@1.2.3`, `@a11y-hud/react@1.2.3`, …) and creates a GitHub Release for each tag from its CHANGELOG entry.
+Publishing authenticates with npm [trusted publishing](https://docs.npmjs.com/trusted-publishers): the job has the `id-token: write` permission and pnpm exchanges the GitHub OIDC token for a short-lived npm credential, so no npm token is stored in the repository. Each package on npmjs.com has a trusted publisher configured for this repository and the `release.yml` workflow, with direct publishing enabled. The GitHub token is provided automatically. After publishing, the action pushes one git tag per package (`a11y-hud@1.2.3`, `@a11y-hud/react@1.2.3`, …) and creates a GitHub Release for each tag from its CHANGELOG entry.
 
 After the publish run completes:
 

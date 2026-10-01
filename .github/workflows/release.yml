@@ -15,6 +15,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v7
@@ -38,5 +39,3 @@ jobs:
           publish-script: pnpm release
           pr-title: "chore: release packages"
           commit-message: "chore: release packages"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
