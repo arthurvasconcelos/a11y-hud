@@ -62,6 +62,12 @@ describe("A11yHud component", () => {
     expect(mount).toHaveBeenCalledWith(expect.objectContaining({ autoScan: false }));
   });
 
+  it("passes runOnly prop to mount()", async () => {
+    vueMount(A11yHud, { props: { runOnly: ["wcag2a", "wcag2aa"] } });
+    await nextTick();
+    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ runOnly: ["wcag2a", "wcag2aa"] }));
+  });
+
   it("calls instance.unmount() when component unmounts", async () => {
     const wrapper = vueMount(A11yHud);
     await nextTick();

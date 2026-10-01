@@ -22,7 +22,7 @@ export async function runScan(
     .run(target, options)
     .then((results) => {
       const ignores = listIgnores();
-      results.violations = results.violations
+      const violations = results.violations
         .map((v) => ({
           ...v,
           nodes: v.nodes.filter((node) => {
@@ -46,7 +46,7 @@ export async function runScan(
           return nodes.length > 0 ? { ...v, nodes } : null;
         })
         .filter((v): v is NonNullable<typeof v> => v !== null);
-      return results;
+      return { ...results, violations };
     })
     .finally(() => {
       activeRun = null;

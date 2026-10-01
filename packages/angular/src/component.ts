@@ -69,7 +69,7 @@ export class A11yHudComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  runScan(): Promise<AxeResults> {
+  runScan(): Promise<AxeResults | null> {
     return this.service.runScan();
   }
 

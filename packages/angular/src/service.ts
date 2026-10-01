@@ -54,10 +54,8 @@ export class A11yHudService implements OnDestroy {
     el.setAttribute("debounce", String(debounce));
   }
 
-  runScan(): Promise<AxeResults> {
-    return this.ngZone.runOutsideAngular(
-      () => this.instance?.runScan() ?? Promise.resolve(null as unknown as AxeResults)
-    );
+  runScan(): Promise<AxeResults | null> {
+    return this.ngZone.runOutsideAngular(() => this.instance?.runScan() ?? Promise.resolve(null));
   }
 
   setTheme(theme: Theme): void {

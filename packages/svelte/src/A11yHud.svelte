@@ -2,7 +2,7 @@
 import { useA11yHud } from "./hook.svelte.js";
 import type { A11yHudProps, UseA11yHudOptions } from "./types.js";
 
-const { theme, scope, autoScan, debounce }: A11yHudProps = $props();
+const { theme, scope, autoScan, debounce, runOnly }: A11yHudProps = $props();
 
 useA11yHud(
   (): UseA11yHudOptions => ({
@@ -10,6 +10,7 @@ useA11yHud(
     ...(scope !== undefined && { scope }),
     ...(autoScan !== undefined && { autoScan }),
     ...(debounce !== undefined && { debounce }),
+    ...(runOnly !== undefined && { runOnly }),
   })
 );
 </script>

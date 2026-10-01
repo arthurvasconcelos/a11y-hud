@@ -11,7 +11,7 @@ export interface UseA11yHudOptions {
 export type A11yHudProps = UseA11yHudOptions;
 
 export interface UseA11yHudReturn {
-  runScan(): Promise<AxeResults>;
+  runScan(): Promise<AxeResults | null>;
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
   exportResults(): string | null;
@@ -24,5 +24,3 @@ export interface UseA11yHudReturn {
     importJson(json: string): void;
   };
 }
-
-export declare function useA11yHud(getOptions?: () => UseA11yHudOptions): UseA11yHudReturn;

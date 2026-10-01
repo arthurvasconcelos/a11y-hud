@@ -11,7 +11,7 @@ export interface CreateA11yHudOptions {
 export type A11yHudProps = CreateA11yHudOptions;
 
 export interface CreateA11yHudReturn {
-  runScan(): Promise<AxeResults>;
+  runScan(): Promise<AxeResults | null>;
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
   exportResults(): string | null;

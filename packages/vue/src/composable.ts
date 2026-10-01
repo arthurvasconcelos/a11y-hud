@@ -86,8 +86,8 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
     { flush: "post" }
   );
 
-  function runScan(): Promise<AxeResults> {
-    return instanceRef.value?.runScan() ?? Promise.resolve(null as unknown as AxeResults);
+  function runScan(): Promise<AxeResults | null> {
+    return instanceRef.value?.runScan() ?? Promise.resolve(null);
   }
 
   function setTheme(theme: Theme): void {

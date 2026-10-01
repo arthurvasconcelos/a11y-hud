@@ -3,20 +3,7 @@
   "version": "1.0.0-rc.0",
   "description": "Angular adapter for a11y-hud — run axe-core accessibility audits in your Angular app with no DevTools required.",
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/types/a11y-hud-angular.d.ts",
-      "default": "./dist/fesm2022/a11y-hud-angular.mjs"
-    }
-  },
-  "module": "./dist/fesm2022/a11y-hud-angular.mjs",
-  "types": "./dist/types/a11y-hud-angular.d.ts",
   "sideEffects": false,
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md"
-  ],
   "scripts": {
     "build": "ng-packagr -p ng-package.json",
     "dev": "ng-packagr -p ng-package.json --watch",
@@ -70,5 +57,9 @@
     "dev-tools",
     "overlay",
     "hud"
-  ]
+  ],
+  "publishConfig": {
+    "directory": "dist",
+    "linkDirectory": true
+  }
 }

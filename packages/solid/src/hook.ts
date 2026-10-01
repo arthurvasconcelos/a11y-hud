@@ -72,8 +72,8 @@ export function createA11yHud(options: CreateA11yHudOptions = {}): CreateA11yHud
     if (runOnly !== undefined) instanceRef.setRunOnly(runOnly);
   });
 
-  function runScan(): Promise<AxeResults> {
-    return instanceRef?.runScan() ?? Promise.resolve(null as unknown as AxeResults);
+  function runScan(): Promise<AxeResults | null> {
+    return instanceRef?.runScan() ?? Promise.resolve(null);
   }
 
   function setTheme(t: Theme): void {
