@@ -10,7 +10,7 @@ const { version } = JSON.parse(
 ) as { version: string };
 
 const base = process.env.DOCS_BASE ?? "/a11y-hud/";
-const siteUrl = process.env.SITE_URL ?? "https://arthurvasconcelos.github.io";
+const siteUrl = process.env.SITE_URL ?? "https://arthurvasconcelos.com.br";
 
 function sidebarGuide(): DefaultTheme.SidebarItem[] {
   return [
