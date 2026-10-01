@@ -6,13 +6,13 @@ export default defineConfig({
   plugins: [svelte({ compilerOptions: { runes: true } }), svelteTesting()],
   test: {
     environment: "jsdom",
-    include: ["src/**/*.test.ts"],
-    setupFiles: ["src/test-setup.ts"],
+    include: ["tests/unit/**/*.test.ts"],
+    setupFiles: ["tests/unit/setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "lcov"],
       include: ["src/**/*.ts", "src/**/*.svelte"],
-      exclude: ["src/**/*.test.ts", "src/test-setup.ts", "src/index.ts", "src/types.ts"],
+      exclude: ["src/index.ts", "src/types.ts"],
       thresholds: { branches: 80 },
     },
   },

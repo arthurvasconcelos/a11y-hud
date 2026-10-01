@@ -79,8 +79,8 @@ export function useA11yHud(getOptions: () => UseA11yHudOptions = () => ({})): Us
     }
   });
 
-  function runScan(): Promise<AxeResults> {
-    return instanceRef?.runScan() ?? Promise.resolve(null as unknown as AxeResults);
+  function runScan(): Promise<AxeResults | null> {
+    return instanceRef?.runScan() ?? Promise.resolve(null);
   }
 
   function setTheme(t: Theme): void {

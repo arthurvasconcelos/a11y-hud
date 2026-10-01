@@ -69,8 +69,7 @@ export function useA11yHud(options: UseA11yHudOptions = {}): UseA11yHudReturn {
   });
 
   const runScan = useCallback(
-    (): Promise<AxeResults> =>
-      instanceRef.current?.runScan() ?? Promise.resolve(null as unknown as AxeResults),
+    (): Promise<AxeResults | null> => instanceRef.current?.runScan() ?? Promise.resolve(null),
     []
   );
 

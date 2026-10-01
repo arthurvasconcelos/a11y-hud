@@ -1355,3 +1355,160 @@ describe("A11yHudElement — CSSStyleSheet fallback", () => {
     el.remove();
   });
 });
+
+describe("A11yHudElement — scan lifecycle and robustness", () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    await setupMock();
+  });
+
+  afterEach(() => {
+    for (const el of document.querySelectorAll("a11y-hud")) el.remove();
+    localStorage.clear();
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+  });
+
+  async function getAxe() {
+    return (await import("axe-core")).default as unknown as { run: ReturnType<typeof vi.fn> };
+  }
+
+  it("concurrent runScan() calls share the in-flight promise", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    const first = el.runScan();
+    const second = el.runScan();
+    expect(second).toBe(first);
+    const results = await second;
+    expect(results.violations).toHaveLength(1);
+  });
+
+  it("renders an error state and rejects when axe.run throws", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    const axe = await getAxe();
+    axe.run.mockRejectedValueOnce(new Error("axe exploded"));
+    await expect(el.runScan()).rejects.toThrow("axe exploded");
+    const alert = el.shadowRoot?.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain("Scan failed");
+    expect(alert?.textContent).toContain("axe exploded");
+    expect(el.shadowRoot?.querySelector("#btn-rescan")?.hasAttribute("data-scanning")).toBe(false);
+  });
+
+  it("stringifies non-Error rejection values in the error state", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    const axe = await getAxe();
+    axe.run.mockRejectedValueOnce("plain string failure");
+    await expect(el.runScan()).rejects.toBe("plain string failure");
+    expect(el.shadowRoot?.querySelector('[role="alert"]')?.textContent).toContain(
+      "plain string failure"
+    );
+  });
+
+  it("does not render the error state while in keyboard mode", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-keyboard")).not.toBeNull());
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-keyboard")?.click();
+    const axe = await getAxe();
+    axe.run.mockRejectedValueOnce(new Error("kbd failure"));
+    await expect(el.runScan()).rejects.toThrow("kbd failure");
+    expect(el.shadowRoot?.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it("does not touch the DOM when the element is removed before a failing scan settles", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    const axe = await getAxe();
+    axe.run.mockRejectedValueOnce(new Error("late failure"));
+    const pending = el.runScan();
+    el.remove();
+    await expect(pending).rejects.toThrow("late failure");
+    expect(el.shadowRoot?.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it("internal scan triggers swallow rejections instead of surfacing unhandled errors", async () => {
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector("#btn-rescan")).not.toBeNull());
+    const axe = await getAxe();
+    axe.run.mockRejectedValueOnce(new Error("button failure"));
+    el.shadowRoot?.querySelector<HTMLButtonElement>("#btn-rescan")?.click();
+    await vi.waitFor(() =>
+      expect(el.shadowRoot?.querySelector('[role="alert"]')?.textContent).toContain(
+        "button failure"
+      )
+    );
+  });
+
+  it("changing the scope attribute while mounted re-observes the new target", async () => {
+    const section = document.createElement("section");
+    section.id = "late-scope";
+    document.body.appendChild(section);
+    const observe = vi.spyOn(MutationObserver.prototype, "observe");
+
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    observe.mockClear();
+
+    el.setAttribute("scope", "#late-scope");
+    expect(observe).toHaveBeenCalledTimes(1);
+    expect(observe.mock.calls[0]?.[0]).toBe(section);
+    section.remove();
+  });
+
+  it("scopeElement setter restarts the observer only when the element changes", async () => {
+    const a = document.createElement("div");
+    const b = document.createElement("div");
+    document.body.append(a, b);
+    const observe = vi.spyOn(MutationObserver.prototype, "observe");
+
+    const el = createElement();
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    observe.mockClear();
+
+    el.scopeElement = a;
+    expect(observe).toHaveBeenCalledTimes(1);
+    expect(observe.mock.calls[0]?.[0]).toBe(a);
+
+    el.scopeElement = a;
+    expect(observe).toHaveBeenCalledTimes(1);
+
+    el.scopeElement = b;
+    expect(observe).toHaveBeenCalledTimes(2);
+    expect(observe.mock.calls[1]?.[0]).toBe(b);
+    a.remove();
+    b.remove();
+  });
+
+  it("scope changes do not start an observer when auto-scan is off", async () => {
+    const observe = vi.spyOn(MutationObserver.prototype, "observe");
+    const el = createElement();
+    el.setAttribute("auto-scan", "");
+    el.removeAttribute("auto-scan");
+    await vi.waitFor(() => expect(el.shadowRoot?.querySelector(".violation-list")).not.toBeNull());
+    observe.mockClear();
+    el.scopeElement = document.createElement("div");
+    expect(observe).not.toHaveBeenCalled();
+  });
+
+  it("a runtime debounce change is honoured by the live observer", async () => {
+    vi.useFakeTimers();
+    try {
+      const el = createElement();
+      el.setAttribute("debounce", "50");
+      await vi.advanceTimersByTimeAsync(10);
+      const axe = await getAxe();
+      axe.run.mockClear();
+
+      const probe = document.createElement("p");
+      document.body.appendChild(probe);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(axe.run).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(60);
+      expect(axe.run).toHaveBeenCalledTimes(1);
+      probe.remove();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

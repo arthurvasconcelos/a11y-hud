@@ -12,7 +12,7 @@ export interface UseA11yHudOptions {
 export type A11yHudProps = UseA11yHudOptions;
 
 export interface UseA11yHudReturn {
-  runScan(): Promise<AxeResults>;
+  runScan(): Promise<AxeResults | null>;
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
   exportResults(): string | null;

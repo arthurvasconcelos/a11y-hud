@@ -2,8 +2,8 @@ import { cleanup, render } from "@testing-library/svelte";
 import { mount } from "a11y-hud";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import HookWrapper from "../tests/HookWrapper.svelte";
-import type { UseA11yHudReturn } from "./types.js";
+import type { UseA11yHudReturn } from "../../src/types.js";
+import HookWrapper from "../HookWrapper.svelte";
 
 vi.mock("a11y-hud", () => ({
   mount: vi.fn(),

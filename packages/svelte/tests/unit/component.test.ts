@@ -2,7 +2,7 @@ import { cleanup, render } from "@testing-library/svelte";
 import { mount } from "a11y-hud";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import A11yHud from "./A11yHud.svelte";
+import A11yHud from "../../src/A11yHud.svelte";
 
 vi.mock("a11y-hud", () => ({
   mount: vi.fn(),
@@ -11,6 +11,7 @@ vi.mock("a11y-hud", () => ({
 type MockInstance = {
   unmount: ReturnType<typeof vi.fn>;
   setTheme: ReturnType<typeof vi.fn>;
+  setRunOnly: ReturnType<typeof vi.fn>;
   runScan: ReturnType<typeof vi.fn>;
 };
 
@@ -34,6 +35,7 @@ beforeEach(() => {
   mockInstance = {
     unmount: vi.fn(() => mockEl.remove()),
     setTheme: vi.fn(),
+    setRunOnly: vi.fn(),
     runScan: vi.fn().mockResolvedValue({ violations: [] }),
   };
   (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
@@ -71,6 +73,12 @@ describe("A11yHud component", () => {
     render(A11yHud, { props: { debounce: 300 } });
     await tick();
     expect(mount).toHaveBeenCalledWith(expect.objectContaining({ debounce: 300 }));
+  });
+
+  it("passes initial runOnly to mount()", async () => {
+    render(A11yHud, { props: { runOnly: ["wcag2a"] } });
+    await tick();
+    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ runOnly: ["wcag2a"] }));
   });
 
   it("calls instance.unmount() when component is unmounted", async () => {

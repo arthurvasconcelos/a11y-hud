@@ -23,6 +23,10 @@ export const A11yHud = defineComponent({
       type: Number as PropType<number>,
       default: undefined,
     },
+    runOnly: {
+      type: Array as PropType<string[]>,
+      default: undefined,
+    },
   },
   setup(props) {
     useA11yHud(props as A11yHudProps);

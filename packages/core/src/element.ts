@@ -82,7 +82,13 @@ function buildStyleSheet(css: string): CSSStyleSheet | null {
   }
 }
 
-export class A11yHudElement extends HTMLElement {
+// Allow the module to be imported in non-browser environments (SSR, Node
+// test runners) without throwing. The element is only registered when a
+// CustomElementRegistry exists, so nothing runs until the page mounts it.
+const BaseElement: typeof HTMLElement =
+  typeof HTMLElement === "undefined" ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
+
+export class A11yHudElement extends BaseElement {
   static observedAttributes = ["theme", "scope", "auto-scan", "debounce", "run-only"];
 
   private _shadow: ShadowRoot;
@@ -92,7 +98,7 @@ export class A11yHudElement extends HTMLElement {
   private _autoScan = true;
   private _debounceMs = 500;
   private _results: AxeResults | undefined;
-  private _scanning = false;
+  private _activeScan: Promise<AxeResults> | undefined;
   private _mounted = false;
   private _observer: MutationObserver | undefined;
   private _unwatchTheme: (() => void) | undefined;
@@ -110,7 +116,7 @@ export class A11yHudElement extends HTMLElement {
   constructor() {
     super();
     this._shadow = this.attachShadow({ mode: "open" });
-    this._debouncedScan = debounce(() => void this._runScan(), this._debounceMs);
+    this._debouncedScan = debounce(() => this._scheduleScan(), this._debounceMs);
     this._applyStyles();
   }
 
@@ -137,7 +143,7 @@ export class A11yHudElement extends HTMLElement {
       }
     );
     if (this._autoScan) this._startObserver();
-    void this._runScan();
+    this._scheduleScan();
   }
 
   disconnectedCallback(): void {
@@ -160,6 +166,7 @@ export class A11yHudElement extends HTMLElement {
       case "scope":
         this._scopeSelector = value ?? undefined;
         this._scopeElement = undefined;
+        this._restartObserver();
         break;
       case "auto-scan":
         this._autoScan = value !== null;
@@ -176,7 +183,7 @@ export class A11yHudElement extends HTMLElement {
         const parsed = Number.parseInt(value ?? "", 10);
         this._debounceMs = Number.isNaN(parsed) ? 500 : parsed;
         this._debouncedScan.cancel();
-        this._debouncedScan = debounce(() => void this._runScan(), this._debounceMs);
+        this._debouncedScan = debounce(() => this._scheduleScan(), this._debounceMs);
         break;
       }
       case "run-only": {
@@ -197,8 +204,10 @@ export class A11yHudElement extends HTMLElement {
   }
 
   set scopeElement(el: Element | undefined) {
+    const changed = el !== this._scopeElement || this._scopeSelector !== undefined;
     this._scopeElement = el;
     this._scopeSelector = undefined;
+    if (changed) this._restartObserver();
   }
 
   setTheme(theme: Theme): void {
@@ -217,7 +226,7 @@ export class A11yHudElement extends HTMLElement {
     this._updateRunOnlyChips();
   }
 
-  async runScan(): Promise<AxeResults> {
+  runScan(): Promise<AxeResults> {
     return this._runScan();
   }
 
@@ -237,10 +246,13 @@ export class A11yHudElement extends HTMLElement {
     this.dataset.theme = resolveTheme(this._theme);
   }
 
+  private _restartObserver(): void {
+    if (this._mounted && this._autoScan) this._startObserver();
+  }
+
   private _startObserver(): void {
     this._observer?.disconnect();
     const target = this._getScopeTarget();
-    const debouncedScan = this._debouncedScan;
 
     this._observer = new MutationObserver((records) => {
       // Ignore mutations we caused ourselves (adding/removing the highlight
@@ -248,7 +260,8 @@ export class A11yHudElement extends HTMLElement {
       // button triggers a rescan which rebuilds the list and collapses open items.
       if (records.every((r) => r.type === "attributes" && r.attributeName === HIGHLIGHT_ATTR))
         return;
-      debouncedScan();
+      // Read the field at call time so a runtime `debounce` change takes effect.
+      this._debouncedScan();
     });
 
     this._observer.observe(target, {
@@ -259,10 +272,21 @@ export class A11yHudElement extends HTMLElement {
     });
   }
 
-  private async _runScan(): Promise<AxeResults> {
-    if (this._scanning) return this._results ?? ({ violations: [] } as unknown as AxeResults);
-    this._scanning = true;
+  // Fire-and-forget entry point for internal triggers (observer, buttons).
+  // Errors are surfaced in the panel by _runScan, so swallow the rejection here.
+  private _scheduleScan(): void {
+    this._runScan().catch(() => {});
+  }
 
+  private _runScan(): Promise<AxeResults> {
+    if (this._activeScan) return this._activeScan;
+    this._activeScan = this._performScan().finally(() => {
+      this._activeScan = undefined;
+    });
+    return this._activeScan;
+  }
+
+  private async _performScan(): Promise<AxeResults> {
     const rescanBtn = this._shadow.querySelector<HTMLButtonElement>("#btn-rescan");
     if (rescanBtn) {
       rescanBtn.setAttribute("data-scanning", "");
@@ -285,8 +309,10 @@ export class A11yHudElement extends HTMLElement {
       this._results = results;
       this._render();
       return results;
+    } catch (error) {
+      if (this._mounted) this._renderError(error);
+      throw error;
     } finally {
-      this._scanning = false;
       const btn = this._shadow.querySelector<HTMLButtonElement>("#btn-rescan");
       if (btn) {
         btn.removeAttribute("data-scanning");
@@ -351,6 +377,21 @@ export class A11yHudElement extends HTMLElement {
         ${this._renderIgnoredSection()}
       `;
     }
+  }
+
+  private _renderError(error: unknown): void {
+    if (this._keyboardMode) return;
+    const body = this._shadow.querySelector(".panel-body");
+    if (!body) return;
+    const message = error instanceof Error ? error.message : String(error);
+    body.innerHTML = `
+      <div class="empty-state" role="alert">
+        <span class="empty-state-icon" aria-hidden="true">${icon("alert-triangle")}</span>
+        <span class="empty-state-title">Scan failed</span>
+        <span class="empty-state-body">${escapeHtml(message)}</span>
+      </div>
+      ${this._renderIgnoredSection()}
+    `;
   }
 
   private _renderPanel(violations: Result[], total: number): string {
@@ -556,7 +597,7 @@ export class A11yHudElement extends HTMLElement {
     if (!panel) return;
 
     panel.querySelector(".btn-panel-title")?.addEventListener("click", () => this._toggleFilters());
-    panel.querySelector("#btn-rescan")?.addEventListener("click", () => void this._runScan());
+    panel.querySelector("#btn-rescan")?.addEventListener("click", () => this._scheduleScan());
     panel.querySelector("#btn-minimize")?.addEventListener("click", () => {
       this.setAttribute("data-minimized", "");
     });
@@ -633,7 +674,7 @@ export class A11yHudElement extends HTMLElement {
       const ruleId = ignoreBtn.dataset.ignoreRule;
       if (ruleId) {
         addIgnore(ruleId);
-        void this._runScan();
+        this._scheduleScan();
       }
       return;
     }
@@ -644,7 +685,7 @@ export class A11yHudElement extends HTMLElement {
       const selector = removeIgnoreBtn.dataset.removeSelector || undefined;
       if (ruleId) {
         removeIgnore(ruleId, selector);
-        void this._runScan();
+        this._scheduleScan();
       }
       return;
     }
@@ -661,7 +702,7 @@ export class A11yHudElement extends HTMLElement {
 
     if (target.closest(".btn-clear-ignores")) {
       clearIgnores();
-      void this._runScan();
+      this._scheduleScan();
       return;
     }
 
@@ -710,7 +751,7 @@ export class A11yHudElement extends HTMLElement {
           chip.setAttribute("aria-pressed", "true");
         }
         this._updateFilterToggle();
-        void this._runScan();
+        this._scheduleScan();
       }
     }
   }
@@ -957,7 +998,7 @@ export class A11yHudElement extends HTMLElement {
       const reader = new FileReader();
       reader.onload = (evt) => {
         importIgnores((evt.target?.result as string | null) ?? "");
-        void this._runScan();
+        this._scheduleScan();
       };
       reader.readAsText(file);
     };
@@ -1023,4 +1064,6 @@ export class A11yHudElement extends HTMLElement {
   }
 }
 
-customElements.define("a11y-hud", A11yHudElement);
+if (typeof customElements !== "undefined" && !customElements.get("a11y-hud")) {
+  customElements.define("a11y-hud", A11yHudElement);
+}
