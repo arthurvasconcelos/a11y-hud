@@ -8,8 +8,8 @@ Framework adapters rescan after every render commit, which covers most route tra
 ## Why adapters handle most cases automatically
 
 * **React**: `useEffect` with no deps fires after every commit, including route-change renders.
-* **Vue**: `watchPostEffect` fires after every Vue DOM flush.
-* **Angular**: `ngOnChanges` fires when inputs update after navigation.
+* **Vue**: the core's MutationObserver picks up DOM changes from navigation; a post-flush `watch` on `scope` rescans when the scope prop changes.
+* **Angular**: `afterEveryRender` fires after every render commit, including navigation-driven renders.
 * **Svelte 5**: `$effect` fires after every reactive update.
 * **Solid**: `createEffect` tracks reactive reads, including router signals.
 
@@ -60,25 +60,30 @@ watch(
 
 ## Angular Router
 
+Grab the component instance with `@ViewChild` and call `runScan()` on it. (Do not inject `A11yHudService` separately — the component provides its own instance, and a second, un-initialised instance would resolve `null` from `runScan()`.)
+
 ```typescript
-import { Component, OnInit, inject } from "@angular/core";
-import { Router, NavigationEnd } from "@angular/router";
+import { Component, ViewChild, inject } from "@angular/core";
+import { Router, NavigationEnd, RouterOutlet } from "@angular/router";
 import { filter } from "rxjs/operators";
-import { A11yHudService } from "@a11y-hud/angular";
+import { A11yHudComponent } from "@a11y-hud/angular";
 
 @Component({
   standalone: true,
-  template: "<a11y-hud-angular [theme]=\"'auto'\" />",
-  imports: [],
+  imports: [A11yHudComponent, RouterOutlet],
+  template: `
+    <a11y-hud-angular [theme]="'auto'" />
+    <router-outlet />
+  `,
 })
-export class RootComponent implements OnInit {
-  private hud = inject(A11yHudService);
-  private router = inject(Router);
+export class RootComponent {
+  @ViewChild(A11yHudComponent) hud?: A11yHudComponent;
+  private readonly router = inject(Router);
 
-  ngOnInit() {
+  constructor() {
     this.router.events
       .pipe(filter((e) => e instanceof NavigationEnd))
-      .subscribe(() => this.hud.runScan());
+      .subscribe(() => void this.hud?.runScan());
   }
 }
 ```
@@ -89,7 +94,6 @@ export class RootComponent implements OnInit {
 <script lang="ts">
   import { page } from "$app/state";
   import { useA11yHud } from "@a11y-hud/svelte";
-  import { $effect } from "svelte";
 
   const hud = useA11yHud(() => ({ theme: "auto" }));
 

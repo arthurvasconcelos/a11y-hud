@@ -7,7 +7,7 @@ Keyboard mode switches the HUD panel from the violation list to a tab-order view
 
 ## Activating keyboard mode
 
-Click the keyboard icon (⌨) in the HUD toolbar. The panel switches to keyboard mode. Click it again (or press Escape) to return to the violation view.
+Click the keyboard icon (⌨) in the HUD toolbar. The panel switches to keyboard mode. Click it again to return to the violation view. (Pressing Escape minimizes the whole panel; it does not exit keyboard mode.)
 
 ![Activating keyboard mode — numbered badges appear on the page, panel shows the tab-order list](/img/keyboard-mode.gif)
 
@@ -72,10 +72,14 @@ violations.forEach(({ type, selector, message }) => {
 import { getFocusableElements, injectFocusOrderOverlay } from "a11y-hud";
 
 const elements = getFocusableElements(document.body);
-injectFocusOrderOverlay(elements);
+const cleanup = injectFocusOrderOverlay(elements);
 // Badges are injected into document.body
-// Calling again removes and re-injects them
+
+// Later — remove the overlay and its injected <style>
+cleanup();
 ```
+
+The function returns a cleanup function and does **not** remove a previous overlay on its own. Call `cleanup()` before injecting a fresh overlay (for example, after a layout change), otherwise badges from both calls stay on the page.
 
 ## Using keyboard helpers in Playwright
 

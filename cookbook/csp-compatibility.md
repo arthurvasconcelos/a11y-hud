@@ -10,8 +10,9 @@ a11y-hud is a dev tool — it typically runs in environments where CSP is either
 | Source | When | Description |
 |--------|------|-------------|
 | `https://cdn.jsdelivr.net/npm/a11y-hud/…` | Bookmarklet, CDN script tag | UMD bundle loaded from jsDelivr |
-| `https://cdn.jsdelivr.net/npm/axe-core/…` | (Bundled — no separate load) | axe-core is bundled into `a11y-hud` |
 | Inline styles | Always | HUD styles via Constructable Stylesheets inside Shadow DOM |
+
+axe-core is bundled into `a11y-hud` and is never fetched separately — no additional `script-src` entry is needed for it.
 
 ## npm + bundler path (no CDN)
 

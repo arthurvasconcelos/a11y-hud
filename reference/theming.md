@@ -11,7 +11,7 @@ a11y-hud's visual design is fully driven by CSS custom properties on the `<a11y-
 
 ## Built-in themes
 
-![Four HUD panels side by side showing the default, light, github-dark, and github-light themes](/img/themes.png)
+![HUD panels side by side showing the seven concrete themes: default, light, github-dark, github-light, tokyo-night, solarized-dark, and high-contrast](/img/themes.png)
 
 | Theme name | Style | Notes |
 |------------|-------|-------|

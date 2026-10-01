@@ -7,7 +7,7 @@ url: /a11y-hud/guide/angular.md
 
 ## Requirements
 
-* Angular 20 or 21 (two most recent minors supported)
+* Angular 20–22 (peer range `>=20.0.0 <23.0.0`)
 * `a11y-hud` (installed automatically as a dependency)
 
 ## Install
@@ -40,7 +40,9 @@ import { A11yHudComponent } from "@a11y-hud/angular";
   standalone: true,
   imports: [A11yHudComponent],
   template: `
-    <a11y-hud-angular *ngIf="isDev" [theme]="'auto'" />
+    @if (isDev) {
+      <a11y-hud-angular [theme]="'auto'" />
+    }
     <!-- rest of app -->
   `,
 })
@@ -51,21 +53,29 @@ export class AppComponent {
 
 ## Quick start — service
 
-`A11yHudService` is injectable for imperative control:
+`A11yHudService` gives you imperative control without the component. It is declared with `@Injectable()` and no `providedIn`, so you must list it in the component's `providers` array — injecting it without a provider throws `NullInjectorError`. Call `init()` once to mount the HUD; the service unmounts it in `ngOnDestroy`.
 
 ```typescript
 import { Component, OnInit, inject } from "@angular/core";
 import { A11yHudService } from "@a11y-hud/angular";
 
-@Component({ standalone: true, template: "" })
+@Component({
+  standalone: true,
+  providers: [A11yHudService],
+  template: "",
+})
 export class DevComponent implements OnInit {
   private hud = inject(A11yHudService);
 
   ngOnInit() {
-    this.hud.mount({ theme: "auto" });
+    this.hud.init({ theme: "auto" });
   }
 }
 ```
+
+## Server-side rendering
+
+Importing `@a11y-hud/angular` is safe on the server (Angular SSR, Analog): the Custom Element is only registered when `customElements` exists. The HUD mounts in `ngAfterViewInit` (component) or when you call `init()`, which run only in the browser, so nothing is rendered server-side.
 
 ## Inputs
 
@@ -88,17 +98,20 @@ template: `<a11y-hud-angular [scope]="mainContent" />`
 
 ## Route-change rescans
 
-Angular's change detection triggers a rescan via `ngOnChanges` whenever inputs update. For router-driven rescans, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
+The component rescans after every render commit via `afterEveryRender`, which covers router navigations and re-renders that do not change any `@Input()` values. Input changes (`scope`, `theme`, `autoScan`, `debounce`, `runOnly`) are synced in `ngOnChanges`. For explicit router-driven rescans, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
 
-## Instance API (via service)
+## Instance API
+
+Both `A11yHudComponent` (via `@ViewChild`) and `A11yHudService` expose the same methods as [`UseA11yHudReturn`](/reference/api#useahudreturn):
 
 ```typescript
-const hud = this.hud; // A11yHudService instance
-// Same API as UseA11yHudReturn:
-await hud.runScan();
-hud.setTheme("tokyo-night");
-hud.exportResults();
-hud.ignores.add("color-contrast");
+@ViewChild(A11yHudComponent) hud!: A11yHudComponent;
+
+await this.hud.runScan();   // Promise<AxeResults | null> — null if not mounted yet
+this.hud.setTheme("tokyo-night");
+this.hud.setRunOnly(["wcag2aa"]);
+this.hud.exportResults();   // string | null
+this.hud.ignores.add("color-contrast");
 ```
 
-See [`UseA11yHudReturn`](/reference/api#useahudreturn) for full type details.
+The service additionally exposes `init(options?)`, an `initialized` getter, and `syncScope` / `syncTheme` / `syncAutoScan` / `syncDebounce` for pushing option changes to the mounted element. See the [API reference](/reference/api#a11yhudservice) for details.

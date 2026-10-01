@@ -16,26 +16,27 @@ Rules that inspect DOM structure, ARIA attributes, color contrast, and label ass
 Use the vanilla core in your root layout:
 
 ```tsx [src/routes/layout.tsx]
-import { component$ } from "@builder.io/qwik";
+import { component$, Slot } from "@builder.io/qwik";
 import { isDev } from "@builder.io/qwik/build";
 
 export default component$(() => {
   return (
     <>
-      <slot />
+      <Slot />
       {isDev && (
-        <script
-          dangerouslySetInnerHTML={`
-            import('https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js')
-              .then(() => window.A11yHud.mount({ theme: 'auto' }));
-          `}
-          type="module"
-        />
+        <>
+          <script src="https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js" />
+          <script
+            dangerouslySetInnerHTML={`window.A11yHud.mount({ theme: 'auto' });`}
+          />
+        </>
       )}
     </>
   );
 });
 ```
+
+The UMD bundle is a classic script that sets `window.A11yHud`; it is not an ES module, so load it with a `<script src>` tag rather than `import()`.
 
 Or, if you have a bundler setup that supports npm imports in Qwik, add it to any dev-only entry point:
 
@@ -46,6 +47,10 @@ if (typeof window !== "undefined") {
   mount({ theme: "auto" });
 }
 ```
+
+## Server-side rendering
+
+Qwik City renders on the server first. Importing `a11y-hud` there is safe: the Custom Element is only registered when `customElements` exists, and `mount()` is the only thing that touches the DOM. Keep the `mount()` call behind a browser check (as above) or inside a `useVisibleTask$`, and nothing is rendered server-side.
 
 ## Rescanning after interaction
 
@@ -79,9 +84,8 @@ The HUD's built-in `MutationObserver` catches DOM changes from resumed component
 ## Headless scan for CI
 
 ```ts
-import { runScan } from "a11y-hud";
-
-// Run structural checks in a Playwright test after page load
+// Inside page.evaluate() in a Playwright test, after page load
+const { runScan } = await import("/node_modules/a11y-hud/dist/index.js");
 const results = await runScan(document.body);
 ```
 
@@ -89,4 +93,4 @@ For CI integration details, see the [CI integration cookbook](/cookbook/ci-integ
 
 ## Dedicated package
 
-There is currently no `@a11y-hud/qwik` package. The vanilla core covers the primary use case. If community demand surfaces a clear need for deeper integration (e.g., tracking Qwik component resume lifecycle), a dedicated adapter may be added post-1.0.
+There is currently no `@a11y-hud/qwik` package. The vanilla core covers the primary use case. If community demand surfaces a clear need for deeper integration (e.g., tracking Qwik component resume lifecycle), a dedicated adapter may be added in a future release.

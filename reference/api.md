@@ -13,6 +13,8 @@ description: >-
 
 Mounts the `<a11y-hud>` Custom Element and returns an instance for runtime control. If a `<a11y-hud>` element already exists in the document, it is reused.
 
+Importing `a11y-hud` is safe in non-browser environments (SSR, Node test runners): the Custom Element is registered only when `customElements` exists. Nothing touches the DOM until you call `mount()` in the browser.
+
 ```ts
 function mount(options?: MountOptions): A11yHudInstance
 ```
@@ -31,7 +33,7 @@ function mount(options?: MountOptions): A11yHudInstance
 
 ### `A11yHudInstance` {#a11yhudinstance}
 
-Returned by `mount()` and by all framework adapter hooks/composables.
+Returned by `mount()`. Framework adapters return the closely related [`UseA11yHudReturn`](#useahudreturn) shape.
 
 ```ts
 interface A11yHudInstance {
@@ -56,8 +58,8 @@ interface A11yHudInstance {
 | `unmount()` | Removes the `<a11y-hud>` element from the DOM. |
 | `setTheme(theme)` | Switches the active theme at runtime. |
 | `setRunOnly(tags)` | Changes which axe rule-set tags are active. |
-| `runScan()` | Triggers a manual scan. Returns the raw axe results. |
-| `exportResults()` | Returns the most recent scan as a JSON string (or `null` if no scan has run yet). |
+| `runScan()` | Triggers a manual scan and resolves with the axe results (ignored violations already filtered out). If a scan is already in flight, the same pending promise is returned instead of starting a new one. If `axe.run` throws, the panel shows a "Scan failed" state and the promise rejects with the original error. |
+| `exportResults()` | Returns the most recent scan as a JSON string (or `null` if no scan has run yet). Ignored violations are filtered before results are stored, so the export reflects the ignore list. |
 | `ignores.add(ruleId, selector?)` | Adds a rule (or rule + selector) to the ignore list and triggers a rescan. Persisted to `localStorage`. |
 | `ignores.remove(ruleId, selector?)` | Removes a specific ignore entry and triggers a rescan. |
 | `ignores.clear()` | Clears all ignores and triggers a rescan. |
@@ -69,7 +71,9 @@ interface A11yHudInstance {
 
 ### `runScan(target?, runOnly?)`
 
-Runs an axe-core scan without rendering any UI. Concurrent calls are serialized — a second call waits for the first to finish.
+Runs an axe-core scan without rendering any UI. Concurrent calls are serialized — a second call waits for the first to finish. Violations matching the current ignore list are filtered out of the returned results. The promise rejects if `axe.run` fails.
+
+This requires a real browser DOM (axe-core relies on layout and computed styles); it is not supported under Node/jsdom. For CI, run it inside a browser via Playwright — see the [CI integration cookbook](/cookbook/ci-integration).
 
 ```ts
 function runScan(
@@ -186,6 +190,25 @@ el.setTheme("github-dark");
 el.runScan();
 ```
 
+| Member | Signature | Description |
+|--------|-----------|-------------|
+| `static observedAttributes` | `string[]` | `["theme", "scope", "auto-scan", "debounce", "run-only"]` |
+| `scopeElement` | `Element \| undefined` (getter/setter) | Programmatic scan scope. Setting it clears the `scope` attribute and re-targets the MutationObserver. Adapters use this to pass element references. |
+| `setTheme(theme)` | `(theme: Theme) => void` | Switches theme and updates the `theme` attribute. |
+| `setRunOnly(tags)` | `(tags: string[]) => void` | Updates active rule-set tags and the `run-only` attribute. |
+| `runScan()` | `() => Promise<AxeResults>` | Same semantics as `A11yHudInstance.runScan()` — returns the in-flight promise if a scan is already running. |
+| `exportResults()` | `() => string \| null` | Last scan as a JSON string. |
+
+**Observed attributes**
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `theme` | `Theme` | `"auto"` | Visual theme |
+| `scope` | CSS selector | — | Restricts scans to a subtree; an invalid selector falls back to `document.body`. Changing it at runtime re-targets the MutationObserver. |
+| `auto-scan` | presence | present | Remove to disable the MutationObserver |
+| `debounce` | integer (ms) | `500` | Auto-scan debounce; runtime changes take effect immediately |
+| `run-only` | JSON `string[]` | `[]` | Active axe rule-set tags |
+
 ***
 
 ### Types
@@ -225,7 +248,7 @@ interface A11yHudExport {
 
 ### `<A11yHud>`
 
-Mounts the HUD inside a React tree. Props are identical to `UseA11yHudOptions`.
+Mounts the HUD inside a React tree. Props are `A11yHudProps`, a type alias for `UseA11yHudOptions`.
 
 ```tsx
 import { A11yHud } from "@a11y-hud/react";
@@ -256,6 +279,8 @@ interface UseA11yHudOptions {
 ## `@a11y-hud/vue`
 
 ### `<A11yHud>`
+
+Props are `A11yHudProps` (alias for `UseA11yHudOptions`): `theme`, `scope`, `autoScan`, `debounce`, `runOnly`.
 
 ```vue
 <A11yHud theme="auto" :scope="templateRef" />
@@ -298,18 +323,30 @@ useA11yHud({ get scope() { return container.value } })
 
 ### `A11yHudComponent`
 
-Selector: `a11y-hud-angular`. Standalone component.
+Selector: `a11y-hud-angular`. Standalone component. Inputs are `theme`, `scope`, `autoScan`, `debounce`, `runOnly` (`A11yHudProps`). The component provides its own `A11yHudService`, mounts the HUD in `ngAfterViewInit`, and rescans after every render commit via `afterEveryRender`.
 
 ```html
 <a11y-hud-angular [theme]="'auto'" [scope]="viewChildRef" />
 ```
 
-### `A11yHudService`
-
-Injectable service. Call `mount(options)` in `ngOnInit` / `ngAfterViewInit`.
+The component also exposes the `UseA11yHudReturn` methods for use via `@ViewChild`:
 
 ```ts
-interface ScopeInput = ElementRef<Element> | Element | null | undefined;
+@ViewChild(A11yHudComponent) hud!: A11yHudComponent;
+
+await this.hud.runScan();     // Promise<AxeResults | null>
+this.hud.setTheme("tokyo-night");
+this.hud.setRunOnly(["wcag2aa"]);
+this.hud.exportResults();     // string | null
+this.hud.ignores.add("color-contrast");
+```
+
+### `A11yHudService`
+
+Injectable service for imperative use without the component. It is declared with `@Injectable()` and **no** `providedIn`, so list it in a component's `providers` array (`A11yHudComponent` does this for you). Call `init(options?)` in `ngOnInit` / `ngAfterViewInit`; the service unmounts the HUD in `ngOnDestroy`.
+
+```ts
+type ScopeInput = ElementRef<Element> | Element | null | undefined;
 
 interface UseA11yHudOptions {
   theme?: Theme;
@@ -320,11 +357,24 @@ interface UseA11yHudOptions {
 }
 ```
 
+| Method | Description |
+|--------|-------------|
+| `init(options?)` | Mounts the HUD with the given options. Call once. |
+| `initialized` | Getter — `true` once `init()` has run. |
+| `syncScope(scope)` | Updates the scan scope (`ScopeInput`) on the mounted element. |
+| `syncTheme(theme)` | Applies `theme` if it is defined. |
+| `syncAutoScan(autoScan)` | Adds or removes the `auto-scan` attribute. |
+| `syncDebounce(debounce)` | Updates the `debounce` attribute. |
+| `runScan()` | Runs a scan outside `NgZone`. Resolves `null` if `init()` has not been called. |
+| `setTheme` / `setRunOnly` / `exportResults` / `ignores` | Same as [`UseA11yHudReturn`](#useahudreturn). |
+
 ***
 
 ## `@a11y-hud/svelte`
 
 ### `<A11yHud>`
+
+Props are `A11yHudProps` (alias for `UseA11yHudOptions`): `theme`, `scope`, `autoScan`, `debounce`, `runOnly`.
 
 ```svelte
 <A11yHud theme="auto" scope={element} />
@@ -355,6 +405,8 @@ interface UseA11yHudOptions {
 ## `@a11y-hud/solid`
 
 ### `<A11yHud>`
+
+Props are `A11yHudProps` (alias for `CreateA11yHudOptions`): `theme`, `scope`, `autoScan`, `debounce`, `runOnly`.
 
 ```tsx
 <A11yHud theme="auto" scope={element} />
@@ -390,11 +442,11 @@ interface CreateA11yHudOptions {
 
 ## `UseA11yHudReturn` {#useahudreturn}
 
-All framework adapters (React, Vue, Angular, Svelte, Solid) return this shape from their hook / composable / service:
+All framework adapters (React, Vue, Angular, Svelte, Solid) return this shape from their hook / composable / service (Solid names it `CreateA11yHudReturn`):
 
 ```ts
 interface UseA11yHudReturn {
-  runScan(): Promise<AxeResults>;
+  runScan(): Promise<AxeResults | null>;
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
   exportResults(): string | null;
@@ -408,5 +460,7 @@ interface UseA11yHudReturn {
   };
 }
 ```
+
+`runScan()` resolves `null` when the HUD has not mounted yet — for example, when called synchronously during the first render before the framework's mount hook has run. Once mounted it resolves with the same `AxeResults` as the core `runScan()`.
 
 Note: `unmount()` is intentionally omitted from adapters — the adapter lifecycle handles cleanup when the component unmounts.

@@ -101,13 +101,25 @@ A common pattern for a shared staging environment:
 2. The JSON file is committed to the repo at a known path (e.g., `a11y-ignores.json`).
 3. CI loads the file before running headless scans:
 
-```ts [ci/a11y.ts]
-import ignores from "../a11y-ignores.json" assert { type: "json" };
-import { importIgnores, runScan } from "a11y-hud";
+```ts [tests/a11y.spec.ts]
+import ignores from "../a11y-ignores.json" with { type: "json" };
+import { test, expect } from "@playwright/test";
 
-importIgnores(JSON.stringify(ignores));
-const results = await runScan(document.body);
+test("no violations outside the shared ignore list", async ({ page }) => {
+  await page.goto("http://localhost:5173");
+
+  const violations = await page.evaluate(async (ignoresJson) => {
+    const { importIgnores, runScan } = await import("/node_modules/a11y-hud/dist/index.js");
+    importIgnores(ignoresJson);
+    const results = await runScan(document.body);
+    return results.violations;
+  }, JSON.stringify(ignores));
+
+  expect(violations).toHaveLength(0);
+});
 ```
+
+See the [CI integration cookbook](/cookbook/ci-integration) for the full Playwright setup.
 
 4. Other team members import the same file into their local HUD:
    * Open the HUD panel.
@@ -118,7 +130,7 @@ const results = await runScan(document.body);
 
 The ignore list is stored at `localStorage.getItem("a11y-hud:ignores")` on the current origin. Ignores are scoped per origin (not per path), so they apply to all pages on the same domain.
 
-## What ignores don't do
+## What ignores do and don't do
 
-* They don't suppress violations in the exported JSON results (`exportResults()`). The export always reflects the raw scan output.
-* They don't affect Playwright / headless scans unless you explicitly call `importIgnores()` before scanning.
+* They **are** applied to every scan — the panel, `runScan()`, and the exported JSON (`exportResults()`) all reflect the ignore list, because ignored violations are filtered before results are stored. To get an unfiltered export, clear the ignore list first.
+* They **don't** carry over to Playwright / headless scans automatically, because those run in a fresh browser context with an empty `localStorage`. Call `importIgnores()` in the page before scanning.

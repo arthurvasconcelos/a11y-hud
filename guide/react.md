@@ -71,6 +71,10 @@ function DevTools() {
 }
 ```
 
+## Server-side rendering
+
+Importing `@a11y-hud/react` is safe on the server (Next.js, Remix, React Router framework mode): the Custom Element is only registered when `customElements` exists. The HUD mounts inside `useEffect`, which never runs during SSR, so nothing is rendered server-side and no hydration mismatch occurs. In the Next.js App Router, place `<A11yHud>` in a `"use client"` component.
+
 ## Props / options
 
 Both `<A11yHud>` props and `useA11yHud` options accept the same fields:
@@ -114,7 +118,7 @@ The adapter rescans after every React commit, which covers most route-change cas
 ```ts
 const hud = useA11yHud({ theme: "auto" });
 
-hud.runScan()              // Promise<AxeResults>
+hud.runScan()              // Promise<AxeResults | null> — null if not mounted yet
 hud.setTheme("github-dark")
 hud.setRunOnly(["wcag2a"])
 hud.exportResults()        // JSON string | null

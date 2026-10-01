@@ -137,6 +137,14 @@ const results = await runScan(document.querySelector("#app"));
 console.log(results.violations);
 ```
 
+`runScan()` needs a real browser DOM — it is not supported under Node/jsdom. See the [CI integration cookbook](/cookbook/ci-integration) for running it in Playwright.
+
+## Bundle formats and SSR
+
+`a11y-hud` ships as ESM (`dist/index.js`) plus a UMD bundle (`dist/index.umd.js`, global `window.A11yHud`) for the script-tag and bookmarklet paths. There is no CommonJS build.
+
+Importing the package is safe in non-browser environments: the Custom Element is only registered when `customElements` exists, so server-side code can import `a11y-hud` as long as `mount()` is only called in the browser.
+
 ## Bookmarklet
 
 For QA reviewers on staging without build access, use the bookmarklet:
@@ -148,7 +156,7 @@ import { generateBookmarklet } from "a11y-hud";
 const url = generateBookmarklet();
 
 // Pin to a specific version
-const pinned = generateBookmarklet("0.4.0");
+const pinned = generateBookmarklet("1.0.0");
 ```
 
 A pre-built drag-to-bookmark page is included in the npm package at `dist/bookmarklet.html`. See the [Bookmarklet cookbook](/cookbook/bookmarklet) for the full workflow.
@@ -158,7 +166,7 @@ A pre-built drag-to-bookmark page is included in the npm package at `dist/bookma
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `theme` | `Theme` | `"auto"` | Visual theme |
-| `scope` | `string` | — | CSS selector for scan scope |
+| `scope` | `string` | — | CSS selector for scan scope. Invalid selectors fall back to `document.body`; runtime changes re-target the observer |
 | `auto-scan` | presence | enabled | Remove attribute to disable auto-scan |
 | `debounce` | `number` | `500` | Auto-scan debounce delay in ms |
 | `run-only` | JSON string | — | Array of axe rule tags, e.g. `'["wcag2a"]'` |
