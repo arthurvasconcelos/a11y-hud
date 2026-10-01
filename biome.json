@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -14,7 +14,8 @@
       "!**/coverage",
       "!**/.vitepress",
       "!**/.angular",
-      "!**/scripts"
+      "!**/scripts",
+      "!**/*.svg"
     ]
   },
   "formatter": {
@@ -27,7 +28,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "style": {
         "noDefaultExport": "off"
       }
@@ -57,6 +58,19 @@
             "useHtmlLang": "off",
             "noSvgWithoutTitle": "off",
             "useMediaCaption": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/examples/bookmarklet/**"],
+      "linter": {
+        "rules": {
+          "security": {
+            "noScriptUrl": "off"
+          },
+          "a11y": {
+            "useValidAnchor": "off"
           }
         }
       }

@@ -28,14 +28,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "axe-core": "^4.10.2"
+    "axe-core": "^4.13.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.60.0",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@playwright/test": "^1.63.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "jsdom": "^29.1.1",
-    "tsup": "^8.3.5",
-    "vitest": "^4.1.7"
+    "tsup": "^8.5.1",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=22"

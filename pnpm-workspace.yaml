@@ -2,7 +2,7 @@ packages:
   - "packages/*"
   - "examples/*"
 patchedDependencies:
-  ng-packagr@21.2.3: patches/ng-packagr@21.2.3.patch
+  ng-packagr: patches/ng-packagr.patch
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true

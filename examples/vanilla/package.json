@@ -12,6 +12,6 @@
     "a11y-hud": "workspace:*"
   },
   "devDependencies": {
-    "vite": "^8.0.14"
+    "vite": "^8.3.1"
   }
 }

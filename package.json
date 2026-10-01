@@ -29,16 +29,16 @@
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.14",
-    "@changesets/cli": "^2.27.10",
-    "@commitlint/cli": "^21.0.1",
-    "@commitlint/config-conventional": "^21.0.1",
-    "lint-staged": "^17.0.5",
-    "simple-git-hooks": "^2.11.1",
+    "@biomejs/biome": "^2.5.14",
+    "@changesets/cli": "^2.31.1",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "lint-staged": "^17.6.0",
+    "simple-git-hooks": "^2.14.0",
     "typescript": "^6.0.3",
-    "vitepress": "^1.6.3",
-    "vitepress-plugin-group-icons": "^1.7.5",
-    "vitepress-plugin-llms": "^1.13.0"
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-group-icons": "^1.7.6",
+    "vitepress-plugin-llms": "^1.14.0"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged",
