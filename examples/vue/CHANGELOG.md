@@ -1,5 +1,12 @@
 # @a11y-hud/example-vue
 
+## 1.0.0-rc.1
+
+### Patch Changes
+
+- Updated dependencies [614c400]
+  - @a11y-hud/vue@1.0.0-rc.1
+
 ## 1.0.0-rc.0
 
 ### Major Changes

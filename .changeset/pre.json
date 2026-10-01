@@ -16,5 +16,5 @@
     "@a11y-hud/svelte": "0.4.1",
     "@a11y-hud/vue": "0.5.1"
   },
-  "changesets": ["every-cups-sell"]
+  "changesets": ["every-cups-sell", "stable-hardening"]
 }
