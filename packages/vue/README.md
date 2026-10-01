@@ -67,10 +67,19 @@ const scopeRef = ref(null);
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `theme` | `"auto" \| "default" \| "light" \| "high-contrast"` | `"auto"` | Panel theme |
+| `theme` | `Theme` | `"auto"` | Panel theme — `"auto"`, `"default"`, `"light"`, `"high-contrast"`, `"github-dark"`, `"github-light"`, `"tokyo-night"`, `"solarized-dark"` |
 | `scope` | `Element \| null` | — | Restrict scan to a subtree |
 | `autoScan` | `boolean` | `true` | Auto-rescan on DOM mutations |
 | `debounce` | `number` | `500` | Debounce delay in ms |
+| `runOnly` | `string[]` | — | Restrict axe to specific rule-set tags |
+
+### Composable return value
+
+`useA11yHud` returns `{ runScan, setTheme, setRunOnly, exportResults, ignores }`. `runScan()` resolves `Promise<AxeResults | null>` — `null` if called before the HUD has mounted.
+
+### Server-side rendering
+
+Importing `@a11y-hud/vue` is safe on the server (e.g. Nuxt); the HUD mounts in `onMounted`, so nothing renders server-side.
 
 ## License
 

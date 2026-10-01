@@ -51,7 +51,7 @@ import { generateBookmarklet } from "a11y-hud";
 const url = generateBookmarklet();
 
 // Pin to a specific version (recommended for reproducibility)
-const pinned = generateBookmarklet("0.4.0");
+const pinned = generateBookmarklet("1.0.0");
 
 console.log(pinned);
 // → javascript:(function(){if(window.A11yHud){...}})()
@@ -70,7 +70,7 @@ Encode the URL into a link and add it to an internal tools page:
 For a stable, reproducible QA workflow, pin the bookmarklet to a specific version:
 
 ```js
-const url = generateBookmarklet("0.4.0");
+const url = generateBookmarklet("1.0.0");
 ```
 
 This ensures every reviewer is running the same version of a11y-hud regardless of when they installed the bookmarklet. Update the version when you upgrade a11y-hud.

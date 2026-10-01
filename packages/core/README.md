@@ -5,7 +5,8 @@ A framework-agnostic developer overlay that runs [axe-core](https://github.com/d
 - **No DevTools required** — the HUD runs in the page itself, not as an extension.
 - **Framework-agnostic** — works with any stack. Framework adapters available for React, Vue, Angular, Svelte, and Solid.
 - **Interactive** — violation list with severity filters, click-to-highlight, keyboard navigation, and clipboard export.
-- **Three built-in themes** — `default` (dark), `light`, `high-contrast`; `auto` respects `prefers-color-scheme`.
+- **Eight built-in themes** — `auto` (follows `prefers-color-scheme`, promotes to `high-contrast` under `prefers-contrast: more`) plus `default` (dark), `light`, `high-contrast`, `github-dark`, `github-light`, `tokyo-night`, `solarized-dark`.
+- **ESM + UMD** — import it from a bundler, or load `dist/index.umd.js` from a CDN. Safe to import in SSR code; the HUD mounts only in the browser.
 
 ## Install
 
@@ -37,10 +38,11 @@ hud.unmount();
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `theme` | `"auto" \| "default" \| "light" \| "high-contrast"` | `"auto"` | Panel theme |
+| `theme` | `Theme` | `"auto"` | Panel theme — `"auto"`, `"default"`, `"light"`, `"high-contrast"`, `"github-dark"`, `"github-light"`, `"tokyo-night"`, `"solarized-dark"` |
 | `scope` | `string \| Element` | `document.body` | Restrict scan to a subtree |
 | `autoScan` | `boolean` | `true` | Auto-rescan on DOM mutations |
 | `debounce` | `number` | `500` | Debounce delay in ms |
+| `runOnly` | `string[]` | `[]` | Restrict axe to specific rule-set tags (e.g. `["wcag2a", "wcag2aa"]`) |
 
 ### Headless API
 
@@ -50,6 +52,8 @@ import { runScan } from "a11y-hud";
 const results = await runScan(document.querySelector("#my-app"));
 console.log(results.violations);
 ```
+
+`runScan()` needs a real browser DOM (run it in the page or inside a Playwright `page.evaluate()`); it is not supported under Node/jsdom.
 
 ## Framework adapters
 

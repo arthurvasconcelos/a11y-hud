@@ -21,7 +21,7 @@ Use `useA11yHud` inside any Svelte 5 component. Pass a getter function so that r
   let scopeSection = $state<HTMLDivElement | null>(null);
 
   useA11yHud(() => ({
-    theme: "dark",
+    theme: "auto",
     scope: scopeSection,
     autoScan: true,
     debounce: 300,
@@ -46,7 +46,7 @@ Use the `<A11yHud>` component when you prefer a declarative approach:
   let scopeSection = $state<HTMLDivElement | null>(null);
 </script>
 
-<A11yHud scope={scopeSection} theme="dark" />
+<A11yHud scope={scopeSection} theme="auto" />
 
 <div bind:this={scopeSection}>
   <!-- your app content -->
@@ -59,16 +59,21 @@ Use the `<A11yHud>` component when you prefer a declarative approach:
 
 | Option | Type | Description |
 |---|---|---|
-| `theme` | `Theme` | `"light"`, `"dark"`, or `"high-contrast"` |
+| `theme` | `Theme` | `"auto"` (default), `"default"`, `"light"`, `"high-contrast"`, `"github-dark"`, `"github-light"`, `"tokyo-night"`, `"solarized-dark"` |
 | `scope` | `Element \| null` | Restrict scan to a subtree |
 | `autoScan` | `boolean` | Enable/disable automatic scanning (default: `true`) |
 | `debounce` | `number` | Debounce delay in milliseconds |
+| `runOnly` | `string[]` | Restrict axe to specific rule-set tags |
 
-Returns `{ runScan(): Promise<AxeResults>, setTheme(theme: Theme): void }`.
+Returns `{ runScan, setTheme, setRunOnly, exportResults, ignores }`. `runScan()` resolves `Promise<AxeResults | null>` — `null` if called before the HUD has mounted.
 
 ### `<A11yHud>` component
 
-Accepts the same options as `UseA11yHudOptions` as props. Renders nothing into the Svelte tree — the `<a11y-hud>` Custom Element is mounted directly on `document.body`.
+Accepts the same options as `UseA11yHudOptions` as props (`theme`, `scope`, `autoScan`, `debounce`, `runOnly`). Renders nothing into the Svelte tree — the `<a11y-hud>` Custom Element is mounted directly on `document.body`.
+
+### Server-side rendering
+
+Importing `@a11y-hud/svelte` is safe on the server (SvelteKit); the HUD mounts in `onMount`, so nothing renders server-side.
 
 ## License
 

@@ -1,6 +1,6 @@
 # Vue 3
 
-`@a11y-hud/vue` is a thin Vue 3 adapter that mounts the a11y-hud Custom Element and re-runs axe after every Vue render via `watchPostEffect`.
+`@a11y-hud/vue` is a thin Vue 3 adapter that mounts the a11y-hud Custom Element in `onMounted` and re-runs axe when the `scope` prop changes (post-flush `watch`). General DOM updates are picked up by the core's MutationObserver.
 
 ## Requirements
 
@@ -30,23 +30,6 @@ yarn add -D @a11y-hud/vue
 ```vue [App.vue]
 <script setup lang="ts">
 import { A11yHud } from "@a11y-hud/vue";
-</script>
-
-<template>
-  <A11yHud v-if="isDev" theme="auto" />
-  <!-- rest of app -->
-</template>
-
-<script lang="ts">
-const isDev = import.meta.env.DEV;
-</script>
-```
-
-Or with `<script setup>` only:
-
-```vue [App.vue]
-<script setup lang="ts">
-import { A11yHud } from "@a11y-hud/vue";
 
 const isDev = import.meta.env.DEV;
 </script>
@@ -56,6 +39,10 @@ const isDev = import.meta.env.DEV;
   <!-- rest of app -->
 </template>
 ```
+
+## Server-side rendering
+
+Importing `@a11y-hud/vue` is safe on the server (Nuxt, Vite SSR): the Custom Element is only registered when `customElements` exists. The HUD mounts in `onMounted`, which runs only in the browser, so nothing is rendered server-side. In Nuxt you can drop `<A11yHud>` straight into `app.vue`; wrapping it in `<ClientOnly>` is optional.
 
 ## Quick start — composable
 
@@ -97,14 +84,14 @@ const appRoot = ref<HTMLDivElement | null>(null);
 
 ## Route-change rescans
 
-`watchPostEffect` fires after every Vue DOM commit, covering Vue Router navigations automatically. For explicit control, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
+Vue Router navigations mutate the DOM, which the core's MutationObserver picks up automatically (debounced). Changing the `scope` prop also triggers an immediate rescan. For explicit control, see the [Route-change rescans cookbook](/cookbook/route-change-rescans).
 
 ## Instance API
 
 ```ts
 const hud = useA11yHud({ theme: "auto" });
 
-hud.runScan()
+hud.runScan()              // Promise<AxeResults | null> — null if not mounted yet
 hud.setTheme("github-dark")
 hud.setRunOnly(["wcag2a"])
 hud.exportResults()

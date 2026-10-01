@@ -15,7 +15,6 @@ const isDev = import.meta.env.DEV;
   <head><!-- ... --></head>
   <body>
     <slot />
-    {isDev && <a11y-hud theme="auto"></a11y-hud>}
     {isDev && (
       <script>
         import { mount } from "a11y-hud";
@@ -25,6 +24,8 @@ const isDev = import.meta.env.DEV;
   </body>
 </html>
 ```
+
+`mount()` creates the `<a11y-hud>` element itself, so there is no need to also write the tag into the markup.
 
 Or with the CDN script tag:
 
@@ -42,6 +43,10 @@ const isDev = import.meta.env.DEV;
 ```
 
 The vanilla core mounts once and auto-rescans on DOM mutations — it picks up island hydration automatically.
+
+## Server-side rendering
+
+Astro renders every page on the server (or at build time). Importing `a11y-hud` or any adapter in that context is safe: the Custom Element is only registered when `customElements` exists. The HUD mounts only when the inline `<script>` runs in the browser (or when an island's client lifecycle hook fires), so nothing is rendered server-side.
 
 ## Path 2 — Adapter inside an island
 

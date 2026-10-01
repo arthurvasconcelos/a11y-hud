@@ -83,10 +83,19 @@ function AppContent() {
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `theme` | `"auto" \| "default" \| "light" \| "high-contrast"` | `"auto"` | Panel theme |
+| `theme` | `Theme` | `"auto"` | Panel theme — `"auto"`, `"default"`, `"light"`, `"high-contrast"`, `"github-dark"`, `"github-light"`, `"tokyo-night"`, `"solarized-dark"` |
 | `scope` | `RefObject<Element \| null>` | — | Restrict scan to a subtree |
 | `autoScan` | `boolean` | `true` | Auto-rescan on DOM mutations |
 | `debounce` | `number` | `500` | Debounce delay in ms |
+| `runOnly` | `string[]` | — | Restrict axe to specific rule-set tags |
+
+### Hook return value
+
+`useA11yHud` returns `{ runScan, setTheme, setRunOnly, exportResults, ignores }`. `runScan()` resolves `Promise<AxeResults | null>` — `null` if called before the HUD has mounted.
+
+### Server-side rendering
+
+Importing `@a11y-hud/react` is safe on the server (e.g. Next.js); the HUD mounts inside `useEffect`, so nothing renders server-side. In the App Router, use it from a `"use client"` component.
 
 ## License
 

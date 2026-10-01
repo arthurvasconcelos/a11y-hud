@@ -63,7 +63,9 @@ Clicking a node selector in the panel outlines the corresponding element on the 
 
 ![Clicking a violation node highlights the element on the page with a purple outline](/img/click-to-highlight.gif)
 
-### Headless (CI / programmatic)
+### Headless (no UI)
+
+`runScan()` audits the page without rendering the panel. Run it in the browser — for example from the DevTools console of an app that already imports `a11y-hud`, or inside a Playwright `page.evaluate()`:
 
 ```js
 import { runScan } from "a11y-hud";
@@ -71,9 +73,10 @@ import { runScan } from "a11y-hud";
 const results = await runScan(document.body);
 if (results.violations.length > 0) {
   console.error("Accessibility violations found:", results.violations);
-  process.exit(1);
 }
 ```
+
+For failing CI builds on violations, see the [CI integration cookbook](/cookbook/ci-integration).
 
 ## Framework adapters
 
@@ -93,4 +96,4 @@ If you're using a framework, pick the matching adapter for a tighter integration
 
 - **Production sites** — mount only in development. The HUD adds axe-core (~300KB) to the page.
 - **Storybook** — `@storybook/addon-a11y` is purpose-built for that workflow.
-- **Server-side rendering** — axe-core requires a live DOM. Mount after hydration.
+- **Server-side scanning** — axe-core requires a live browser DOM. Importing `a11y-hud` on the server is safe (the Custom Element is registered only when `customElements` exists), but the HUD mounts and scans only in the browser.

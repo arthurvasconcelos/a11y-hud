@@ -18,14 +18,15 @@ npm install --save-dev a11y-hud @playwright/test
 
 ```ts [tests/a11y.spec.ts]
 import { test, expect } from "@playwright/test";
-import { chromium } from "playwright";
 
 test("homepage has no critical accessibility violations", async ({ page }) => {
   await page.goto("http://localhost:5173");
 
+  // a11y-hud is not pre-installed in the target app — inject the UMD bundle.
+  // It is a classic script (not an ES module), so use addScriptTag, not import().
+  await page.addScriptTag({ url: "https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js" });
+
   const violations = await page.evaluate(async () => {
-    // a11y-hud is not pre-installed on CI — inject it
-    await import("https://cdn.jsdelivr.net/npm/a11y-hud/dist/index.umd.js");
     const results = await window.A11yHud.runScan(document.body);
     return results.violations;
   });
@@ -79,38 +80,9 @@ test("no accessibility violations", async ({ page }) => {
 });
 ```
 
-## Node.js + jsdom (lightweight, no browser)
+## Why not Node.js + jsdom?
 
-For environments where Playwright is unavailable:
-
-```ts
-import { JSDOM } from "jsdom";
-import { runScan } from "a11y-hud";
-
-const dom = new JSDOM(`
-  <!doctype html>
-  <html lang="en">
-    <body>
-      <img src="logo.png" />
-      <button>Click me</button>
-    </body>
-  </html>
-`, { url: "http://localhost" });
-
-// axe-core needs window and document globals
-global.window = dom.window as unknown as Window & typeof globalThis;
-global.document = dom.window.document;
-
-const results = await runScan(dom.window.document.body);
-if (results.violations.length > 0) {
-  console.error("Violations:", results.violations.map((v) => v.id));
-  process.exit(1);
-}
-```
-
-::: warning jsdom limitations
-jsdom doesn't compute CSS styles, so color-contrast and focus-indicator rules won't fire. Use Playwright for a comprehensive audit.
-:::
+Importing `a11y-hud` in Node is safe (nothing runs until `mount()` or `runScan()` is called), but **scanning under jsdom is not supported**. axe-core needs a real browser — layout, computed styles, `CSSStyleSheet`, and other APIs that jsdom does not implement — so results would be incomplete or the scan would throw. Always run `runScan()` inside a browser page, as in the Playwright recipes above.
 
 ## GitHub Actions example
 
@@ -148,8 +120,10 @@ jobs:
 
 ## Restricting to WCAG 2.1 AA only
 
+Pass axe tags as the second argument (inside `page.evaluate()` in Playwright):
+
 ```ts
-import { runScan } from "a11y-hud";
+const { runScan } = await import("/node_modules/a11y-hud/dist/index.js");
 
 const results = await runScan(document.body, ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]);
 ```
@@ -162,12 +136,24 @@ Common axe tag values:
 
 ## Respecting the ignore list in CI
 
-The ignore list lives in `localStorage`, which doesn't exist in Node or Playwright by default. If you maintain an ignore list in the HUD panel and want CI to respect it, export the list from the HUD panel as `ignores.json`, commit that file to your repo, then load it before scanning:
+The ignore list lives in the browser's `localStorage`, which starts empty in a fresh Playwright context. If you maintain an ignore list in the HUD panel and want CI to respect it, export the list from the HUD panel as `ignores.json`, commit that file to your repo, then load it in the page before scanning:
 
-```ts
-import ignoreList from "./ignores.json" assert { type: "json" };
-import { importIgnores, runScan } from "a11y-hud";
+```ts [tests/a11y.spec.ts]
+import ignoreList from "./ignores.json" with { type: "json" };
+import { test, expect } from "@playwright/test";
 
-importIgnores(JSON.stringify(ignoreList));
-const results = await runScan(document.body);
+test("no violations outside the shared ignore list", async ({ page }) => {
+  await page.goto("http://localhost:5173");
+
+  const violations = await page.evaluate(async (ignoresJson) => {
+    const { importIgnores, runScan } = await import("/node_modules/a11y-hud/dist/index.js");
+    importIgnores(ignoresJson);
+    const results = await runScan(document.body);
+    return results.violations;
+  }, JSON.stringify(ignoreList));
+
+  expect(violations).toHaveLength(0);
+});
 ```
+
+`runScan()` filters ignored violations before returning, so the results already reflect the list.
