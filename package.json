@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "description": "Monorepo for a11y-hud packages",
-  "packageManager": "pnpm@11.1.1",
+  "packageManager": "pnpm@11.28.2",
   "engines": {
     "node": ">=22",
     "pnpm": ">=11"
