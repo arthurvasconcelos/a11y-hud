@@ -52,6 +52,10 @@ yarn add -D @a11y-hud/svelte
 </script>
 ```
 
+## Server-side rendering
+
+Importing `@a11y-hud/svelte` is safe on the server (SvelteKit): the Custom Element is only registered when `customElements` exists. The HUD mounts in `onMount`, which runs only in the browser, so nothing is rendered server-side. You can place `<A11yHud>` in `+layout.svelte` without any `browser` guard.
+
 ## Props / options
 
 | Prop | Type | Default | Description |
@@ -70,7 +74,7 @@ Use `bind:this` to get an element reference:
 <script lang="ts">
   import { A11yHud } from "@a11y-hud/svelte";
 
-  let appRoot: HTMLDivElement | null = null;
+  let appRoot = $state<HTMLDivElement | null>(null);
 </script>
 
 <A11yHud theme="auto" scope={appRoot} />
@@ -101,7 +105,7 @@ useA11yHud(() => opts);
 ```ts
 const hud = useA11yHud(() => ({ theme: "auto" }));
 
-hud.runScan()
+hud.runScan()              // Promise<AxeResults | null> — null if not mounted yet
 hud.setTheme("solarized-dark")
 hud.setRunOnly(["wcag2a"])
 hud.exportResults()

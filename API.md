@@ -1,23 +1,21 @@
-# a11y-hud Public API Surface — 1.0 Freeze Review
+# a11y-hud Public API Surface (1.0)
 
-This document lists every exported symbol, Custom Element attribute, theme name, CSS custom property, event name, localStorage key, and UMD global across all six published packages.
+This document lists every exported symbol, Custom Element attribute, theme name, CSS custom property, event name, localStorage key, and UMD global across all six published packages. Everything listed here is public API and follows semver from 1.0.0 onwards — renaming or removing any of it is a breaking change.
 
-**Owner action required:** read end-to-end and approve before tagging `1.0.0-rc1`. Any questionable names should be renamed _now_ — renaming after 1.0 is a semver-breaking change.
-
-Issues found during inventory are marked **⚠ Review** and grouped at the bottom.
+All packages ship as ESM only. The core package additionally ships a UMD bundle (`dist/index.umd.js`) for CDN and bookmarklet use. Importing any package is safe in non-browser environments (SSR, Node test runners): the Custom Element is registered only when `customElements` exists, and nothing touches the DOM until `mount()` is called or an adapter's client lifecycle hook runs.
 
 ---
 
 ## Package index
 
-| Package | npm name | Current version |
-|---------|----------|----------------|
-| Core | `a11y-hud` | 0.4.1 |
-| React adapter | `@a11y-hud/react` | 0.5.1 |
-| Vue adapter | `@a11y-hud/vue` | 0.5.1 |
-| Angular adapter | `@a11y-hud/angular` | 0.4.1 |
-| Svelte adapter | `@a11y-hud/svelte` | 0.4.1 |
-| Solid adapter | `@a11y-hud/solid` | 0.4.1 |
+| Package | npm name |
+|---------|----------|
+| Core | `a11y-hud` |
+| React adapter | `@a11y-hud/react` |
+| Vue adapter | `@a11y-hud/vue` |
+| Angular adapter | `@a11y-hud/angular` |
+| Svelte adapter | `@a11y-hud/svelte` |
+| Solid adapter | `@a11y-hud/solid` |
 
 ---
 
@@ -52,24 +50,24 @@ Issues found during inventory are marked **⚠ Review** and grouped at the botto
 |--------|-----------|-------|
 | `static observedAttributes` | `string[]` | `["theme", "scope", "auto-scan", "debounce", "run-only"]` |
 | `scopeElement` getter | `() => Element \| undefined` | Programmatically set scope element |
-| `scopeElement` setter | `(el: Element \| undefined) => void` | Sets scope element directly; clears `scope` attribute |
+| `scopeElement` setter | `(el: Element \| undefined) => void` | Sets scope element directly; clears the `scope` attribute and re-targets the MutationObserver |
 | `setTheme(theme)` | `(Theme) => void` | Switches theme and updates attribute |
 | `setRunOnly(tags)` | `(string[]) => void` | Updates active rule-set tags |
-| `runScan()` | `() => Promise<AxeResults>` | Triggers a scan; serialized vs. concurrent |
+| `runScan()` | `() => Promise<AxeResults>` | Triggers a scan; returns the in-flight promise if a scan is already running; rejects if `axe.run` throws |
 | `exportResults()` | `() => string \| null` | Returns last scan as JSON string |
 
 ### Custom Element: `<a11y-hud>`
 
-Registered at: `customElements.define("a11y-hud", A11yHudElement)`.
+Registered at: `customElements.define("a11y-hud", A11yHudElement)` (only when `customElements` is defined).
 
-**Observed attributes (public API, frozen at 1.0):**
+**Observed attributes:**
 
 | Attribute | Values | Default | Notes |
 |-----------|--------|---------|-------|
 | `theme` | `Theme` string | `"auto"` | Visual theme |
-| `scope` | CSS selector string | — | Restricts scan subtree; clears the programmatic scopeElement |
+| `scope` | CSS selector string | — | Restricts scan subtree; clears the programmatic `scopeElement`; invalid selectors fall back to `document.body` |
 | `auto-scan` | Presence attribute | present (enabled) | Present = enabled, absent = disabled |
-| `debounce` | Integer (ms) | `500` | Auto-scan debounce interval |
+| `debounce` | Integer (ms) | `500` | Auto-scan debounce interval; runtime changes take effect immediately |
 | `run-only` | JSON-serialized `string[]` | `[]` | Active axe rule-set tags; empty array = run all |
 
 **Internal state attributes (set by the element itself, not consumed by consumers):**
@@ -87,7 +85,7 @@ Registered at: `customElements.define("a11y-hud", A11yHudElement)`.
 | `ResolvedTheme` | `Exclude<Theme, "auto">` — the 7 concrete theme values |
 | `Severity` | `"minor" \| "moderate" \| "serious" \| "critical"` |
 | `MountOptions` | `{ theme?, scope?, autoScan?, debounce?, runOnly? }` (see full definition below) |
-| `A11yHudInstance` | Return type of `mount()` and all adapter hooks/composables |
+| `A11yHudInstance` | Return type of `mount()` |
 | `A11yHudExport` | Shape of the JSON export blob |
 | `IgnoreEntry` | `{ ruleId: string; selector?: string }` |
 | `FocusableElementInfo` | `{ element: Element; index: number; selector: string; tabIndex: number }` |
@@ -134,7 +132,7 @@ interface A11yHudExport {
   timestamp: string;     // ISO 8601
   url: string;           // window.location.href at scan time
   scope: string;         // selector string or "document.body"
-  results: AxeResults;   // raw axe-core results object
+  results: AxeResults;   // axe-core results, with ignored violations already filtered out
 }
 ```
 
@@ -146,7 +144,7 @@ interface A11yHudExport {
 
 | Symbol | Notes |
 |--------|-------|
-| `A11yHud` | React component; props shape is `UseA11yHudOptions` |
+| `A11yHud` | React component; props shape is `A11yHudProps` |
 
 ### Exported hooks
 
@@ -170,7 +168,7 @@ interface A11yHudExport {
 
 | Symbol | Notes |
 |--------|-------|
-| `A11yHud` | Vue 3 component; props shape is `UseA11yHudOptions` |
+| `A11yHud` | Vue 3 component; props are `theme`, `scope`, `autoScan`, `debounce`, `runOnly` (`A11yHudProps`) |
 
 ### Exported composables
 
@@ -196,7 +194,7 @@ interface A11yHudExport {
 
 | Symbol | Notes |
 |--------|-------|
-| `A11yHudComponent` | Angular standalone component; selector `a11y-hud-angular` |
+| `A11yHudComponent` | Angular standalone component; selector `a11y-hud-angular`; provides its own `A11yHudService` instance |
 
 **`A11yHudComponent` inputs:**
 
@@ -208,11 +206,41 @@ interface A11yHudExport {
 | `@Input() debounce` | `number \| undefined` |
 | `@Input() runOnly` | `string[] \| undefined` |
 
+**`A11yHudComponent` public methods** (same shape as `UseA11yHudReturn`, for use via `@ViewChild`):
+
+| Member | Signature |
+|--------|-----------|
+| `runScan()` | `() => Promise<AxeResults \| null>` |
+| `setTheme(theme)` | `(Theme) => void` |
+| `setRunOnly(tags)` | `(string[]) => void` |
+| `exportResults()` | `() => string \| null` |
+| `ignores` getter | Shared `ignores` object (see below) |
+
+The component mounts the HUD in `ngAfterViewInit` and rescans after every render commit via `afterEveryRender`, so route changes and re-renders that do not alter `@Input()` values are covered.
+
 ### Exported services
 
 | Symbol | Notes |
 |--------|-------|
-| `A11yHudService` | Injectable; `mount(options)` returns `UseA11yHudReturn` |
+| `A11yHudService` | `@Injectable()` without `providedIn` — must be listed in a component's `providers` (or use `A11yHudComponent`, which provides it) |
+
+**`A11yHudService` public surface:**
+
+| Member | Signature | Notes |
+|--------|-----------|-------|
+| `init(options?)` | `(UseA11yHudOptions) => void` | Mounts the HUD; call once in `ngOnInit` / `ngAfterViewInit` |
+| `initialized` getter | `() => boolean` | `true` once `init()` has run |
+| `syncScope(scope)` | `(ScopeInput) => void` | Updates the scan scope on the mounted element |
+| `syncTheme(theme)` | `(Theme \| undefined) => void` | Applies a theme if defined |
+| `syncAutoScan(autoScan)` | `(boolean \| undefined) => void` | Toggles the `auto-scan` attribute |
+| `syncDebounce(debounce)` | `(number \| undefined) => void` | Updates the `debounce` attribute |
+| `runScan()` | `() => Promise<AxeResults \| null>` | Runs outside `NgZone`; resolves `null` if not initialised |
+| `setTheme(theme)` | `(Theme) => void` | |
+| `setRunOnly(tags)` | `(string[]) => void` | |
+| `exportResults()` | `() => string \| null` | |
+| `ignores` getter | Shared `ignores` object (see below) | |
+
+The service unmounts the HUD in `ngOnDestroy`.
 
 ### Exported types
 
@@ -231,7 +259,7 @@ interface A11yHudExport {
 
 | Symbol | Notes |
 |--------|-------|
-| `A11yHud` | Svelte 5 component (`.svelte` file); props shape is `UseA11yHudOptions` |
+| `A11yHud` | Svelte 5 component (`.svelte` file); props shape is `A11yHudProps` |
 
 ### Exported hooks
 
@@ -257,7 +285,7 @@ interface A11yHudExport {
 
 | Symbol | Notes |
 |--------|-------|
-| `A11yHud` | Solid component; props shape is `CreateA11yHudOptions` |
+| `A11yHud` | Solid component; props shape is `A11yHudProps` |
 
 ### Exported primitives
 
@@ -279,13 +307,13 @@ interface A11yHudExport {
 
 ## Shared return shape
 
-All five adapters return this shape from their hook / composable / service. `unmount()` is intentionally absent — adapters handle teardown via their framework lifecycle.
+All five adapters return this shape from their hook / composable / service. `unmount()` is intentionally absent — adapters handle teardown via their framework lifecycle. `runScan()` resolves `null` when the HUD has not mounted yet (for example, when called before the framework's mount hook has run).
 
 ```ts
 // React / Vue / Angular / Svelte: UseA11yHudReturn
 // Solid: CreateA11yHudReturn
 {
-  runScan(): Promise<AxeResults>;
+  runScan(): Promise<AxeResults | null>;
   setTheme(theme: Theme): void;
   setRunOnly(tags: string[]): void;
   exportResults(): string | null;
@@ -302,7 +330,7 @@ All five adapters return this shape from their hook / composable / service. `unm
 
 ---
 
-## Theme names (all 8 frozen at 1.0)
+## Theme names (all 8)
 
 | Name | Style | Notes |
 |------|-------|-------|
@@ -315,11 +343,9 @@ All five adapters return this shape from their hook / composable / service. `unm
 | `"tokyo-night"` | Tokyo Night editor theme | |
 | `"solarized-dark"` | Solarized Dark | |
 
-Renaming or removing any of these after 1.0 is a breaking change.
-
 ---
 
-## CSS custom properties (all 17 frozen at 1.0)
+## CSS custom properties (all 17)
 
 All properties are declared on `:host` (the `<a11y-hud>` element). Custom properties pierce the Shadow DOM boundary — consumers can override any of these from the host page's CSS.
 
@@ -350,13 +376,24 @@ All properties are declared on `:host` (the `<a11y-hud>` element). Custom proper
 | `--a11y-hud-z-index` | `999999` | z-index for the floating panel |
 | `--a11y-hud-panel-width` | `380px` | Panel width |
 
-Renaming or removing any of these after 1.0 is a breaking change.
-
 ---
 
 ## Custom DOM events
 
 **None.** The `<a11y-hud>` element dispatches no custom events. All programmatic state is surfaced through the `A11yHudInstance` / `UseA11yHudReturn` API.
+
+---
+
+## Bundle formats
+
+| Package | Formats |
+|---------|---------|
+| `a11y-hud` | ESM (`dist/index.js`) + UMD (`dist/index.umd.js`) |
+| `@a11y-hud/react`, `@a11y-hud/vue`, `@a11y-hud/solid` | ESM only |
+| `@a11y-hud/angular` | Angular Package Format (ESM) via ng-packagr |
+| `@a11y-hud/svelte` | ESM via `@sveltejs/package` (`.svelte` source + `.d.ts`) |
+
+No package ships a CommonJS build.
 
 ---
 
@@ -377,71 +414,3 @@ Framework adapter packages do not ship UMD bundles. Their consumers use npm.
 | `a11y-hud:ignores` | Serialized `IgnoreEntry[]` (the ignore-rules list) |
 
 This key is part of the public API. Headless scripts can read/write it directly, or use the exported `addIgnore` / `exportIgnores` / `importIgnores` functions.
-
----
-
-## Issues found during inventory
-
-These items need owner decision before the 1.0 tag.
-
-### ⚠ Doc bug: `injectFocusOrderOverlay` return type
-
-**Location:** `docs/reference/api.md`
-
-**Current docs say:**
-```ts
-function injectFocusOrderOverlay(elements: FocusableElementInfo[]): void
-```
-
-**Actual source return type:**
-```ts
-export function injectFocusOrderOverlay(elements: FocusableElementInfo[]): () => void
-```
-
-The function returns a cleanup function that removes the overlay and its injected style element. The docs are wrong. This will be fixed in the same PR as this document.
-
-### ⚠ Doc bug: Vue `scope` type in API reference
-
-**Location:** `docs/reference/api.md` (Vue section)
-
-**Current docs say:**
-```ts
-interface UseA11yHudOptions {
-  scope?: Ref<Element | null>;
-}
-```
-
-**Actual types file says:**
-```ts
-interface UseA11yHudOptions {
-  scope?: Element | null;
-}
-```
-
-The prop accepts `Element | null`, not a `Ref`. The guide example (`:scope="appRoot"`) works because Vue templates auto-unwrap refs in attribute bindings. But the type definition in the API reference is misleading for users who call the composable directly.
-
-**Recommendation:** fix the API reference to show `Element | null` and add a note that Vue templates auto-unwrap template refs. This will be fixed in the same PR.
-
-### ✅ Fixed: `_getScopeTarget()` missing error boundary
-
-**Location:** `packages/core/src/element.ts`, `_getScopeTarget()` method
-
-`document.querySelector` throws a `DOMException` for syntactically invalid CSS selectors. The `findElement` helper (used in the highlight path) already had a try/catch, but `_getScopeTarget` did not. Fixed in the same commit as this document — malformed selectors now silently fall back to `document.body`.
-
-### ✅ Fixed: Node selector HTML-escaped in violation template
-
-**Location:** `packages/core/src/element.ts`, `_renderViolationItem()` method
-
-Node selectors (derived from axe-core's `node.target` array) were previously inserted into the panel's Shadow DOM without escaping. While this posed no real attack risk (dev tool + Shadow DOM isolation), it was inconsistent with the keyboard view which already calls `escapeHtml`. Fixed in the same commit — `escapeHtml(selector)` is now applied in violation items, matching the keyboard view behavior.
-
----
-
-## Summary for owner
-
-All names, types, and defaults look consistent and sound. No renames are needed before 1.0.
-
-All four items above were fixed in the same commit as this document:
-- Doc bugs (items 1 and 2) corrected in `docs/reference/api.md` and `docs/guide/vue.md`.
-- Robustness fixes (items 3 and 4) applied in `packages/core/src/element.ts`.
-
-**Approval action:** read this document end-to-end and confirm the API surface as listed. Once confirmed, the next step is to tag `1.0.0-rc1` — see the RC tagging instructions in the commit message or the release playbook.

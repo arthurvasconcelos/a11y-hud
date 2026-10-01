@@ -18,7 +18,7 @@ npm install @a11y-hud/solid
 import { createA11yHud } from "@a11y-hud/solid";
 
 function App() {
-  createA11yHud({ theme: "dark" });
+  createA11yHud({ theme: "auto" });
   return <main>...</main>;
 }
 ```
@@ -31,7 +31,7 @@ import { A11yHud } from "@a11y-hud/solid";
 function App() {
   return (
     <>
-      <A11yHud theme="dark" />
+      <A11yHud theme="auto" />
       <main>...</main>
     </>
   );
@@ -77,10 +77,17 @@ function App() {
 
 | Option | Type | Description |
 |---|---|---|
-| `theme` | `"light" \| "dark" \| "high-contrast"` | HUD color theme |
+| `theme` | `Theme` | `"auto"` (default), `"default"`, `"light"`, `"high-contrast"`, `"github-dark"`, `"github-light"`, `"tokyo-night"`, `"solarized-dark"` |
 | `scope` | `Element \| null` | Restrict scan to this element's subtree |
 | `autoScan` | `boolean` | Enable/disable automatic scanning (default: `true`) |
 | `debounce` | `number` | Debounce delay in ms for MutationObserver rescans |
+| `runOnly` | `string[]` | Restrict axe to specific rule-set tags |
+
+`createA11yHud` returns `{ runScan, setTheme, setRunOnly, exportResults, ignores }`. `runScan()` resolves `Promise<AxeResults | null>` — `null` if called before the HUD has mounted.
+
+## Server-side rendering
+
+Importing `@a11y-hud/solid` is safe on the server (SolidStart); the HUD mounts in `onMount`, so nothing renders server-side.
 
 ## License
 

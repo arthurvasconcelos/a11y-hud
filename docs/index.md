@@ -25,7 +25,7 @@ features:
     details: Vanilla core with thin adapters for React, Vue, Angular, Svelte, and Solid. One Custom Element UI, every framework.
   - icon: 🎨
     title: 8 built-in themes
-    details: default, light, high-contrast, github-dark, github-light, tokyo-night, solarized-dark. Fully customizable via CSS custom properties.
+    details: auto plus seven themes — default, light, high-contrast, github-dark, github-light, tokyo-night, solarized-dark. Fully customizable via CSS custom properties.
   - icon: ⌨️
     title: Keyboard mode
     details: Tab-order visualization, focusable element list, and automatic detection of tab-stop violations — without leaving the page.

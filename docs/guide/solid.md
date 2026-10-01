@@ -66,6 +66,10 @@ const hud = createA11yHud({
 });
 ```
 
+## Server-side rendering
+
+Importing `@a11y-hud/solid` is safe on the server (SolidStart): the Custom Element is only registered when `customElements` exists. The HUD mounts in `onMount`, which runs only in the browser, so nothing is rendered server-side.
+
 ## Props / options
 
 | Prop | Type | Default | Description |
@@ -78,17 +82,19 @@ const hud = createA11yHud({
 
 ## Scoping to a subtree
 
+The `scope` prop is read reactively, so pass it from a signal — a plain `let` ref is `undefined` at render time and never updates:
+
 ```tsx
 import { createSignal } from "solid-js";
 import { A11yHud } from "@a11y-hud/solid";
 
 export default function App() {
-  let appRoot: HTMLDivElement | undefined;
+  const [appRoot, setAppRoot] = createSignal<HTMLDivElement | null>(null);
 
   return (
     <>
-      <A11yHud theme="auto" scope={appRoot} />
-      <div ref={appRoot}>
+      <A11yHud theme="auto" scope={appRoot()} />
+      <div ref={setAppRoot}>
         {/* only this subtree is scanned */}
       </div>
     </>
@@ -105,7 +111,7 @@ export default function App() {
 ```ts
 const hud = createA11yHud({ theme: "auto" });
 
-hud.runScan()
+hud.runScan()              // Promise<AxeResults | null> — null if not mounted yet
 hud.setTheme("github-dark")
 hud.setRunOnly(["wcag2aa"])
 hud.exportResults()

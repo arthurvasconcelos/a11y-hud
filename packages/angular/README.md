@@ -8,7 +8,7 @@ Angular adapter for [a11y-hud](https://www.npmjs.com/package/a11y-hud) — run a
 npm install a11y-hud @a11y-hud/angular
 ```
 
-Peer dependencies: `@angular/core >= 20.0.0 < 23.0.0` (Angular 20 and 21).
+Peer dependencies: `@angular/core >=20.0.0 <23.0.0` (Angular 20–22).
 
 ## Usage
 
@@ -83,7 +83,7 @@ The `scope` input accepts a template reference variable (typed as `Element` by A
 
 ### Route change rescans
 
-Angular Router navigation mutates the DOM — the core's built-in `MutationObserver` picks up these changes and rescans automatically. No extra wiring needed.
+The component rescans after every render commit via `afterEveryRender`, which covers Angular Router navigations and any re-render that does not change an `@Input()` value. No extra wiring needed.
 
 If you need a manual rescan on a specific navigation event (for example, inside a `CanActivate` guard or a resolver), call `runScan()` on the component or through `A11yHudService`:
 
@@ -113,19 +113,33 @@ export class AppComponent {
 
 | Input | Type | Default | Description |
 |---|---|---|---|
-| `theme` | `'auto' \| 'default' \| 'light' \| 'high-contrast'` | `'auto'` | Panel color theme |
+| `theme` | `Theme` | `'auto'` | Panel theme — `'auto'`, `'default'`, `'light'`, `'high-contrast'`, `'github-dark'`, `'github-light'`, `'tokyo-night'`, `'solarized-dark'` |
 | `scope` | `ElementRef<Element> \| Element \| null` | `null` | Restrict scan to this element |
 | `autoScan` | `boolean` | `true` | Rescan on DOM mutations |
 | `debounce` | `number` | `500` | MutationObserver debounce in ms |
+| `runOnly` | `string[]` | — | Restrict axe to specific rule-set tags |
+
+`A11yHudComponent` also exposes `runScan()`, `setTheme()`, `setRunOnly()`, `exportResults()` and `ignores` for use via `@ViewChild`.
 
 ## `A11yHudService` methods
 
 | Method | Description |
 |---|---|
 | `init(options?)` | Mount the HUD; call once in `ngOnInit` or `ngAfterViewInit` |
-| `runScan()` | Trigger a manual scan, returns `Promise<AxeResults>` |
+| `initialized` | Getter — `true` once `init()` has run |
+| `runScan()` | Trigger a manual scan, returns `Promise<AxeResults \| null>` (`null` before `init()`) |
 | `setTheme(theme)` | Switch the theme at runtime |
+| `setRunOnly(tags)` | Change the active axe rule-set tags |
+| `exportResults()` | Last scan as a JSON string, or `null` |
+| `ignores` | Ignore-list API (`add`, `remove`, `clear`, `list`, `exportJson`, `importJson`) |
 | `syncScope(scope)` | Update the scan scope |
+| `syncTheme(theme)` / `syncAutoScan(autoScan)` / `syncDebounce(debounce)` | Push option changes to the mounted element |
+
+The service is `@Injectable()` without `providedIn` — list it in a component's `providers` (the component does this for you). It unmounts the HUD in `ngOnDestroy`.
+
+## Server-side rendering
+
+Importing `@a11y-hud/angular` is safe on the server (Angular SSR, Analog); the HUD mounts in `ngAfterViewInit` / `init()`, so nothing renders server-side.
 
 ## License
 

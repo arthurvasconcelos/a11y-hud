@@ -35,7 +35,7 @@ import { generateBookmarklet } from "a11y-hud";
 
 // Returns a javascript: URL — drag it to your bookmarks bar
 const url = generateBookmarklet();          // always latest
-const pinned = generateBookmarklet("0.3.0"); // pinned version
+const pinned = generateBookmarklet("1.0.0"); // pinned version
 ```
 
 A pre-built drag-to-bookmark page ships at `dist/bookmarklet.html` inside the npm package.
@@ -115,7 +115,7 @@ import { addIgnore, removeIgnore, clearIgnores, listIgnores,
 
 ### Keyboard mode
 
-Click the keyboard icon in the HUD toolbar to activate keyboard-only mode. The panel switches to a tab-order view: focusable elements are listed and numbered badges are overlaid on the page showing their tab position. Clicking an element in the list highlights it. Detected issues (missing tab stops, positive `tabindex` values, elements removed from the tab order) are surfaced at the top of the view.
+Click the keyboard icon in the HUD toolbar to activate keyboard-only mode. The panel switches to a tab-order view: focusable elements are listed and numbered badges are overlaid on the page showing their tab position. Clicking an element in the list highlights it. Detected issues (positive `tabindex` values, interactive elements removed from the tab order with `tabindex="-1"`, and scopes with no focusable elements at all) are surfaced at the top of the view.
 
 The underlying helpers are also exported for headless use:
 
@@ -134,9 +134,9 @@ Attributes: `theme`, `scope`, `auto-scan`, `debounce`, `run-only`.
 
 ### Themes
 
-![Seven a11y-hud panels side by side showing all built-in themes: default, light, github-dark, github-light, tokyo-night, solarized-dark, and high-contrast](https://raw.githubusercontent.com/arthurvasconcelos/a11y-hud/main/docs/public/img/themes.png)
+![a11y-hud panels side by side showing the seven concrete themes: default, light, github-dark, github-light, tokyo-night, solarized-dark, and high-contrast](https://raw.githubusercontent.com/arthurvasconcelos/a11y-hud/main/docs/public/img/themes.png)
 
-Eight built-in themes:
+Eight built-in themes (`auto` plus seven concrete themes):
 
 | Name | Style |
 |------|-------|
@@ -171,7 +171,7 @@ a11y-hud {
 | Svelte | [`@a11y-hud/svelte`](https://www.npmjs.com/package/@a11y-hud/svelte) | `npm i -D @a11y-hud/svelte` |
 | Solid | [`@a11y-hud/solid`](https://www.npmjs.com/package/@a11y-hud/solid) | `npm i -D @a11y-hud/solid` |
 
-All adapters expose the same surface as `A11yHudInstance` (above) through their hook/composable return value.
+All adapters expose the same surface as `A11yHudInstance` (above) through their hook/composable return value, minus `unmount()` — teardown follows the framework lifecycle. Adapter `runScan()` resolves `null` if called before the HUD has mounted.
 
 ## Framework quick starts
 
