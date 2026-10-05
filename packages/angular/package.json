@@ -27,11 +27,11 @@
     "@angular/platform-browser": "^21.2.24",
     "@angular/platform-browser-dynamic": "^21.2.24",
     "@playwright/test": "^1.63.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.3",
     "jsdom": "^29.1.1",
     "ng-packagr": "^21.2.7",
-    "typescript": "~6.0.3",
-    "vitest": "^4.1.11",
+    "typescript": "~7.0.2",
+    "vitest": "^5.0.3",
     "zone.js": "^0.16.3"
   },
   "engines": {

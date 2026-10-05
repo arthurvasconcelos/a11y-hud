@@ -29,13 +29,13 @@
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.14",
+    "@biomejs/biome": "^2.5.15",
     "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "lint-staged": "^17.6.0",
     "simple-git-hooks": "^2.14.0",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vitepress": "^1.6.4",
     "vitepress-plugin-group-icons": "^1.7.6",
     "vitepress-plugin-llms": "^1.14.0"
