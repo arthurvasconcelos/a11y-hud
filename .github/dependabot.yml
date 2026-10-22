@@ -20,6 +20,16 @@ updates:
           - "@vitest/*"
           - "@playwright/*"
           - "playwright"
+      angular:
+        patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+          - "ng-packagr"
+    ignore:
+      # tsup's declaration build (rollup-plugin-dts) needs the TypeScript
+      # compiler API, which TypeScript 7 no longer ships.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
