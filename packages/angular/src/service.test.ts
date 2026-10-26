@@ -1,253 +1,253 @@
 import { TestBed } from "@angular/core/testing";
-import { mount } from "a11y-hud";
+import { A11yHudElement } from "a11y-hud";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HudHostHarness } from "./__harnesses__/hud-host.harness.js";
 import { A11yHudService } from "./service.js";
 
-vi.mock("a11y-hud", () => ({
-  mount: vi.fn(),
-}));
-
-type MockIgnores = {
-  add: ReturnType<typeof vi.fn>;
-  remove: ReturnType<typeof vi.fn>;
-  clear: ReturnType<typeof vi.fn>;
-  list: ReturnType<typeof vi.fn>;
-  exportJson: ReturnType<typeof vi.fn>;
-  importJson: ReturnType<typeof vi.fn>;
-};
-
-type MockInstance = {
-  unmount: ReturnType<typeof vi.fn>;
-  setTheme: ReturnType<typeof vi.fn>;
-  runScan: ReturnType<typeof vi.fn>;
-  exportResults: ReturnType<typeof vi.fn>;
-  ignores: MockIgnores;
-};
-
-function makeMockElement() {
-  const el = document.createElement("a11y-hud") as HTMLElement & {
-    scopeElement?: Element;
-  };
-  Object.defineProperty(el, "scopeElement", {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
-  return el;
-}
-
-let mockEl: ReturnType<typeof makeMockElement>;
-let mockInstance: MockInstance;
-
-beforeEach(() => {
-  mockEl = makeMockElement();
-  mockInstance = {
-    unmount: vi.fn(() => mockEl.remove()),
-    setTheme: vi.fn(),
-    runScan: vi.fn().mockResolvedValue({ violations: [] }),
-    exportResults: vi.fn().mockReturnValue(null),
-    ignores: {
-      add: vi.fn(),
-      remove: vi.fn(),
-      clear: vi.fn(),
-      list: vi.fn().mockReturnValue([]),
-      exportJson: vi.fn().mockReturnValue("[]"),
-      importJson: vi.fn(),
-    },
-  };
-  (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
-    document.body.appendChild(mockEl);
-    return mockInstance;
-  });
-  TestBed.configureTestingModule({
-    providers: [A11yHudService],
-  });
-});
-
-afterEach(() => {
-  mockEl.remove();
-  vi.clearAllMocks();
-  TestBed.resetTestingModule();
-});
+const hud = new HudHostHarness();
 
 describe("A11yHudService", () => {
-  it("calls mount() on init()", () => {
+  let runScan: ReturnType<typeof vi.spyOn>;
+  const pageFixtures: Element[] = [];
+
+  /** Appends an element to the page and keeps it there until the scans using it have settled. */
+  function addToPage(element: Element): void {
+    document.body.appendChild(element);
+    pageFixtures.push(element);
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    hud.track();
+    runScan = vi.spyOn(A11yHudElement.prototype, "runScan");
+    TestBed.configureTestingModule({ providers: [A11yHudService] });
+  });
+
+  afterEach(async () => {
+    await hud.cleanup();
+    for (const element of pageFixtures.splice(0)) element.remove();
+    localStorage.clear();
+    vi.restoreAllMocks();
+    TestBed.resetTestingModule();
+  });
+
+  it("init() mounts the <a11y-hud> element", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
-    expect(mount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(true);
+    expect(service.initialized).toBe(true);
   });
 
-  it("passes theme to mount()", () => {
+  it("init() applies the given options to the element", () => {
     const service = TestBed.inject(A11yHudService);
-    service.init({ theme: "light", autoScan: false, debounce: 300 });
-    expect(mount).toHaveBeenCalledWith({ theme: "light", autoScan: false, debounce: 300 });
+    service.init({ theme: "light", autoScan: false, debounce: 300, runOnly: ["wcag2a"] });
+    expect(hud.getThemeAttribute()).toBe("light");
+    expect(hud.hasAutoScan()).toBe(false);
+    expect(hud.getDebounceAttribute()).toBe("300");
+    expect(hud.getRunOnly()).toEqual(["wcag2a"]);
   });
 
-  it("does not pass undefined fields to mount()", () => {
+  it("init() leaves omitted options untouched on the element", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
-    expect(mount).toHaveBeenCalledWith({});
+    expect(hud.getThemeAttribute()).toBeNull();
+    expect(hud.getDebounceAttribute()).toBeNull();
+    expect(hud.getRunOnly()).toBeNull();
   });
 
-  it("sets scopeElement on CE when scope is an Element", () => {
+  it("init() scopes the element to a given Element", () => {
     const service = TestBed.inject(A11yHudService);
     const container = document.createElement("div");
-    document.body.appendChild(container);
+    addToPage(container);
     service.init({ scope: container });
-    expect(mockEl.scopeElement).toBe(container);
-    container.remove();
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("sets scopeElement to undefined when scope is null", () => {
+  it("init() leaves the element unscoped when scope is null", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({ scope: null });
-    expect(mockEl.scopeElement).toBeUndefined();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("syncScope() updates scopeElement", () => {
+  it("syncScope() re-scopes the element", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
     const container = document.createElement("div");
-    document.body.appendChild(container);
+    addToPage(container);
     service.syncScope(container);
-    expect(mockEl.scopeElement).toBe(container);
-    container.remove();
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("syncScope() clears scopeElement when passed null", () => {
+  it("syncScope() clears the scope when passed null", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
     const container = document.createElement("div");
+    addToPage(container);
     service.syncScope(container);
     service.syncScope(null);
-    expect(mockEl.scopeElement).toBeUndefined();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("syncScope() unwraps ElementRef.nativeElement", () => {
+  it("syncScope() unwraps an ElementRef", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
     const container = document.createElement("div");
-    document.body.appendChild(container);
+    addToPage(container);
     service.syncScope({ nativeElement: container } as unknown as Element);
-    expect(mockEl.scopeElement).toBe(container);
-    container.remove();
+    expect(hud.getScopeElement()).toBe(container);
   });
 
   it("syncScope() is a no-op before init()", () => {
     const service = TestBed.inject(A11yHudService);
-    service.syncScope(document.body);
-    expect(true).toBe(true);
+    expect(() => service.syncScope(document.body)).not.toThrow();
+    expect(hud.isMounted()).toBe(false);
   });
 
-  it("syncTheme() calls setTheme on the instance", () => {
+  it("syncTheme() changes the element's theme", () => {
     const service = TestBed.inject(A11yHudService);
-    service.init({});
+    service.init({ theme: "light" });
     service.syncTheme("high-contrast");
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
+    expect(hud.getThemeAttribute()).toBe("high-contrast");
   });
 
-  it("syncTheme() does not call setTheme when theme is undefined", () => {
+  it("syncTheme() keeps the current theme when passed undefined", () => {
     const service = TestBed.inject(A11yHudService);
-    service.init({});
+    service.init({ theme: "light" });
     service.syncTheme(undefined);
-    expect(mockInstance.setTheme).not.toHaveBeenCalled();
+    expect(hud.getThemeAttribute()).toBe("light");
   });
 
-  it("syncAutoScan() sets auto-scan attribute when true", () => {
+  it("syncAutoScan() turns auto-scan on", () => {
     const service = TestBed.inject(A11yHudService);
-    service.init({});
+    service.init({ autoScan: false });
     service.syncAutoScan(true);
-    expect(mockEl.hasAttribute("auto-scan")).toBe(true);
+    expect(hud.hasAutoScan()).toBe(true);
   });
 
-  it("syncAutoScan() removes auto-scan attribute when false", () => {
+  it("syncAutoScan() turns auto-scan off", () => {
     const service = TestBed.inject(A11yHudService);
-    service.init({});
-    mockEl.setAttribute("auto-scan", "");
+    service.init({ autoScan: true });
     service.syncAutoScan(false);
-    expect(mockEl.hasAttribute("auto-scan")).toBe(false);
+    expect(hud.hasAutoScan()).toBe(false);
   });
 
-  it("syncAutoScan() is a no-op when autoScan is undefined", () => {
+  it("syncAutoScan() is a no-op when passed undefined", () => {
     const service = TestBed.inject(A11yHudService);
-    service.init({});
-    const hadAutoScan = mockEl.hasAttribute("auto-scan");
+    service.init({ autoScan: true });
     service.syncAutoScan(undefined);
-    expect(mockEl.hasAttribute("auto-scan")).toBe(hadAutoScan);
+    expect(hud.hasAutoScan()).toBe(true);
   });
 
-  it("syncDebounce() sets debounce attribute", () => {
+  it("syncDebounce() updates the debounce", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
     service.syncDebounce(400);
-    expect(mockEl.getAttribute("debounce")).toBe("400");
+    expect(hud.getDebounceAttribute()).toBe("400");
   });
 
-  it("syncDebounce() is a no-op when debounce is undefined", () => {
+  it("syncDebounce() is a no-op when passed undefined", () => {
     const service = TestBed.inject(A11yHudService);
-    service.init({});
+    service.init({ debounce: 200 });
     service.syncDebounce(undefined);
-    expect(mockEl.getAttribute("debounce")).toBeNull();
+    expect(hud.getDebounceAttribute()).toBe("200");
   });
 
-  it("runScan() delegates to instance.runScan()", async () => {
+  it("runScan() scans the element and resolves with axe results", async () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
-    await service.runScan();
-    expect(mockInstance.runScan).toHaveBeenCalled();
+    runScan.mockClear();
+
+    const results = await service.runScan();
+
+    expect(runScan).toHaveBeenCalledTimes(1);
+    expect(Array.isArray(results?.violations)).toBe(true);
   });
 
-  it("runScan() returns null-equivalent when not yet initialized", async () => {
+  it("runScan() resolves with null before init()", async () => {
     const service = TestBed.inject(A11yHudService);
-    const result = await service.runScan();
-    expect(result).toBeNull();
+    await expect(service.runScan()).resolves.toBeNull();
   });
 
-  it("setTheme() delegates to instance.setTheme()", () => {
-    const service = TestBed.inject(A11yHudService);
-    service.init({});
-    service.setTheme("light");
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("light");
-  });
-
-  it("exportResults() delegates to instance.exportResults()", () => {
+  it("setTheme() changes the element's theme", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
-    mockInstance.exportResults.mockReturnValue('{"version":"1"}');
+    service.setTheme("github-dark");
+    expect(hud.getThemeAttribute()).toBe("github-dark");
+  });
+
+  it("setRunOnly() changes the element's rule sets", () => {
+    const service = TestBed.inject(A11yHudService);
+    service.init({});
+    service.setRunOnly(["best-practice"]);
+    expect(hud.getRunOnly()).toEqual(["best-practice"]);
+  });
+
+  it("exportResults() returns the element's export once a scan has settled", async () => {
+    const service = TestBed.inject(A11yHudService);
+    service.init({});
+    await hud.awaitReady();
+
     const json = service.exportResults();
-    expect(mockInstance.exportResults).toHaveBeenCalledOnce();
-    expect(json).toBe('{"version":"1"}');
+
+    expect(json).not.toBeNull();
+    expect((JSON.parse(json as string) as { version: string }).version).toBe("1");
   });
 
-  it("ignores.add() delegates to instance.ignores.add()", () => {
-    const service = TestBed.inject(A11yHudService);
-    service.init({});
-    service.ignores.add("color-contrast");
-    expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
-  });
-
-  it("ignores.list() returns [] when not initialized", () => {
-    const service = TestBed.inject(A11yHudService);
-    expect(service.ignores.list()).toEqual([]);
-  });
-
-  it("exportResults() returns null when not initialized", () => {
+  it("exportResults() returns null before init()", () => {
     const service = TestBed.inject(A11yHudService);
     expect(service.exportResults()).toBeNull();
   });
 
-  it("ngOnDestroy() calls instance.unmount()", () => {
+  it("ignores.add() persists the rule and ignores.list() reads it back", () => {
+    const service = TestBed.inject(A11yHudService);
+    service.init({});
+    service.ignores.add("color-contrast");
+    expect(service.ignores.list()).toEqual([{ ruleId: "color-contrast" }]);
+  });
+
+  it("ignores.remove() and ignores.clear() drop rules again", () => {
+    const service = TestBed.inject(A11yHudService);
+    service.init({});
+    service.ignores.add("color-contrast");
+    service.ignores.add("image-alt");
+
+    service.ignores.remove("color-contrast");
+    expect(service.ignores.list()).toEqual([{ ruleId: "image-alt" }]);
+
+    service.ignores.clear();
+    expect(service.ignores.list()).toEqual([]);
+  });
+
+  it("ignores.exportJson() and ignores.importJson() round-trip the list", () => {
+    const service = TestBed.inject(A11yHudService);
+    service.init({});
+    service.ignores.add("image-alt");
+    const json = service.ignores.exportJson();
+    service.ignores.clear();
+
+    service.ignores.importJson(json);
+
+    expect(JSON.parse(json)).toEqual([{ ruleId: "image-alt" }]);
+    expect(service.ignores.list()).toEqual([{ ruleId: "image-alt" }]);
+  });
+
+  it("ignores.list() returns [] before init()", () => {
+    const service = TestBed.inject(A11yHudService);
+    expect(service.ignores.list()).toEqual([]);
+  });
+
+  it("ngOnDestroy() removes the element", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
     service.ngOnDestroy();
-    expect(mockInstance.unmount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(false);
+    expect(service.initialized).toBe(false);
   });
 
   it("syncScope() is a no-op after ngOnDestroy()", () => {
     const service = TestBed.inject(A11yHudService);
     service.init({});
     service.ngOnDestroy();
-    service.syncScope(document.body);
-    expect(true).toBe(true);
+    expect(() => service.syncScope(document.body)).not.toThrow();
   });
 });

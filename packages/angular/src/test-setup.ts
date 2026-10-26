@@ -57,3 +57,9 @@ if (!window.matchMedia) {
 getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting(), {
   teardown: { destroyAfterEach: true },
 });
+
+// axe-core probes a 2D canvas context for its colour-contrast checks. jsdom has
+// no canvas implementation and logs a "not implemented" error on every scan;
+// returning null is what an unsupported browser would do and axe handles it.
+HTMLCanvasElement.prototype.getContext = (() =>
+  null) as unknown as typeof HTMLCanvasElement.prototype.getContext;

@@ -1,425 +1,329 @@
 import { mount as vueMount } from "@vue/test-utils";
-import { mount } from "a11y-hud";
+import { A11yHudElement } from "a11y-hud";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, nextTick, reactive, shallowReactive } from "vue";
+import { HudHostHarness } from "./__harnesses__/hud-host.harness.js";
 import { useA11yHud } from "./composable.js";
-import type { UseA11yHudOptions } from "./types.js";
+import type { UseA11yHudOptions, UseA11yHudReturn } from "./types.js";
 
-vi.mock("a11y-hud", () => ({
-  mount: vi.fn(),
-}));
+const hud = new HudHostHarness();
 
-type MockIgnores = {
-  add: ReturnType<typeof vi.fn>;
-  remove: ReturnType<typeof vi.fn>;
-  clear: ReturnType<typeof vi.fn>;
-  list: ReturnType<typeof vi.fn>;
-  exportJson: ReturnType<typeof vi.fn>;
-  importJson: ReturnType<typeof vi.fn>;
-};
-
-type MockInstance = {
-  unmount: ReturnType<typeof vi.fn>;
-  setTheme: ReturnType<typeof vi.fn>;
-  setRunOnly: ReturnType<typeof vi.fn>;
-  runScan: ReturnType<typeof vi.fn>;
-  exportResults: ReturnType<typeof vi.fn>;
-  ignores: MockIgnores;
-};
-
-function makeMockElement() {
-  const el = document.createElement("a11y-hud") as HTMLElement & {
-    scopeElement?: Element;
-  };
-  Object.defineProperty(el, "scopeElement", {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
-  return el;
-}
-
-let mockEl: ReturnType<typeof makeMockElement>;
-let mockInstance: MockInstance;
-
-beforeEach(() => {
-  mockEl = makeMockElement();
-  mockInstance = {
-    unmount: vi.fn(() => mockEl.remove()),
-    setTheme: vi.fn(),
-    setRunOnly: vi.fn(),
-    runScan: vi.fn().mockResolvedValue({ violations: [] }),
-    exportResults: vi.fn().mockReturnValue(null),
-    ignores: {
-      add: vi.fn(),
-      remove: vi.fn(),
-      clear: vi.fn(),
-      list: vi.fn().mockReturnValue([]),
-      exportJson: vi.fn().mockReturnValue("[]"),
-      importJson: vi.fn(),
-    },
-  };
-  (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
-    document.body.appendChild(mockEl);
-    return mockInstance;
-  });
-});
-
-afterEach(() => {
-  mockEl.remove();
-  vi.clearAllMocks();
-});
-
+/** Mounts a bare component that runs the composable and exposes what it returns. */
 function mountComposable(options: UseA11yHudOptions = {}) {
+  let captured: UseA11yHudReturn | undefined;
   const wrapper = vueMount(
     defineComponent({
       setup() {
-        const result = useA11yHud(options);
-        return result;
-      },
-      render() {
-        return null;
+        captured = useA11yHud(options);
+        return () => null;
       },
     })
   );
-  return wrapper;
+  if (!captured) throw new Error("useA11yHud() did not run during setup");
+  return { wrapper, hook: captured };
 }
 
 describe("useA11yHud", () => {
-  it("calls mount() on initial render", async () => {
-    mountComposable();
-    await nextTick();
-    expect(mount).toHaveBeenCalledOnce();
+  let runScan: ReturnType<typeof vi.spyOn>;
+  const pageFixtures: Element[] = [];
+
+  /** Appends an element to the page and keeps it there until the scans using it have settled. */
+  function addToPage(element: Element): void {
+    document.body.appendChild(element);
+    pageFixtures.push(element);
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    hud.track();
+    runScan = vi.spyOn(A11yHudElement.prototype, "runScan");
   });
 
-  it("passes initial options to mount()", async () => {
+  afterEach(async () => {
+    await hud.cleanup();
+    for (const element of pageFixtures.splice(0)) element.remove();
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("mounts the <a11y-hud> element once the owner is mounted", async () => {
+    mountComposable();
+    await nextTick();
+    expect(hud.isMounted()).toBe(true);
+  });
+
+  it("applies the initial options to the element", async () => {
     mountComposable({ theme: "light", autoScan: false, debounce: 300 });
     await nextTick();
-    expect(mount).toHaveBeenCalledWith({ theme: "light", autoScan: false, debounce: 300 });
+    expect(hud.getThemeAttribute()).toBe("light");
+    expect(hud.hasAutoScan()).toBe(false);
+    expect(hud.getDebounceAttribute()).toBe("300");
   });
 
-  it("calls instance.unmount() when the composable owner unmounts", async () => {
-    const wrapper = mountComposable();
+  it("removes the element when the owner unmounts", async () => {
+    const { wrapper } = mountComposable();
     await nextTick();
-    await wrapper.unmount();
-    expect(mockInstance.unmount).toHaveBeenCalledOnce();
+    wrapper.unmount();
+    expect(hud.isMounted()).toBe(false);
   });
 
-  it("calls instance.runScan() on initial mount", async () => {
+  it("runs a scan on initial mount", async () => {
     mountComposable();
     await nextTick();
-    expect(mockInstance.runScan).toHaveBeenCalled();
+    expect(runScan).toHaveBeenCalled();
   });
 
-  it("calls instance.runScan() on re-render (render-settled signal)", async () => {
+  it("runs a scan again when the scope changes (render-settled signal)", async () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
-    // shallowReactive makes opts.scope trackable so watch(() => options.scope)
-    // fires when the scope prop changes, triggering the rescan.
+    addToPage(container);
+    // shallowReactive makes opts.scope trackable, so the composable's watch fires on change.
     const opts = shallowReactive<UseA11yHudOptions>({ scope: undefined });
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
-    const callsBefore = mockInstance.runScan.mock.calls.length;
+    const callsBefore = runScan.mock.calls.length;
+
     opts.scope = container;
     await nextTick();
-    expect(mockInstance.runScan.mock.calls.length).toBeGreaterThan(callsBefore);
-    container.remove();
-    wrapper.unmount();
+
+    expect(runScan.mock.calls.length).toBeGreaterThan(callsBefore);
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("calls instance.setTheme() when theme changes", async () => {
+  it("switches the element's theme when the theme option changes", async () => {
     const opts = reactive<UseA11yHudOptions>({ theme: "light" });
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
+
     opts.theme = "high-contrast";
     await nextTick();
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
-    wrapper.unmount();
+
+    expect(hud.getThemeAttribute()).toBe("high-contrast");
   });
 
-  it("does not call setTheme when theme changes to undefined", async () => {
+  it("keeps the current theme when the theme option becomes undefined", async () => {
     const opts = reactive({ theme: "light" as UseA11yHudOptions["theme"] });
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
+
     opts.theme = undefined;
     await nextTick();
-    expect(mockInstance.setTheme).not.toHaveBeenCalledWith(undefined);
-    wrapper.unmount();
+
+    expect(hud.getThemeAttribute()).toBe("light");
   });
 
-  it("sets auto-scan attribute when autoScan changes to true", async () => {
+  it("turns auto-scan on when autoScan changes to true", async () => {
     const opts = reactive<UseA11yHudOptions>({ autoScan: false });
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
+    expect(hud.hasAutoScan()).toBe(false);
+
     opts.autoScan = true;
     await nextTick();
-    expect(mockEl.hasAttribute("auto-scan")).toBe(true);
-    wrapper.unmount();
+
+    expect(hud.hasAutoScan()).toBe(true);
   });
 
-  it("removes auto-scan attribute when autoScan changes to false", async () => {
+  it("turns auto-scan off when autoScan changes to false", async () => {
     const opts = reactive<UseA11yHudOptions>({ autoScan: true });
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
+
     opts.autoScan = false;
     await nextTick();
-    expect(mockEl.hasAttribute("auto-scan")).toBe(false);
-    wrapper.unmount();
+
+    expect(hud.hasAutoScan()).toBe(false);
   });
 
-  it("sets debounce attribute when debounce prop changes", async () => {
+  it("updates the debounce when the option changes", async () => {
     const opts = reactive<UseA11yHudOptions>({ debounce: 200 });
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
+
     opts.debounce = 400;
     await nextTick();
-    expect(mockEl.getAttribute("debounce")).toBe("400");
-    wrapper.unmount();
+
+    expect(hud.getDebounceAttribute()).toBe("400");
   });
 
-  it("does not update debounce attribute when debounce changes to undefined", async () => {
+  it("keeps the current debounce when the option becomes undefined", async () => {
     const opts = reactive({ debounce: 200 as UseA11yHudOptions["debounce"] });
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
     opts.debounce = 400;
     await nextTick();
-    expect(mockEl.getAttribute("debounce")).toBe("400");
+    expect(hud.getDebounceAttribute()).toBe("400");
+
     opts.debounce = undefined;
     await nextTick();
-    expect(mockEl.getAttribute("debounce")).toBe("400");
-    wrapper.unmount();
+
+    expect(hud.getDebounceAttribute()).toBe("400");
   });
 
-  it("sets scopeElement on the CE when scope has a value", async () => {
+  it("scopes the element to the given scope element", async () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
+    addToPage(container);
 
     mountComposable({ scope: container });
     await nextTick();
 
-    expect(mockEl.scopeElement).toBe(container);
-    container.remove();
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("clears scopeElement when scope is null", async () => {
+  it("leaves the element unscoped when scope is null", async () => {
     mountComposable({ scope: null });
     await nextTick();
-    expect(mockEl.scopeElement).toBeUndefined();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("clears scopeElement when scope changes from an element to undefined", async () => {
+  it("clears the scope when it goes from an element to undefined", async () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
+    addToPage(container);
     const opts = shallowReactive<UseA11yHudOptions>({ scope: container });
-
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
-    expect(mockEl.scopeElement).toBe(container);
+    expect(hud.getScopeElement()).toBe(container);
 
     opts.scope = undefined;
     await nextTick();
-    expect(mockEl.scopeElement).toBeUndefined();
 
-    container.remove();
-    wrapper.unmount();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("returned runScan() delegates to instance.runScan()", async () => {
-    const wrapper = mountComposable();
-    await nextTick();
-    await (wrapper.vm as unknown as { runScan: () => Promise<unknown> }).runScan();
-    expect(mockInstance.runScan).toHaveBeenCalled();
-  });
-
-  it("returned setTheme() delegates to instance.setTheme()", async () => {
-    const wrapper = mountComposable();
-    await nextTick();
-    (wrapper.vm as unknown as { setTheme: (t: string) => void }).setTheme("dark");
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("dark");
-  });
-
-  it("calls instance.setRunOnly() when runOnly changes", async () => {
+  it("applies runOnly changes to the element", async () => {
     const opts = reactive<UseA11yHudOptions>({ runOnly: ["wcag2a"] });
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          useA11yHud(opts);
-          return () => null;
-        },
-      })
-    );
+    mountComposable(opts);
     await nextTick();
+    expect(hud.getRunOnly()).toEqual(["wcag2a"]);
+
     opts.runOnly = ["wcag2a", "wcag2aa"];
     await nextTick();
-    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["wcag2a", "wcag2aa"]);
-    wrapper.unmount();
+
+    expect(hud.getRunOnly()).toEqual(["wcag2a", "wcag2aa"]);
   });
 
-  it("returned setRunOnly() delegates to instance.setRunOnly()", async () => {
-    const wrapper = mountComposable();
-    await nextTick();
-    (wrapper.vm as unknown as { setRunOnly: (tags: string[]) => void }).setRunOnly([
-      "best-practice",
-    ]);
-    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["best-practice"]);
-  });
+  describe("returned API", () => {
+    it("runScan() scans the element and resolves with axe results", async () => {
+      const { hook } = mountComposable();
+      await nextTick();
+      runScan.mockClear();
 
-  it("returned exportResults() delegates to instance.exportResults()", async () => {
-    mockInstance.exportResults.mockReturnValue('{"version":"1"}');
-    const wrapper = mountComposable();
-    await nextTick();
-    const json = (wrapper.vm as unknown as { exportResults: () => string | null }).exportResults();
-    expect(mockInstance.exportResults).toHaveBeenCalledOnce();
-    expect(json).toBe('{"version":"1"}');
-    wrapper.unmount();
-  });
+      const results = await hook.runScan();
 
-  it("returned ignores.add() delegates to instance.ignores.add()", async () => {
-    const wrapper = mountComposable();
-    await nextTick();
-    (wrapper.vm as unknown as { ignores: { add: (id: string) => void } }).ignores.add(
-      "color-contrast"
-    );
-    expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
-    wrapper.unmount();
-  });
+      expect(runScan).toHaveBeenCalledTimes(1);
+      expect(Array.isArray(results?.violations)).toBe(true);
+    });
 
-  it("returned ignores.remove() delegates to instance.ignores.remove()", async () => {
-    const wrapper = mountComposable();
-    await nextTick();
-    (wrapper.vm as unknown as { ignores: { remove: (id: string) => void } }).ignores.remove(
-      "color-contrast"
-    );
-    expect(mockInstance.ignores.remove).toHaveBeenCalledWith("color-contrast", undefined);
-    wrapper.unmount();
-  });
+    it("setTheme() changes the element's theme", async () => {
+      const { hook } = mountComposable();
+      await nextTick();
 
-  it("returned ignores.clear() delegates to instance.ignores.clear()", async () => {
-    const wrapper = mountComposable();
-    await nextTick();
-    (wrapper.vm as unknown as { ignores: { clear: () => void } }).ignores.clear();
-    expect(mockInstance.ignores.clear).toHaveBeenCalledOnce();
-    wrapper.unmount();
-  });
+      hook.setTheme("github-dark");
 
-  it("returned ignores.exportJson() delegates to instance.ignores.exportJson()", async () => {
-    mockInstance.ignores.exportJson.mockReturnValue('[{"ruleId":"image-alt"}]');
-    const wrapper = mountComposable();
-    await nextTick();
-    const json = (
-      wrapper.vm as unknown as { ignores: { exportJson: () => string } }
-    ).ignores.exportJson();
-    expect(json).toBe('[{"ruleId":"image-alt"}]');
-    wrapper.unmount();
-  });
+      expect(hud.getThemeAttribute()).toBe("github-dark");
+    });
 
-  it("returned ignores.importJson() delegates to instance.ignores.importJson()", async () => {
-    const wrapper = mountComposable();
-    await nextTick();
-    (wrapper.vm as unknown as { ignores: { importJson: (j: string) => void } }).ignores.importJson(
-      '[{"ruleId":"image-alt"}]'
-    );
-    expect(mockInstance.ignores.importJson).toHaveBeenCalledWith('[{"ruleId":"image-alt"}]');
-    wrapper.unmount();
-  });
+    it("setRunOnly() changes the element's rule sets", async () => {
+      const { hook } = mountComposable();
+      await nextTick();
 
-  it("ignores.list() returns [] and exportJson returns '[]' before instance mounts", () => {
-    let earlyList: unknown[] | undefined;
-    let earlyJson: string | undefined;
-    vueMount(
-      defineComponent({
-        setup() {
-          const { ignores } = useA11yHud();
-          earlyList = ignores.list();
-          earlyJson = ignores.exportJson();
-          return () => null;
-        },
-      })
-    );
-    expect(earlyList).toEqual([]);
-    expect(earlyJson).toBe("[]");
-  });
+      hook.setRunOnly(["best-practice"]);
 
-  it("returned runScan and setTheme are stable references across re-renders", async () => {
-    const opts = reactive<UseA11yHudOptions>({});
-    const captured: { runScan?: unknown; setTheme?: unknown } = {};
+      expect(hud.getRunOnly()).toEqual(["best-practice"]);
+    });
 
-    const wrapper = vueMount(
-      defineComponent({
-        setup() {
-          const { runScan, setTheme } = useA11yHud(opts);
-          captured.runScan = runScan;
-          captured.setTheme = setTheme;
-          return { runScan, setTheme };
-        },
-        render() {
-          return null;
-        },
-      })
-    );
-    await nextTick();
+    it("exportResults() returns the element's export once a scan has settled", async () => {
+      const { hook } = mountComposable();
+      await hud.awaitReady();
 
-    const vmRunScan = (wrapper.vm as unknown as { runScan: unknown }).runScan;
-    const vmSetTheme = (wrapper.vm as unknown as { setTheme: unknown }).setTheme;
+      const json = hook.exportResults();
 
-    expect(captured.runScan).toBe(vmRunScan);
-    expect(captured.setTheme).toBe(vmSetTheme);
-    wrapper.unmount();
+      expect(json).not.toBeNull();
+      expect((JSON.parse(json as string) as { version: string }).version).toBe("1");
+    });
+
+    it("ignores.add() persists the rule and ignores.list() reads it back", async () => {
+      const { hook } = mountComposable();
+      await nextTick();
+
+      hook.ignores.add("color-contrast");
+
+      expect(hook.ignores.list()).toEqual([{ ruleId: "color-contrast" }]);
+    });
+
+    it("ignores.remove() drops the rule again", async () => {
+      const { hook } = mountComposable();
+      await nextTick();
+      hook.ignores.add("color-contrast");
+
+      hook.ignores.remove("color-contrast");
+
+      expect(hook.ignores.list()).toEqual([]);
+    });
+
+    it("ignores.clear() empties the list", async () => {
+      const { hook } = mountComposable();
+      await nextTick();
+      hook.ignores.add("color-contrast");
+      hook.ignores.add("image-alt");
+
+      hook.ignores.clear();
+
+      expect(hook.ignores.list()).toEqual([]);
+    });
+
+    it("ignores.exportJson() and ignores.importJson() round-trip the list", async () => {
+      const { hook } = mountComposable();
+      await nextTick();
+      hook.ignores.add("image-alt");
+      const json = hook.ignores.exportJson();
+      hook.ignores.clear();
+
+      hook.ignores.importJson(json);
+
+      expect(JSON.parse(json)).toEqual([{ ruleId: "image-alt" }]);
+      expect(hook.ignores.list()).toEqual([{ ruleId: "image-alt" }]);
+    });
+
+    it("ignores.list() and ignores.exportJson() are safe to call during setup", () => {
+      let earlyList: unknown[] | undefined;
+      let earlyJson: string | undefined;
+
+      vueMount(
+        defineComponent({
+          setup() {
+            const { ignores } = useA11yHud();
+            earlyList = ignores.list();
+            earlyJson = ignores.exportJson();
+            return () => null;
+          },
+        })
+      );
+
+      expect(earlyList).toEqual([]);
+      expect(earlyJson).toBe("[]");
+    });
+
+    it("runScan and setTheme are stable references across re-renders", async () => {
+      const opts = reactive<UseA11yHudOptions>({});
+      const captured: { runScan?: unknown; setTheme?: unknown } = {};
+      const wrapper = vueMount(
+        defineComponent({
+          setup() {
+            const { runScan: scan, setTheme } = useA11yHud(opts);
+            captured.runScan = scan;
+            captured.setTheme = setTheme;
+            return { runScan: scan, setTheme };
+          },
+          render() {
+            return null;
+          },
+        })
+      );
+      await nextTick();
+
+      const vm = wrapper.vm as unknown as { runScan: unknown; setTheme: unknown };
+      expect(captured.runScan).toBe(vm.runScan);
+      expect(captured.setTheme).toBe(vm.setTheme);
+    });
   });
 });

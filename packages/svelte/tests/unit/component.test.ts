@@ -1,211 +1,187 @@
 import { cleanup, render } from "@testing-library/svelte";
-import { mount } from "a11y-hud";
+import { A11yHudElement } from "a11y-hud";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import A11yHud from "../../src/A11yHud.svelte";
+import { HudHostHarness } from "./__harnesses__/hud-host.harness.js";
 
-vi.mock("a11y-hud", () => ({
-  mount: vi.fn(),
-}));
-
-type MockInstance = {
-  unmount: ReturnType<typeof vi.fn>;
-  setTheme: ReturnType<typeof vi.fn>;
-  setRunOnly: ReturnType<typeof vi.fn>;
-  runScan: ReturnType<typeof vi.fn>;
-};
-
-function makeMockElement() {
-  const el = document.createElement("a11y-hud") as HTMLElement & {
-    scopeElement?: Element;
-  };
-  Object.defineProperty(el, "scopeElement", {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
-  return el;
-}
-
-let mockEl: ReturnType<typeof makeMockElement>;
-let mockInstance: MockInstance;
-
-beforeEach(() => {
-  mockEl = makeMockElement();
-  mockInstance = {
-    unmount: vi.fn(() => mockEl.remove()),
-    setTheme: vi.fn(),
-    setRunOnly: vi.fn(),
-    runScan: vi.fn().mockResolvedValue({ violations: [] }),
-  };
-  (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
-    document.body.appendChild(mockEl);
-    return mockInstance;
-  });
-});
-
-afterEach(() => {
-  cleanup();
-  mockEl.remove();
-  vi.clearAllMocks();
-});
+const hud = new HudHostHarness();
 
 describe("A11yHud component", () => {
-  it("calls mount() on initial render", async () => {
+  let runScan: ReturnType<typeof vi.spyOn>;
+  const pageFixtures: Element[] = [];
+
+  /** Appends an element to the page and keeps it there until the scans using it have settled. */
+  function addToPage(element: Element): void {
+    document.body.appendChild(element);
+    pageFixtures.push(element);
+  }
+
+  beforeEach(() => {
+    hud.track();
+    runScan = vi.spyOn(A11yHudElement.prototype, "runScan");
+  });
+
+  afterEach(async () => {
+    cleanup();
+    await hud.cleanup();
+    for (const element of pageFixtures.splice(0)) element.remove();
+    vi.restoreAllMocks();
+  });
+
+  it("mounts the <a11y-hud> element into the document", async () => {
     render(A11yHud);
     await tick();
-    expect(mount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(true);
   });
 
-  it("passes initial theme to mount()", async () => {
-    render(A11yHud, { props: { theme: "light" } });
+  it("applies the initial props to the element", async () => {
+    render(A11yHud, { props: { theme: "light", autoScan: false, debounce: 300 } });
     await tick();
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ theme: "light" }));
+    expect(hud.getThemeAttribute()).toBe("light");
+    expect(hud.hasAutoScan()).toBe(false);
+    expect(hud.getDebounceAttribute()).toBe("300");
   });
 
-  it("passes initial autoScan to mount()", async () => {
-    render(A11yHud, { props: { autoScan: false } });
-    await tick();
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ autoScan: false }));
-  });
-
-  it("passes initial debounce to mount()", async () => {
-    render(A11yHud, { props: { debounce: 300 } });
-    await tick();
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ debounce: 300 }));
-  });
-
-  it("passes initial runOnly to mount()", async () => {
+  it("applies the runOnly prop to the element", async () => {
     render(A11yHud, { props: { runOnly: ["wcag2a"] } });
     await tick();
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ runOnly: ["wcag2a"] }));
+    expect(hud.getRunOnly()).toEqual(["wcag2a"]);
   });
 
-  it("calls instance.unmount() when component is unmounted", async () => {
+  it("removes the element when the component unmounts", async () => {
     const { unmount } = render(A11yHud);
     await tick();
     unmount();
     await tick();
-    expect(mockInstance.unmount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(false);
   });
 
-  it("calls instance.runScan() on initial mount", async () => {
+  it("runs a scan on initial mount", async () => {
     render(A11yHud);
     await tick();
-    expect(mockInstance.runScan).toHaveBeenCalled();
+    expect(runScan).toHaveBeenCalled();
   });
 
-  it("calls instance.runScan() when scope changes", async () => {
+  it("re-scopes and rescans when the scope prop changes", async () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
-
+    addToPage(container);
     const { rerender } = render(A11yHud);
     await tick();
-    const callsBefore = mockInstance.runScan.mock.calls.length;
+    const callsBefore = runScan.mock.calls.length;
 
     await rerender({ scope: container });
     await tick();
 
-    expect(mockInstance.runScan.mock.calls.length).toBeGreaterThan(callsBefore);
-    container.remove();
+    expect(runScan.mock.calls.length).toBeGreaterThan(callsBefore);
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("calls instance.setTheme() when theme changes", async () => {
+  it("switches the element's theme when the theme prop changes", async () => {
     const { rerender } = render(A11yHud, { props: { theme: "light" } });
     await tick();
 
     await rerender({ theme: "high-contrast" });
     await tick();
 
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
+    expect(hud.getThemeAttribute()).toBe("high-contrast");
   });
 
-  it("sets auto-scan attribute when autoScan changes to true", async () => {
+  it("leaves the theme untouched when no theme prop is given", async () => {
+    render(A11yHud);
+    await tick();
+    expect(hud.getThemeAttribute()).toBeNull();
+  });
+
+  it("turns auto-scan on when autoScan changes to true", async () => {
     const { rerender } = render(A11yHud, { props: { autoScan: false } });
     await tick();
+    expect(hud.hasAutoScan()).toBe(false);
 
     await rerender({ autoScan: true });
     await tick();
 
-    expect(mockEl.hasAttribute("auto-scan")).toBe(true);
+    expect(hud.hasAutoScan()).toBe(true);
   });
 
-  it("removes auto-scan attribute when autoScan is set to false", async () => {
+  it("turns auto-scan off when autoScan changes to false", async () => {
     const { rerender } = render(A11yHud, { props: { autoScan: true } });
     await tick();
 
     await rerender({ autoScan: false });
     await tick();
 
-    expect(mockEl.hasAttribute("auto-scan")).toBe(false);
+    expect(hud.hasAutoScan()).toBe(false);
   });
 
-  it("sets debounce attribute when debounce changes", async () => {
+  it("updates the debounce when the prop changes", async () => {
     const { rerender } = render(A11yHud, { props: { debounce: 200 } });
     await tick();
 
     await rerender({ debounce: 400 });
     await tick();
 
-    expect(mockEl.getAttribute("debounce")).toBe("400");
+    expect(hud.getDebounceAttribute()).toBe("400");
   });
 
-  it("sets scopeElement on CE when scope has a value", async () => {
+  it("keeps the current debounce when the prop becomes undefined", async () => {
+    const { rerender } = render(A11yHud, { props: { debounce: 200 } });
+    await tick();
+    expect(hud.getDebounceAttribute()).toBe("200");
+
+    await rerender({ debounce: undefined });
+    await tick();
+
+    expect(hud.getDebounceAttribute()).toBe("200");
+  });
+
+  it("scopes the element to the given scope element", async () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
+    addToPage(container);
 
     render(A11yHud, { props: { scope: container } });
     await tick();
 
-    expect(mockEl.scopeElement).toBe(container);
-    container.remove();
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("clears scopeElement when scope is null", async () => {
+  it("leaves the element unscoped when scope is null", async () => {
     render(A11yHud, { props: { scope: null } });
     await tick();
-
-    expect(mockEl.scopeElement).toBeUndefined();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("clears scopeElement when scope changes from element to undefined", async () => {
+  it("clears the scope when it goes from an element to undefined", async () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
-
+    addToPage(container);
     const { rerender } = render(A11yHud, { props: { scope: container } });
     await tick();
-    expect(mockEl.scopeElement).toBe(container);
+    expect(hud.getScopeElement()).toBe(container);
 
     await rerender({ scope: undefined });
     await tick();
-    expect(mockEl.scopeElement).toBeUndefined();
 
-    container.remove();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("does not call setTheme when theme prop is undefined", async () => {
+  it("does not scan when the element cannot be found after mounting", async () => {
+    const realQuerySelector = document.querySelector.bind(document);
+    vi.spyOn(document, "querySelector").mockImplementation((selector: string) =>
+      selector === "a11y-hud" ? null : realQuerySelector(selector)
+    );
+
     render(A11yHud);
     await tick();
-    expect(mockInstance.setTheme).not.toHaveBeenCalled();
+
+    expect(runScan).not.toHaveBeenCalled();
   });
 
-  it("does not update debounce attribute when debounce changes to undefined", async () => {
-    const { rerender } = render(A11yHud, { props: { debounce: 200 } });
-    await tick();
-    expect(mockEl.getAttribute("debounce")).toBe("200");
-    await rerender({ debounce: undefined });
-    await tick();
-    expect(mockEl.getAttribute("debounce")).toBe("200");
-  });
-
-  it("does not call runScan when CE element is not found in the DOM", async () => {
-    vi.spyOn(document, "querySelector").mockImplementation((selector) => {
-      if (selector === "a11y-hud") return null;
-      return document.querySelector.call(document, selector);
-    });
+  it("runs a real axe-core scan and lists the page's violations", async () => {
+    addToPage(document.createElement("img"));
     render(A11yHud);
-    await tick();
-    expect(mockInstance.runScan).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+
+    await hud.awaitReady();
+
+    expect(hud.getRuleIds()).toContain("image-alt");
   });
 });
