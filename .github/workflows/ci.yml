@@ -13,6 +13,8 @@ concurrency:
 jobs:
   ci:
     name: CI (Node ${{ matrix.node-version }})
+    # Release commits were already tested on the release PR; only the Release workflow needs to run on them.
+    if: "${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore: release packages') }}"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
