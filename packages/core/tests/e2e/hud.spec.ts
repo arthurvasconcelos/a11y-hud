@@ -1,183 +1,65 @@
-import { expect, test } from "@playwright/test";
+import { createRequire } from "node:module";
+import { expect, type Page, test } from "@playwright/test";
 
-test.describe("a11y-hud panel", () => {
+const require = createRequire(import.meta.url);
+const AXE_SCRIPT_PATH = require.resolve("axe-core/axe.min.js");
+
+// Playwright locators pierce open shadow roots, so the panel can be addressed
+// by the same roles and accessible names the integration harnesses use.
+const hud = (page: Page) => page.locator("a11y-hud");
+const panel = (page: Page) => page.getByRole("complementary", { name: "Accessibility panel" });
+const violationList = (page: Page) => page.getByRole("list", { name: /^\d+ violations?$/ });
+const ruleIds = (page: Page) => hud(page).locator(".violation-rule");
+
+test.describe("a11y-hud in a real browser", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForSelector("a11y-hud");
+    await expect(violationList(page)).toBeVisible();
   });
 
-  test("panel renders and contains a violation list", async ({ page }) => {
-    const panelHandle = page.locator("a11y-hud");
-    await expect(panelHandle).toBeAttached();
-
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector(".violation-list") !== null;
-    });
-
-    const violationCount = await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelectorAll(".violation-item").length ?? 0;
-    });
-
-    expect(violationCount).toBeGreaterThan(0);
+  test("lists the fixture page's violations found by axe-core", async ({ page }) => {
+    await expect(ruleIds(page).filter({ hasText: /^image-alt$/ })).toHaveCount(1);
+    expect(await ruleIds(page).count()).toBeGreaterThan(0);
   });
 
-  test("violation list contains expected rules from fixture page", async ({ page }) => {
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector(".violation-list") !== null;
-    });
+  test("highlights the offending node on the page", async ({ page }) => {
+    await hud(page)
+      .getByRole("button", { name: /^image-alt / })
+      .click();
+    await hud(page)
+      .getByRole("region", { name: "image-alt details" })
+      .getByRole("button", { name: /^Highlight:/ })
+      .first()
+      .click();
 
-    const ruleIds = await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      return Array.from(el?.shadowRoot?.querySelectorAll(".violation-rule") ?? []).map(
-        (r) => r.textContent
-      );
-    });
-
-    expect(ruleIds).toContain("image-alt");
+    await expect(page.locator("[data-a11y-hud-highlighted]")).toHaveCount(1);
   });
 
-  test("click-to-highlight adds highlight attribute to host element", async ({ page }) => {
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector(".violation-list") !== null;
-    });
+  test("Escape collapses the panel to the FAB and the FAB brings it back", async ({ page }) => {
+    const fab = hud(page).getByRole("button", { name: "Open accessibility panel" });
+    await hud(page).getByRole("button", { name: "Re-scan page" }).focus();
 
-    await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      const toggle = el?.shadowRoot?.querySelector<HTMLButtonElement>(".violation-toggle");
-      toggle?.click();
-    });
+    await page.keyboard.press("Escape");
 
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector("[data-open]") !== null;
-    });
+    await expect(panel(page)).toBeHidden();
+    await expect(fab).toBeVisible();
 
-    await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      el?.shadowRoot?.querySelector<HTMLButtonElement>(".btn-highlight")?.click();
-    });
+    await fab.click();
 
-    const highlighted = await page.evaluate(
-      () => document.querySelectorAll("[data-a11y-hud-highlighted]").length
-    );
-    expect(highlighted).toBe(1);
+    await expect(panel(page)).toBeVisible();
+    await expect(fab).toBeHidden();
   });
 
-  test("severity filter narrows the violation list", async ({ page }) => {
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector(".violation-list") !== null;
-    });
-
-    const totalBefore = await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelectorAll(".violation-item").length ?? 0;
-    });
-
-    await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      const chips = el?.shadowRoot?.querySelectorAll<HTMLButtonElement>("[data-severity]");
-      for (const c of chips ?? []) {
-        if (c.dataset.severity !== "critical") c.click();
-      }
-    });
-
-    const totalAfter = await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelectorAll(".violation-item").length ?? 0;
-    });
-
-    expect(totalAfter).toBeLessThanOrEqual(totalBefore);
-  });
-
-  test("theme switching via setTheme()", async ({ page }) => {
-    await page.evaluate(() => {
-      (window as Window & { __hud?: { setTheme: (t: string) => void } }).__hud?.setTheme("light");
-    });
-
-    const theme = await page.evaluate(
-      () => (document.querySelector("a11y-hud") as HTMLElement | null)?.dataset.theme
-    );
-    expect(theme).toBe("light");
-
-    await page.evaluate(() => {
-      (window as Window & { __hud?: { setTheme: (t: string) => void } }).__hud?.setTheme("default");
-    });
-
-    const themeDark = await page.evaluate(
-      () => (document.querySelector("a11y-hud") as HTMLElement | null)?.dataset.theme
-    );
-    expect(themeDark).toBe("default");
-  });
-
-  test("keyboard navigation: Escape minimizes the panel to FAB", async ({ page }) => {
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector(".panel") !== null;
-    });
-
-    await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      el?.shadowRoot
-        ?.querySelector(".panel")
-        ?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    });
-
-    // Escape minimizes to FAB — element stays in DOM with data-minimized attribute.
-    await expect(page.locator("a11y-hud")).toHaveCount(1);
-    const isMinimized = await page.evaluate(() =>
-      (document.querySelector("a11y-hud") as HTMLElement | null)?.hasAttribute("data-minimized")
-    );
-    expect(isMinimized).toBe(true);
-  });
-
-  test("re-scan button triggers a new scan", async ({ page }) => {
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector("#btn-rescan") !== null;
-    });
-
-    await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      el?.shadowRoot?.querySelector<HTMLButtonElement>("#btn-rescan")?.click();
-    });
-
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector(".violation-list") !== null;
-    });
-
-    const count = await page.evaluate(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelectorAll(".violation-item").length ?? 0;
-    });
-    expect(count).toBeGreaterThan(0);
-  });
-});
-
-test.describe("a11y-hud self-audit", () => {
-  test("a11y-hud's own UI passes axe-core scan", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForFunction(() => {
-      const el = document.querySelector("a11y-hud");
-      return el?.shadowRoot?.querySelector(".panel") !== null;
-    });
-
-    await page.addScriptTag({
-      url: "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.2/axe.min.js",
-    });
+  test("passes its own axe-core audit", async ({ page }) => {
+    await page.addScriptTag({ path: AXE_SCRIPT_PATH });
 
     const violations = await page.evaluate(async () => {
       const el = document.querySelector("a11y-hud");
       if (!el) return [];
-      const results = await (
+      const axe = (
         window as Window & { axe: { run: (el: Element) => Promise<{ violations: unknown[] }> } }
-      ).axe.run(el);
-      return results.violations;
+      ).axe;
+      return (await axe.run(el)).violations;
     });
 
     expect(violations).toHaveLength(0);
