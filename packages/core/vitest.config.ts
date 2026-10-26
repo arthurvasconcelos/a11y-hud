@@ -24,6 +24,8 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: [
         "src/**/*.test.ts",
+        "src/__fixtures__/**",
+        "src/__harnesses__/**",
         "src/test-setup.ts",
         "src/index.ts",
         "src/declarations.d.ts",
