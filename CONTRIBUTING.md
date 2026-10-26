@@ -41,8 +41,23 @@ pnpm dev
 ```
 packages/
   core/      # a11y-hud (the main package — vanilla, framework-agnostic)
+  react/     # @a11y-hud/react
+  vue/       # @a11y-hud/vue
+  solid/     # @a11y-hud/solid
+  svelte/    # @a11y-hud/svelte
+  angular/   # @a11y-hud/angular
 examples/
-  vanilla/   # example app for manual testing and E2E
+  vanilla/   # example apps: manual testing and E2E, one per package
+  react/
+  vue/
+  solid/
+  svelte/
+  angular/
+  bookmarklet/
+contributing/
+  testing-strategy.md   # which test layer owns what
+  testing-harnesses.md  # how to write and use test harnesses
+docs/        # VitePress site (a11y-hud.dev)
 ```
 
 ## Commit messages
@@ -69,10 +84,32 @@ Breaking changes: append `!` after the type (`feat!: rename mount option`) and d
 
 ## Tests
 
-- Unit tests live alongside source files in `packages/core/src/`.
-- E2E tests live in `packages/core/tests/e2e/`.
-- Coverage targets: 90%+ branch for `packages/core/`.
-- Run `pnpm test:coverage` inside `packages/core/` to check coverage.
+Read [contributing/testing-strategy.md](contributing/testing-strategy.md) before writing tests. The short version:
+
+- **Integration is the default.** Core tests mount the real `<a11y-hud>` element in jsdom and replace only `axe.run()` with fixture results. Adapter tests render the real framework component, the real core element and real axe-core, and assert on what reached the element.
+- **Every integration test drives the element through a harness** (`__harnesses__/`). Tests never query the shadow DOM or call `vi.waitFor` directly. See [contributing/testing-harnesses.md](contributing/testing-harnesses.md).
+- **Unit tests are the exception**, for pure helpers with many edge cases (`keyboard.ts`, `ignores.ts`, `theme.ts`, …). They live next to the file they cover.
+- **E2E is thin.** Playwright runs happy paths and browser-only behaviour (real axe-core in three engines, CSS-driven visibility, framework lifecycle in a real app) against the example apps. Edge cases and error states belong in integration.
+
+Where things live:
+
+| What | Where |
+| --- | --- |
+| Core integration and unit tests | `packages/core/src/*.test.ts` |
+| Core harnesses and fixtures | `packages/core/src/__harnesses__/`, `packages/core/src/__fixtures__/` |
+| Adapter integration tests | `packages/<adapter>/src/*.test.ts` (`packages/svelte/tests/unit/`) |
+| E2E | `packages/<package>/tests/e2e/` |
+
+Commands:
+
+```bash
+pnpm test                      # all packages
+pnpm --filter=a11y-hud test    # one package (any package name works)
+pnpm test:e2e                  # all E2E suites (needs built packages: pnpm build)
+cd packages/core && pnpm test:coverage   # enforces the branch threshold
+```
+
+Coverage thresholds are enforced per package: 86% branches for `packages/core/` (target 90%+), 80% for adapters.
 
 ## Adding or updating vendored icons
 
