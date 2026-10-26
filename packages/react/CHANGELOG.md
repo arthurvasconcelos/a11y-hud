@@ -1,5 +1,12 @@
 # @a11y-hud/react
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [51cda82]
+  - a11y-hud@1.0.1
+
 ## 1.0.0
 
 ### Major Changes
