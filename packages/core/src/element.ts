@@ -398,10 +398,11 @@ export class A11yHudElement extends BaseElement {
     return `
       <div class="panel" role="complementary" aria-label="Accessibility panel">
         <div class="panel-header">
-          <button class="btn-panel-title" aria-expanded="${this._filtersOpen}" aria-controls="panel-filters" aria-label="Toggle filters" title="Toggle filters">
+          <button class="btn-panel-title" aria-expanded="${this._filtersOpen}" aria-controls="panel-filters" title="Toggle filters">
             <span class="panel-title-icon" aria-hidden="true">${icon("filter")}</span>
             a11y
             <span class="panel-count" data-count="${total}" aria-live="polite" aria-label="${total} violations">${total}</span>
+            <span class="visually-hidden">Toggle filters</span>
             <span class="panel-title-chevron" aria-hidden="true">${icon("chevron-down")}</span>
           </button>
           <div class="panel-actions" role="toolbar" aria-label="Panel actions">
