@@ -1,5 +1,12 @@
 # @a11y-hud/svelte
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [6cdb934]
+  - a11y-hud@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes
