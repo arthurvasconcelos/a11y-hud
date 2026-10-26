@@ -14,9 +14,12 @@ jobs:
   ci:
     name: CI (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         node-version: ["22", "24"]
+    outputs:
+      playwright-version: ${{ steps.playwright.outputs.version }}
 
     steps:
       - uses: actions/checkout@v7
@@ -61,14 +64,35 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Install Playwright browsers
-        run: |
-          pnpm --filter='./packages/core' exec playwright install --with-deps chromium firefox webkit
-          pnpm --filter='./packages/react' exec playwright install chromium firefox webkit
-          pnpm --filter='./packages/vue' exec playwright install chromium firefox webkit
-          pnpm --filter='./packages/angular' exec playwright install chromium firefox webkit
-          pnpm --filter='./packages/svelte' exec playwright install chromium firefox webkit
-          pnpm --filter='./packages/solid' exec playwright install chromium firefox webkit
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(pnpm --filter=a11y-hud exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    name: E2E
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The official image ships every browser and its system libraries, so no
+    # browser download and no apt install on the runner's Ubuntu mirror.
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.ci.outputs.playwright-version }}-noble
+      options: --ipc=host
+    env:
+      # Firefox refuses to launch when $HOME is not owned by the current user,
+      # and the Actions container runs as root with HOME set to /github/home.
+      HOME: /root
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
 
       - name: E2E tests
         run: pnpm test:e2e
