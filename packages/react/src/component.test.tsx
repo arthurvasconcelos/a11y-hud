@@ -1,73 +1,70 @@
 import { render } from "@testing-library/react";
-import { mount } from "a11y-hud";
+import { A11yHudElement } from "a11y-hud";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HudHostHarness } from "./__harnesses__/hud-host.harness.js";
 import { A11yHud } from "./component.js";
 
-vi.mock("a11y-hud", () => ({
-  mount: vi.fn(),
-}));
-
-type MockInstance = {
-  unmount: ReturnType<typeof vi.fn>;
-  setTheme: ReturnType<typeof vi.fn>;
-  runScan: ReturnType<typeof vi.fn>;
-};
-
-let mockEl: HTMLElement & { scopeElement?: Element };
-let mockInstance: MockInstance;
-
-beforeEach(() => {
-  mockEl = Object.assign(document.createElement("a11y-hud"), {
-    scopeElement: undefined as Element | undefined,
-  });
-  mockInstance = {
-    unmount: vi.fn(() => mockEl.remove()),
-    setTheme: vi.fn(),
-    runScan: vi.fn().mockResolvedValue({ violations: [] }),
-  };
-  (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
-    document.body.appendChild(mockEl);
-    return mockInstance;
-  });
-});
-
-afterEach(() => {
-  mockEl.remove();
-  vi.clearAllMocks();
-});
+const hud = new HudHostHarness();
 
 describe("A11yHud component", () => {
+  let fixtureImage: HTMLImageElement;
+
+  beforeEach(() => {
+    hud.track();
+    fixtureImage = document.createElement("img");
+    document.body.appendChild(fixtureImage);
+  });
+
+  afterEach(async () => {
+    await hud.cleanup();
+    fixtureImage.remove();
+    vi.restoreAllMocks();
+  });
+
   it("renders nothing into the React tree", () => {
     const { container } = render(<A11yHud />);
     expect(container.firstChild).toBeNull();
   });
 
-  it("mounts the CE on render", () => {
+  it("mounts the <a11y-hud> element into the document", () => {
     render(<A11yHud />);
-    expect(mount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(true);
   });
 
-  it("passes theme prop to mount()", () => {
+  it("applies the theme prop to the element", () => {
     render(<A11yHud theme="light" />);
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ theme: "light" }));
+    expect(hud.getThemeAttribute()).toBe("light");
   });
 
-  it("passes autoScan prop to mount()", () => {
+  it("keeps auto-scan on by default", () => {
+    render(<A11yHud />);
+    expect(hud.hasAutoScan()).toBe(true);
+  });
+
+  it("turns auto-scan off when autoScan is false", () => {
     render(<A11yHud autoScan={false} />);
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ autoScan: false }));
+    expect(hud.hasAutoScan()).toBe(false);
   });
 
-  it("calls instance.unmount() when component unmounts", () => {
+  it("removes the element when the component unmounts", () => {
     const { unmount } = render(<A11yHud />);
     unmount();
-    expect(mockInstance.unmount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(false);
   });
 
-  it("calls instance.setTheme() when theme prop changes", async () => {
+  it("switches the element's theme when the theme prop changes", () => {
     const { rerender } = render(<A11yHud theme="light" />);
     rerender(<A11yHud theme="high-contrast" />);
-    await vi.waitFor(() => {
-      expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
-    });
+    expect(hud.getThemeAttribute()).toBe("high-contrast");
+  });
+
+  it("runs a real axe-core scan and lists the page's violations", async () => {
+    const runScan = vi.spyOn(A11yHudElement.prototype, "runScan");
+    render(<A11yHud />);
+
+    await hud.awaitReady();
+
+    expect(runScan).toHaveBeenCalled();
+    expect(hud.getRuleIds()).toContain("image-alt");
   });
 });

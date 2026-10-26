@@ -1,80 +1,20 @@
 import { cleanup, render } from "@testing-library/svelte";
-import { mount } from "a11y-hud";
+import { A11yHudElement } from "a11y-hud";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UseA11yHudReturn } from "../../src/types.js";
 import HookWrapper from "../HookWrapper.svelte";
+import { HudHostHarness } from "./__harnesses__/hud-host.harness.js";
 
-vi.mock("a11y-hud", () => ({
-  mount: vi.fn(),
-}));
+const hud = new HudHostHarness();
 
-type MockIgnores = {
-  add: ReturnType<typeof vi.fn>;
-  remove: ReturnType<typeof vi.fn>;
-  clear: ReturnType<typeof vi.fn>;
-  list: ReturnType<typeof vi.fn>;
-  exportJson: ReturnType<typeof vi.fn>;
-  importJson: ReturnType<typeof vi.fn>;
-};
-
-type MockInstance = {
-  unmount: ReturnType<typeof vi.fn>;
-  setTheme: ReturnType<typeof vi.fn>;
-  runScan: ReturnType<typeof vi.fn>;
-  exportResults: ReturnType<typeof vi.fn>;
-  ignores: MockIgnores;
-};
-
-function makeMockElement() {
-  const el = document.createElement("a11y-hud") as HTMLElement & {
-    scopeElement?: Element;
-  };
-  Object.defineProperty(el, "scopeElement", {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
-  return el;
-}
-
-let mockEl: ReturnType<typeof makeMockElement>;
-let mockInstance: MockInstance;
-
-beforeEach(() => {
-  mockEl = makeMockElement();
-  mockInstance = {
-    unmount: vi.fn(() => mockEl.remove()),
-    setTheme: vi.fn(),
-    runScan: vi.fn().mockResolvedValue({ violations: [] }),
-    exportResults: vi.fn().mockReturnValue(null),
-    ignores: {
-      add: vi.fn(),
-      remove: vi.fn(),
-      clear: vi.fn(),
-      list: vi.fn().mockReturnValue([]),
-      exportJson: vi.fn().mockReturnValue("[]"),
-      importJson: vi.fn(),
-    },
-  };
-  (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
-    document.body.appendChild(mockEl);
-    return mockInstance;
-  });
-});
-
-afterEach(() => {
-  cleanup();
-  mockEl.remove();
-  vi.clearAllMocks();
-});
-
+/** Renders the wrapper component that runs the hook and hands back what it returned. */
 function mountHook(): UseA11yHudReturn {
   let captured: UseA11yHudReturn | undefined;
   render(HookWrapper, {
     props: {
-      onResult: (r) => {
-        captured = r;
+      onResult: (result) => {
+        captured = result;
       },
     },
   });
@@ -83,92 +23,131 @@ function mountHook(): UseA11yHudReturn {
 }
 
 describe("useA11yHud hook", () => {
-  it("returned runScan() delegates to instance.runScan()", async () => {
-    const hook = mountHook();
-    await tick();
-    await hook.runScan();
-    expect(mockInstance.runScan).toHaveBeenCalled();
+  let runScan: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    localStorage.clear();
+    hud.track();
+    runScan = vi.spyOn(A11yHudElement.prototype, "runScan");
   });
 
-  it("returned setTheme() delegates to instance.setTheme()", async () => {
-    const hook = mountHook();
-    await tick();
-    hook.setTheme("dark");
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("dark");
+  afterEach(async () => {
+    cleanup();
+    await hud.cleanup();
+    localStorage.clear();
+    vi.restoreAllMocks();
   });
 
-  it("returned runScan() returns a Promise", async () => {
+  it("runScan() scans the element and resolves with axe results", async () => {
     const hook = mountHook();
     await tick();
-    const result = hook.runScan();
-    expect(result).toBeInstanceOf(Promise);
+    runScan.mockClear();
+
+    const results = await hook.runScan();
+
+    expect(runScan).toHaveBeenCalledTimes(1);
+    expect(Array.isArray(results?.violations)).toBe(true);
   });
 
-  it("returned setTheme() accepts any valid theme", async () => {
+  it("setTheme() changes the element's theme", async () => {
     const hook = mountHook();
     await tick();
-    expect(() => hook.setTheme("high-contrast")).not.toThrow();
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
+
+    hook.setTheme("high-contrast");
+
+    expect(hud.getThemeAttribute()).toBe("high-contrast");
   });
 
-  it("returned ignores.add() delegates to instance.ignores.add()", async () => {
+  it("setRunOnly() changes the element's rule sets", async () => {
+    const hook = mountHook();
+    await tick();
+
+    hook.setRunOnly(["best-practice"]);
+
+    expect(hud.getRunOnly()).toEqual(["best-practice"]);
+  });
+
+  it("exportResults() returns the element's export once a scan has settled", async () => {
+    const hook = mountHook();
+    await hud.awaitReady();
+
+    const json = hook.exportResults();
+
+    expect(json).not.toBeNull();
+    expect((JSON.parse(json as string) as { version: string }).version).toBe("1");
+  });
+
+  it("ignores.add() persists the rule and ignores.list() reads it back", async () => {
+    const hook = mountHook();
+    await tick();
+
+    hook.ignores.add("color-contrast");
+
+    expect(hook.ignores.list()).toEqual([{ ruleId: "color-contrast" }]);
+  });
+
+  it("ignores.remove() drops the rule again", async () => {
     const hook = mountHook();
     await tick();
     hook.ignores.add("color-contrast");
-    expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
-  });
 
-  it("returned ignores.remove() delegates to instance.ignores.remove()", async () => {
-    const hook = mountHook();
-    await tick();
     hook.ignores.remove("color-contrast");
-    expect(mockInstance.ignores.remove).toHaveBeenCalledWith("color-contrast", undefined);
+
+    expect(hook.ignores.list()).toEqual([]);
   });
 
-  it("returned ignores.clear() delegates to instance.ignores.clear()", async () => {
+  it("ignores.clear() empties the list", async () => {
     const hook = mountHook();
     await tick();
+    hook.ignores.add("color-contrast");
+    hook.ignores.add("image-alt");
+
     hook.ignores.clear();
-    expect(mockInstance.ignores.clear).toHaveBeenCalledOnce();
+
+    expect(hook.ignores.list()).toEqual([]);
   });
 
-  it("returned ignores.exportJson() delegates to instance.ignores.exportJson()", async () => {
-    mockInstance.ignores.exportJson.mockReturnValue('[{"ruleId":"image-alt"}]');
+  it("ignores.exportJson() and ignores.importJson() round-trip the list", async () => {
     const hook = mountHook();
     await tick();
+    hook.ignores.add("image-alt");
     const json = hook.ignores.exportJson();
-    expect(json).toBe('[{"ruleId":"image-alt"}]');
+    hook.ignores.clear();
+
+    hook.ignores.importJson(json);
+
+    expect(JSON.parse(json)).toEqual([{ ruleId: "image-alt" }]);
+    expect(hook.ignores.list()).toEqual([{ ruleId: "image-alt" }]);
   });
 
-  it("returned ignores.importJson() delegates to instance.ignores.importJson()", async () => {
-    const hook = mountHook();
-    await tick();
-    hook.ignores.importJson('[{"ruleId":"image-alt"}]');
-    expect(mockInstance.ignores.importJson).toHaveBeenCalledWith('[{"ruleId":"image-alt"}]');
-  });
-
-  it("ignores.list() returns [] and exportJson returns '[]' before instance mounts", () => {
+  it("ignores.list() and ignores.exportJson() are safe to call during component init", () => {
     let earlyList: unknown[] | undefined;
     let earlyJson: string | undefined;
+
     render(HookWrapper, {
       props: {
-        onResult: (r) => {
-          earlyList = r.ignores.list();
-          earlyJson = r.ignores.exportJson();
+        onResult: (result) => {
+          earlyList = result.ignores.list();
+          earlyJson = result.ignores.exportJson();
         },
       },
     });
+
     expect(earlyList).toEqual([]);
     expect(earlyJson).toBe("[]");
-    cleanup();
   });
 
-  it("returned exportResults() delegates to instance.exportResults()", async () => {
-    mockInstance.exportResults.mockReturnValue('{"version":"1"}');
-    const hook = mountHook();
-    await tick();
-    const json = hook.exportResults();
-    expect(mockInstance.exportResults).toHaveBeenCalledOnce();
-    expect(json).toBe('{"version":"1"}');
+  it("runScan() resolves with null when called before the element is mounted", async () => {
+    let early: Promise<unknown> | undefined;
+
+    render(HookWrapper, {
+      props: {
+        onResult: (result) => {
+          early = result.runScan();
+        },
+      },
+    });
+
+    await expect(early).resolves.toBeNull();
   });
 });

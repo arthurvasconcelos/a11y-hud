@@ -1,165 +1,201 @@
 import { TestBed } from "@angular/core/testing";
-import { mount } from "a11y-hud";
+import { A11yHudElement } from "a11y-hud";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HudHostHarness } from "./__harnesses__/hud-host.harness.js";
 import { A11yHudComponent } from "./component.js";
 
-vi.mock("a11y-hud", () => ({
-  mount: vi.fn(),
-}));
-
-type MockInstance = {
-  unmount: ReturnType<typeof vi.fn>;
-  setTheme: ReturnType<typeof vi.fn>;
-  runScan: ReturnType<typeof vi.fn>;
-};
-
-let mockEl: HTMLElement & { scopeElement?: Element };
-let mockInstance: MockInstance;
-
-beforeEach(() => {
-  mockEl = Object.assign(document.createElement("a11y-hud"), {
-    scopeElement: undefined as Element | undefined,
-  });
-  mockInstance = {
-    unmount: vi.fn(() => mockEl.remove()),
-    setTheme: vi.fn(),
-    runScan: vi.fn().mockResolvedValue({ violations: [] }),
-  };
-  (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
-    document.body.appendChild(mockEl);
-    return mockInstance;
-  });
-  TestBed.configureTestingModule({
-    imports: [A11yHudComponent],
-  });
-});
-
-afterEach(() => {
-  mockEl.remove();
-  vi.clearAllMocks();
-  TestBed.resetTestingModule();
-});
+const hud = new HudHostHarness();
 
 describe("A11yHudComponent", () => {
+  let runScan: ReturnType<typeof vi.spyOn>;
+  const pageFixtures: Element[] = [];
+
+  /** Appends an element to the page and keeps it there until the scans using it have settled. */
+  function addToPage(element: Element): void {
+    document.body.appendChild(element);
+    pageFixtures.push(element);
+  }
+
+  beforeEach(() => {
+    hud.track();
+    runScan = vi.spyOn(A11yHudElement.prototype, "runScan");
+    TestBed.configureTestingModule({ imports: [A11yHudComponent] });
+  });
+
+  afterEach(async () => {
+    await hud.cleanup();
+    for (const element of pageFixtures.splice(0)) element.remove();
+    vi.restoreAllMocks();
+    TestBed.resetTestingModule();
+  });
+
   it("renders nothing into the Angular tree", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.detectChanges();
     expect(fixture.nativeElement.childNodes.length).toBe(0);
   });
 
-  it("calls mount() on initial render", () => {
+  it("mounts the <a11y-hud> element into the document", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.detectChanges();
-    expect(mount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(true);
   });
 
-  it("passes theme input to mount()", () => {
+  it("applies the theme input to the element", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.componentRef.setInput("theme", "light");
     fixture.detectChanges();
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ theme: "light" }));
+    expect(hud.getThemeAttribute()).toBe("light");
   });
 
-  it("passes autoScan input to mount()", () => {
+  it("turns auto-scan off when the autoScan input is false", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.componentRef.setInput("autoScan", false);
     fixture.detectChanges();
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ autoScan: false }));
+    expect(hud.hasAutoScan()).toBe(false);
   });
 
-  it("calls runScan() on initial render", () => {
+  it("runs a scan on initial render", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.detectChanges();
-    expect(mockInstance.runScan).toHaveBeenCalled();
+    expect(runScan).toHaveBeenCalled();
   });
 
-  it("calls setTheme() when theme input changes", () => {
+  it("switches the element's theme when the theme input changes", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
+    fixture.componentRef.setInput("theme", "light");
     fixture.detectChanges();
-    vi.clearAllMocks();
+
     fixture.componentRef.setInput("theme", "high-contrast");
     fixture.detectChanges();
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
+
+    expect(hud.getThemeAttribute()).toBe("high-contrast");
   });
 
-  it("calls runScan() when scope input changes", () => {
+  it("re-scopes and rescans when the scope input changes", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.detectChanges();
-    const scansBefore = mockInstance.runScan.mock.calls.length;
+    const callsBefore = runScan.mock.calls.length;
     const container = document.createElement("div");
+    addToPage(container);
+
     fixture.componentRef.setInput("scope", container);
     fixture.detectChanges();
-    expect(mockInstance.runScan.mock.calls.length).toBeGreaterThan(scansBefore);
+
+    expect(runScan.mock.calls.length).toBeGreaterThan(callsBefore);
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("sets scopeElement on CE when scope input changes", () => {
+  it("clears the scope when the scope input changes to null", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
-    fixture.detectChanges();
     const container = document.createElement("div");
-    document.body.appendChild(container);
+    addToPage(container);
     fixture.componentRef.setInput("scope", container);
     fixture.detectChanges();
-    expect(mockEl.scopeElement).toBe(container);
-    container.remove();
-  });
 
-  it("clears scopeElement when scope changes to null", () => {
-    const fixture = TestBed.createComponent(A11yHudComponent);
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    fixture.componentRef.setInput("scope", container);
-    fixture.detectChanges();
     fixture.componentRef.setInput("scope", null);
     fixture.detectChanges();
-    expect(mockEl.scopeElement).toBeUndefined();
-    container.remove();
+
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("sets auto-scan attribute when autoScan input changes to true", () => {
+  it("turns auto-scan on when the autoScan input changes to true", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.componentRef.setInput("autoScan", false);
     fixture.detectChanges();
+
     fixture.componentRef.setInput("autoScan", true);
     fixture.detectChanges();
-    expect(mockEl.hasAttribute("auto-scan")).toBe(true);
+
+    expect(hud.hasAutoScan()).toBe(true);
   });
 
-  it("removes auto-scan attribute when autoScan input changes to false", () => {
+  it("turns auto-scan off when the autoScan input changes to false", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.componentRef.setInput("autoScan", true);
     fixture.detectChanges();
-    mockEl.setAttribute("auto-scan", "");
+
     fixture.componentRef.setInput("autoScan", false);
     fixture.detectChanges();
-    expect(mockEl.hasAttribute("auto-scan")).toBe(false);
+
+    expect(hud.hasAutoScan()).toBe(false);
   });
 
-  it("sets debounce attribute when debounce input changes", () => {
+  it("updates the debounce when the debounce input changes", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.detectChanges();
+
     fixture.componentRef.setInput("debounce", 400);
     fixture.detectChanges();
-    expect(mockEl.getAttribute("debounce")).toBe("400");
+
+    expect(hud.getDebounceAttribute()).toBe("400");
   });
 
-  it("calls unmount() when component is destroyed", () => {
+  it("updates the rule sets when the runOnly input changes", () => {
+    const fixture = TestBed.createComponent(A11yHudComponent);
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput("runOnly", ["wcag2a", "wcag2aa"]);
+    fixture.detectChanges();
+
+    expect(hud.getRunOnly()).toEqual(["wcag2a", "wcag2aa"]);
+  });
+
+  it("removes the element when the component is destroyed", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.detectChanges();
     fixture.destroy();
-    expect(mockInstance.unmount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(false);
   });
 
-  it("public runScan() delegates to service.runScan()", async () => {
+  it("public runScan() scans the element and resolves with axe results", async () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.detectChanges();
-    await fixture.componentInstance.runScan();
-    expect(mockInstance.runScan).toHaveBeenCalled();
+    runScan.mockClear();
+
+    const results = await fixture.componentInstance.runScan();
+
+    expect(runScan).toHaveBeenCalledTimes(1);
+    expect(Array.isArray(results?.violations)).toBe(true);
   });
 
-  it("public setTheme() delegates to service.setTheme()", () => {
+  it("public setTheme() changes the element's theme", () => {
     const fixture = TestBed.createComponent(A11yHudComponent);
     fixture.detectChanges();
-    fixture.componentInstance.setTheme("dark");
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("dark");
+    fixture.componentInstance.setTheme("github-dark");
+    expect(hud.getThemeAttribute()).toBe("github-dark");
+  });
+
+  it("public setRunOnly() and exportResults() reach the element", async () => {
+    const fixture = TestBed.createComponent(A11yHudComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.setRunOnly(["best-practice"]);
+    expect(hud.getRunOnly()).toEqual(["best-practice"]);
+
+    await hud.awaitReady();
+
+    const json = fixture.componentInstance.exportResults();
+    expect((JSON.parse(json as string) as { version: string }).version).toBe("1");
+  });
+
+  it("public ignores reach the element's ignore list", () => {
+    localStorage.clear();
+    const fixture = TestBed.createComponent(A11yHudComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.ignores.add("color-contrast");
+
+    expect(fixture.componentInstance.ignores.list()).toEqual([{ ruleId: "color-contrast" }]);
+    localStorage.clear();
+  });
+
+  it("runs a real axe-core scan and lists the page's violations", async () => {
+    addToPage(document.createElement("img"));
+    const fixture = TestBed.createComponent(A11yHudComponent);
+    fixture.detectChanges();
+
+    await hud.awaitReady();
+
+    expect(hud.getRuleIds()).toContain("image-alt");
   });
 });

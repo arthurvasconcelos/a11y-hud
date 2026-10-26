@@ -1,281 +1,276 @@
 import { act, renderHook } from "@testing-library/react";
-import { mount } from "a11y-hud";
+import { A11yHudElement } from "a11y-hud";
+import type { RefObject } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HudHostHarness } from "./__harnesses__/hud-host.harness.js";
 import { useA11yHud } from "./hook.js";
 
-vi.mock("a11y-hud", () => ({
-  mount: vi.fn(),
-}));
-
-type MockIgnores = {
-  add: ReturnType<typeof vi.fn>;
-  remove: ReturnType<typeof vi.fn>;
-  clear: ReturnType<typeof vi.fn>;
-  list: ReturnType<typeof vi.fn>;
-  exportJson: ReturnType<typeof vi.fn>;
-  importJson: ReturnType<typeof vi.fn>;
-};
-
-type MockInstance = {
-  unmount: ReturnType<typeof vi.fn>;
-  setTheme: ReturnType<typeof vi.fn>;
-  setRunOnly: ReturnType<typeof vi.fn>;
-  runScan: ReturnType<typeof vi.fn>;
-  exportResults: ReturnType<typeof vi.fn>;
-  ignores: MockIgnores;
-};
-
-function makeMockElement() {
-  const el = document.createElement("a11y-hud") as HTMLElement & {
-    scopeElement?: Element;
-  };
-  Object.defineProperty(el, "scopeElement", {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
-  return el;
-}
-
-let mockEl: ReturnType<typeof makeMockElement>;
-let mockInstance: MockInstance;
-
-beforeEach(() => {
-  mockEl = makeMockElement();
-  mockInstance = {
-    unmount: vi.fn(() => mockEl.remove()),
-    setTheme: vi.fn(),
-    setRunOnly: vi.fn(),
-    runScan: vi.fn().mockResolvedValue({ violations: [] }),
-    exportResults: vi.fn().mockReturnValue(null),
-    ignores: {
-      add: vi.fn(),
-      remove: vi.fn(),
-      clear: vi.fn(),
-      list: vi.fn().mockReturnValue([]),
-      exportJson: vi.fn().mockReturnValue("[]"),
-      importJson: vi.fn(),
-    },
-  };
-  (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
-    document.body.appendChild(mockEl);
-    return mockInstance;
-  });
-});
-
-afterEach(() => {
-  mockEl.remove();
-  vi.clearAllMocks();
-});
+const hud = new HudHostHarness();
 
 describe("useA11yHud", () => {
-  it("calls mount() on initial render", () => {
+  let runScan: ReturnType<typeof vi.spyOn>;
+  const pageFixtures: Element[] = [];
+
+  /** Appends an element to the page and keeps it there until the scans using it have settled. */
+  function addToPage(element: Element): void {
+    document.body.appendChild(element);
+    pageFixtures.push(element);
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    hud.track();
+    runScan = vi.spyOn(A11yHudElement.prototype, "runScan");
+  });
+
+  afterEach(async () => {
+    await hud.cleanup();
+    for (const element of pageFixtures.splice(0)) element.remove();
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("mounts the <a11y-hud> element on first render", () => {
     renderHook(() => useA11yHud());
-    expect(mount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(true);
   });
 
-  it("passes initial options to mount()", () => {
+  it("applies the initial options to the element", () => {
     renderHook(() => useA11yHud({ theme: "light", autoScan: false, debounce: 300 }));
-    expect(mount).toHaveBeenCalledWith({ theme: "light", autoScan: false, debounce: 300 });
+    expect(hud.getThemeAttribute()).toBe("light");
+    expect(hud.hasAutoScan()).toBe(false);
+    expect(hud.getDebounceAttribute()).toBe("300");
   });
 
-  it("calls instance.unmount() when the hook unmounts", () => {
+  it("removes the element when the hook unmounts", () => {
     const { unmount } = renderHook(() => useA11yHud());
     unmount();
-    expect(mockInstance.unmount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(false);
   });
 
-  it("calls instance.runScan() on initial render commit", async () => {
+  it("runs a scan once the initial render has committed", async () => {
     renderHook(() => useA11yHud());
     await act(async () => {});
-    expect(mockInstance.runScan).toHaveBeenCalled();
+    expect(runScan).toHaveBeenCalled();
   });
 
-  it("calls instance.runScan() on re-render (render-settled signal)", async () => {
+  it("runs a scan again after every re-render (render-settled signal)", async () => {
     const { rerender } = renderHook(() => useA11yHud());
     await act(async () => {});
-    const callsBefore = mockInstance.runScan.mock.calls.length;
+    const callsBefore = runScan.mock.calls.length;
+
     rerender();
     await act(async () => {});
-    expect(mockInstance.runScan.mock.calls.length).toBeGreaterThan(callsBefore);
+
+    expect(runScan.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 
-  it("calls instance.setTheme() when theme prop changes", async () => {
-    let theme = "light" as const;
+  it("switches the element's theme when the theme option changes", async () => {
+    let theme: "light" | "high-contrast" = "light";
     const { rerender } = renderHook(() => useA11yHud({ theme }));
     await act(async () => {});
+
     theme = "high-contrast";
     rerender();
     await act(async () => {});
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
+
+    expect(hud.getThemeAttribute()).toBe("high-contrast");
   });
 
-  it("sets auto-scan attribute when autoScan changes to true", async () => {
+  it("turns auto-scan on when autoScan changes to true", async () => {
     let autoScan = false;
     const { rerender } = renderHook(() => useA11yHud({ autoScan }));
     await act(async () => {});
+    expect(hud.hasAutoScan()).toBe(false);
+
     autoScan = true;
     rerender();
     await act(async () => {});
-    expect(mockEl.hasAttribute("auto-scan")).toBe(true);
+
+    expect(hud.hasAutoScan()).toBe(true);
   });
 
-  it("removes auto-scan attribute when autoScan changes to false", async () => {
+  it("turns auto-scan off when autoScan changes to false", async () => {
     let autoScan = true;
     const { rerender } = renderHook(() => useA11yHud({ autoScan }));
     await act(async () => {});
+
     autoScan = false;
     rerender();
     await act(async () => {});
-    expect(mockEl.hasAttribute("auto-scan")).toBe(false);
+
+    expect(hud.hasAutoScan()).toBe(false);
   });
 
-  it("sets debounce attribute when debounce prop changes", async () => {
+  it("updates the debounce when the option changes", async () => {
     let debounce = 200;
     const { rerender } = renderHook(() => useA11yHud({ debounce }));
     await act(async () => {});
+
     debounce = 400;
     rerender();
     await act(async () => {});
-    expect(mockEl.getAttribute("debounce")).toBe("400");
+
+    expect(hud.getDebounceAttribute()).toBe("400");
   });
 
-  it("sets scopeElement on the CE when scope ref has a current value", async () => {
+  it("scopes the element to the ref's current element", async () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
-    const scopeRef = { current: container };
+    addToPage(container);
 
-    renderHook(() => useA11yHud({ scope: scopeRef }));
+    renderHook(() => useA11yHud({ scope: { current: container } }));
     await act(async () => {});
 
-    expect(mockEl.scopeElement).toBe(container);
-    container.remove();
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("clears scopeElement when scope ref current is null", async () => {
-    const scopeRef = { current: null };
-    renderHook(() => useA11yHud({ scope: scopeRef }));
+  it("leaves the element unscoped when the ref is empty", async () => {
+    renderHook(() => useA11yHud({ scope: { current: null } }));
     await act(async () => {});
-    expect(mockEl.scopeElement).toBeUndefined();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("clears scopeElement when scope changes from a ref to undefined", async () => {
+  it("clears the scope when the option goes from a ref to undefined", async () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
-    let scope: { current: Element | null } | undefined = { current: container };
+    addToPage(container);
+    let scope: RefObject<Element | null> | undefined = { current: container };
 
-    const { rerender } = renderHook(() =>
-      useA11yHud({ scope: scope as import("react").RefObject<Element | null> })
-    );
+    const { rerender } = renderHook(() => useA11yHud({ scope }));
     await act(async () => {});
-    expect(mockEl.scopeElement).toBe(container);
+    expect(hud.getScopeElement()).toBe(container);
 
     scope = undefined;
     rerender();
     await act(async () => {});
-    expect(mockEl.scopeElement).toBeUndefined();
 
-    container.remove();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("returned runScan() delegates to instance.runScan()", async () => {
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    await result.current.runScan();
-    expect(mockInstance.runScan).toHaveBeenCalled();
-  });
-
-  it("returned setTheme() delegates to instance.setTheme()", async () => {
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    result.current.setTheme("dark" as never);
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("dark");
-  });
-
-  it("passes initial runOnly to mount()", () => {
+  it("applies the initial runOnly tags to the element", () => {
     renderHook(() => useA11yHud({ runOnly: ["wcag2a", "wcag2aa"] }));
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ runOnly: ["wcag2a", "wcag2aa"] }));
+    expect(hud.getRunOnly()).toEqual(["wcag2a", "wcag2aa"]);
   });
 
-  it("calls instance.setRunOnly() when runOnly prop changes", async () => {
-    let runOnly = ["wcag2a"] as string[];
+  it("updates the runOnly tags when the option changes", async () => {
+    let runOnly = ["wcag2a"];
     const { rerender } = renderHook(() => useA11yHud({ runOnly }));
     await act(async () => {});
+
     runOnly = ["wcag2a", "wcag2aa"];
     rerender();
     await act(async () => {});
-    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["wcag2a", "wcag2aa"]);
+
+    expect(hud.getRunOnly()).toEqual(["wcag2a", "wcag2aa"]);
   });
 
-  it("returned setRunOnly() delegates to instance.setRunOnly()", async () => {
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    result.current.setRunOnly(["best-practice"]);
-    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["best-practice"]);
-  });
+  describe("returned API", () => {
+    it("runScan() scans the element and resolves with axe results", async () => {
+      const { result } = renderHook(() => useA11yHud());
+      await act(async () => {});
+      runScan.mockClear();
 
-  it("returned exportResults() delegates to instance.exportResults()", async () => {
-    mockInstance.exportResults.mockReturnValue('{"version":"1"}');
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    const json = result.current.exportResults();
-    expect(mockInstance.exportResults).toHaveBeenCalledOnce();
-    expect(json).toBe('{"version":"1"}');
-  });
+      const results = await result.current.runScan();
 
-  it("returned ignores.add() delegates to instance.ignores.add()", async () => {
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    result.current.ignores.add("color-contrast");
-    expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
-  });
+      expect(runScan).toHaveBeenCalledTimes(1);
+      expect(Array.isArray(results?.violations)).toBe(true);
+    });
 
-  it("returned ignores.list() delegates to instance.ignores.list()", async () => {
-    mockInstance.ignores.list.mockReturnValue([{ ruleId: "image-alt" }]);
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    const list = result.current.ignores.list();
-    expect(list).toEqual([{ ruleId: "image-alt" }]);
-  });
+    it("setTheme() changes the element's theme", async () => {
+      const { result } = renderHook(() => useA11yHud());
+      await act(async () => {});
 
-  it("returned ignores.remove() delegates to instance.ignores.remove()", async () => {
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    result.current.ignores.remove("color-contrast");
-    expect(mockInstance.ignores.remove).toHaveBeenCalledWith("color-contrast", undefined);
-  });
+      result.current.setTheme("github-dark");
 
-  it("returned ignores.clear() delegates to instance.ignores.clear()", async () => {
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    result.current.ignores.clear();
-    expect(mockInstance.ignores.clear).toHaveBeenCalledOnce();
-  });
+      expect(hud.getThemeAttribute()).toBe("github-dark");
+    });
 
-  it("returned ignores.exportJson() delegates to instance.ignores.exportJson()", async () => {
-    mockInstance.ignores.exportJson.mockReturnValue('[{"ruleId":"image-alt"}]');
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    const json = result.current.ignores.exportJson();
-    expect(mockInstance.ignores.exportJson).toHaveBeenCalledOnce();
-    expect(json).toBe('[{"ruleId":"image-alt"}]');
-  });
+    it("setRunOnly() changes the element's rule sets", async () => {
+      const { result } = renderHook(() => useA11yHud());
+      await act(async () => {});
 
-  it("returned ignores.importJson() delegates to instance.ignores.importJson()", async () => {
-    const { result } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    result.current.ignores.importJson('[{"ruleId":"image-alt"}]');
-    expect(mockInstance.ignores.importJson).toHaveBeenCalledWith('[{"ruleId":"image-alt"}]');
-  });
+      result.current.setRunOnly(["best-practice"]);
 
-  it("returned runScan and setTheme are stable references across re-renders", async () => {
-    const { result, rerender } = renderHook(() => useA11yHud());
-    await act(async () => {});
-    const { runScan: run1, setTheme: set1 } = result.current;
-    rerender();
-    await act(async () => {});
-    const { runScan: run2, setTheme: set2 } = result.current;
-    expect(run1).toBe(run2);
-    expect(set1).toBe(set2);
+      expect(hud.getRunOnly()).toEqual(["best-practice"]);
+    });
+
+    it("exportResults() returns the element's export once a scan has settled", async () => {
+      const { result } = renderHook(() => useA11yHud());
+      await hud.awaitReady();
+
+      const json = result.current.exportResults();
+
+      expect(json).not.toBeNull();
+      expect((JSON.parse(json as string) as { version: string }).version).toBe("1");
+    });
+
+    it("ignores.add() persists the rule and ignores.list() reads it back", async () => {
+      const { result } = renderHook(() => useA11yHud());
+      await act(async () => {});
+
+      result.current.ignores.add("color-contrast");
+
+      expect(result.current.ignores.list()).toEqual([{ ruleId: "color-contrast" }]);
+    });
+
+    it("ignores.remove() drops the rule again", async () => {
+      const { result } = renderHook(() => useA11yHud());
+      await act(async () => {});
+      result.current.ignores.add("color-contrast");
+
+      result.current.ignores.remove("color-contrast");
+
+      expect(result.current.ignores.list()).toEqual([]);
+    });
+
+    it("ignores.clear() empties the list", async () => {
+      const { result } = renderHook(() => useA11yHud());
+      await act(async () => {});
+      result.current.ignores.add("color-contrast");
+      result.current.ignores.add("image-alt");
+
+      result.current.ignores.clear();
+
+      expect(result.current.ignores.list()).toEqual([]);
+    });
+
+    it("ignores.exportJson() and ignores.importJson() round-trip the list", async () => {
+      const { result } = renderHook(() => useA11yHud());
+      await act(async () => {});
+      result.current.ignores.add("image-alt");
+      const json = result.current.ignores.exportJson();
+      result.current.ignores.clear();
+
+      result.current.ignores.importJson(json);
+
+      expect(JSON.parse(json)).toEqual([{ ruleId: "image-alt" }]);
+      expect(result.current.ignores.list()).toEqual([{ ruleId: "image-alt" }]);
+    });
+
+    it("ignores.list() and ignores.exportJson() are safe to call during the first render", () => {
+      let earlyList: unknown[] | undefined;
+      let earlyJson: string | undefined;
+
+      renderHook(() => {
+        const hook = useA11yHud();
+        earlyList ??= hook.ignores.list();
+        earlyJson ??= hook.ignores.exportJson();
+        return hook;
+      });
+
+      expect(earlyList).toEqual([]);
+      expect(earlyJson).toBe("[]");
+    });
+
+    it("runScan and setTheme are stable references across re-renders", async () => {
+      const { result, rerender } = renderHook(() => useA11yHud());
+      await act(async () => {});
+      const { runScan: firstRunScan, setTheme: firstSetTheme } = result.current;
+
+      rerender();
+      await act(async () => {});
+
+      expect(result.current.runScan).toBe(firstRunScan);
+      expect(result.current.setTheme).toBe(firstSetTheme);
+    });
   });
 });

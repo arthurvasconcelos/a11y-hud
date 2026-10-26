@@ -1,419 +1,298 @@
 import { cleanup, render } from "@solidjs/testing-library";
-import { mount } from "a11y-hud";
+import { A11yHudElement } from "a11y-hud";
 import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HudHostHarness } from "./__harnesses__/hud-host.harness.js";
 import { createA11yHud } from "./hook.js";
-import type { CreateA11yHudOptions } from "./types.js";
+import type { CreateA11yHudOptions, CreateA11yHudReturn } from "./types.js";
 
-vi.mock("a11y-hud", () => ({ mount: vi.fn() }));
+const hud = new HudHostHarness();
 
-type MockIgnores = {
-  add: ReturnType<typeof vi.fn>;
-  remove: ReturnType<typeof vi.fn>;
-  clear: ReturnType<typeof vi.fn>;
-  list: ReturnType<typeof vi.fn>;
-  exportJson: ReturnType<typeof vi.fn>;
-  importJson: ReturnType<typeof vi.fn>;
-};
-
-type MockInstance = {
-  unmount: ReturnType<typeof vi.fn>;
-  setTheme: ReturnType<typeof vi.fn>;
-  setRunOnly: ReturnType<typeof vi.fn>;
-  runScan: ReturnType<typeof vi.fn>;
-  exportResults: ReturnType<typeof vi.fn>;
-  ignores: MockIgnores;
-};
-
-function makeMockElement() {
-  const el = document.createElement("a11y-hud") as HTMLElement & {
-    scopeElement?: Element;
-  };
-  Object.defineProperty(el, "scopeElement", {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
-  return el;
-}
-
-let mockEl: ReturnType<typeof makeMockElement>;
-let mockInstance: MockInstance;
-
-beforeEach(() => {
-  mockEl = makeMockElement();
-  mockInstance = {
-    unmount: vi.fn(() => mockEl.remove()),
-    setTheme: vi.fn(),
-    setRunOnly: vi.fn(),
-    runScan: vi.fn().mockResolvedValue({ violations: [] }),
-    exportResults: vi.fn().mockReturnValue(null),
-    ignores: {
-      add: vi.fn(),
-      remove: vi.fn(),
-      clear: vi.fn(),
-      list: vi.fn().mockReturnValue([]),
-      exportJson: vi.fn().mockReturnValue("[]"),
-      importJson: vi.fn(),
-    },
-  };
-  (mount as ReturnType<typeof vi.fn>).mockImplementation(() => {
-    document.body.appendChild(mockEl);
-    return mockInstance;
-  });
-});
-
-afterEach(() => {
-  mockEl.remove();
-  cleanup();
-  vi.clearAllMocks();
-});
-
-function mountHook(options: CreateA11yHudOptions = {}) {
-  return render(() => {
-    createA11yHud(options);
+/** Renders a bare component that runs the primitive and returns what it produced. */
+function mountHook(options: CreateA11yHudOptions = {}): CreateA11yHudReturn {
+  let captured: CreateA11yHudReturn | undefined;
+  render(() => {
+    captured = createA11yHud(options);
     return null;
   });
+  if (!captured) throw new Error("createA11yHud() did not run during render");
+  return captured;
 }
 
 describe("createA11yHud", () => {
-  it("calls mount() on initial render", () => {
+  let runScan: ReturnType<typeof vi.spyOn>;
+  const pageFixtures: Element[] = [];
+
+  /** Appends an element to the page and keeps it there until the scans using it have settled. */
+  function addToPage(element: Element): void {
+    document.body.appendChild(element);
+    pageFixtures.push(element);
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    hud.track();
+    runScan = vi.spyOn(A11yHudElement.prototype, "runScan");
+  });
+
+  afterEach(async () => {
+    cleanup();
+    await hud.cleanup();
+    for (const element of pageFixtures.splice(0)) element.remove();
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("mounts the <a11y-hud> element on initial render", () => {
     mountHook();
-    expect(mount).toHaveBeenCalledOnce();
+    expect(hud.isMounted()).toBe(true);
   });
 
-  it("passes initial theme to mount()", () => {
-    mountHook({ theme: "light" });
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ theme: "light" }));
+  it("applies the initial options to the element", () => {
+    mountHook({ theme: "light", autoScan: false, debounce: 300, runOnly: ["wcag2a"] });
+    expect(hud.getThemeAttribute()).toBe("light");
+    expect(hud.hasAutoScan()).toBe(false);
+    expect(hud.getDebounceAttribute()).toBe("300");
+    expect(hud.getRunOnly()).toEqual(["wcag2a"]);
   });
 
-  it("passes initial autoScan to mount()", () => {
-    mountHook({ autoScan: false });
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ autoScan: false }));
-  });
-
-  it("passes initial debounce to mount()", () => {
-    mountHook({ debounce: 300 });
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ debounce: 300 }));
-  });
-
-  it("does not include theme in mount() options when undefined", () => {
+  it("leaves the theme untouched when no theme is given", () => {
     mountHook({});
-    expect(mount).toHaveBeenCalledWith({});
+    expect(hud.getThemeAttribute()).toBeNull();
   });
 
-  it("calls instance.unmount() when the component unmounts", () => {
-    const { unmount } = mountHook();
-    unmount();
-    expect(mockInstance.unmount).toHaveBeenCalledOnce();
-  });
-
-  it("calls instance.runScan() on initial render (from scope effect)", () => {
+  it("removes the element when the owner unmounts", () => {
     mountHook();
-    expect(mockInstance.runScan).toHaveBeenCalled();
+    cleanup();
+    expect(hud.isMounted()).toBe(false);
   });
 
-  it("sets scopeElement on the CE when scope has a value", () => {
+  it("runs a scan on initial render (from the scope effect)", () => {
+    mountHook();
+    expect(runScan).toHaveBeenCalled();
+  });
+
+  it("scopes the element to the given scope element", () => {
     const container = document.createElement("div");
-    document.body.appendChild(container);
+    addToPage(container);
     mountHook({ scope: container });
-    expect(mockEl.scopeElement).toBe(container);
-    container.remove();
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("clears scopeElement when scope is null", () => {
+  it("leaves the element unscoped when scope is null", () => {
     mountHook({ scope: null });
-    expect(mockEl.scopeElement).toBeUndefined();
+    expect(hud.getScopeElement()).toBeUndefined();
   });
 
-  it("calls instance.runScan() when scope changes (via signal)", () => {
+  it("re-scopes and rescans when the scope signal changes", () => {
     const [scope, setScope] = createSignal<Element | null>(null);
     const container = document.createElement("div");
-    document.body.appendChild(container);
-
-    render(() => {
-      createA11yHud({
-        get scope() {
-          return scope();
-        },
-      });
-      return null;
+    addToPage(container);
+    mountHook({
+      get scope() {
+        return scope();
+      },
     });
+    const callsBefore = runScan.mock.calls.length;
 
-    const callsBefore = mockInstance.runScan.mock.calls.length;
     setScope(container);
 
-    expect(mockInstance.runScan.mock.calls.length).toBeGreaterThan(callsBefore);
-    container.remove();
+    expect(runScan.mock.calls.length).toBeGreaterThan(callsBefore);
+    expect(hud.getScopeElement()).toBe(container);
   });
 
-  it("calls instance.setTheme() when theme changes via signal", () => {
-    const [theme, setTheme] = createSignal<CreateA11yHudOptions["theme"]>("light");
+  it("clears the scope when the signal goes from an element to null", () => {
+    const container = document.createElement("div");
+    addToPage(container);
+    const [scope, setScope] = createSignal<Element | null>(container);
+    mountHook({
+      get scope() {
+        return scope();
+      },
+    });
+    expect(hud.getScopeElement()).toBe(container);
 
-    render(() => {
-      createA11yHud({
-        get theme() {
-          return theme();
-        },
-      });
-      return null;
+    setScope(null);
+
+    expect(hud.getScopeElement()).toBeUndefined();
+  });
+
+  it("switches the element's theme when the theme signal changes", () => {
+    const [theme, setTheme] = createSignal<CreateA11yHudOptions["theme"]>("light");
+    mountHook({
+      get theme() {
+        return theme();
+      },
     });
 
     setTheme("high-contrast");
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("high-contrast");
+
+    expect(hud.getThemeAttribute()).toBe("high-contrast");
   });
 
-  it("does not call setTheme when theme is undefined", () => {
-    render(() => {
-      createA11yHud({ theme: undefined });
-      return null;
+  it("turns auto-scan on when the autoScan signal changes to true", () => {
+    const [autoScan, setAutoScan] = createSignal(false);
+    mountHook({
+      get autoScan() {
+        return autoScan();
+      },
     });
-    expect(mockInstance.setTheme).not.toHaveBeenCalled();
-  });
-
-  it("sets auto-scan attribute when autoScan changes to true via signal", () => {
-    const [autoScan, setAutoScan] = createSignal<boolean>(false);
-
-    render(() => {
-      createA11yHud({
-        get autoScan() {
-          return autoScan();
-        },
-      });
-      return null;
-    });
+    expect(hud.hasAutoScan()).toBe(false);
 
     setAutoScan(true);
-    expect(mockEl.hasAttribute("auto-scan")).toBe(true);
+
+    expect(hud.hasAutoScan()).toBe(true);
   });
 
-  it("removes auto-scan attribute when autoScan changes to false via signal", () => {
-    const [autoScan, setAutoScan] = createSignal<boolean>(true);
-
-    render(() => {
-      createA11yHud({
-        get autoScan() {
-          return autoScan();
-        },
-      });
-      return null;
+  it("turns auto-scan off when the autoScan signal changes to false", () => {
+    const [autoScan, setAutoScan] = createSignal(true);
+    mountHook({
+      get autoScan() {
+        return autoScan();
+      },
     });
 
     setAutoScan(false);
-    expect(mockEl.hasAttribute("auto-scan")).toBe(false);
+
+    expect(hud.hasAutoScan()).toBe(false);
   });
 
-  it("sets debounce attribute when debounce changes via signal", () => {
+  it("updates the debounce when the signal changes", () => {
     const [debounce, setDebounce] = createSignal<number | undefined>(200);
-
-    render(() => {
-      createA11yHud({
-        get debounce() {
-          return debounce();
-        },
-      });
-      return null;
+    mountHook({
+      get debounce() {
+        return debounce();
+      },
     });
 
     setDebounce(400);
-    expect(mockEl.getAttribute("debounce")).toBe("400");
+
+    expect(hud.getDebounceAttribute()).toBe("400");
   });
 
-  it("does not update debounce attribute when debounce changes to undefined", () => {
+  it("keeps the current debounce when the signal becomes undefined", () => {
     const [debounce, setDebounce] = createSignal<number | undefined>(200);
-
-    render(() => {
-      createA11yHud({
-        get debounce() {
-          return debounce();
-        },
-      });
-      return null;
+    mountHook({
+      get debounce() {
+        return debounce();
+      },
     });
-
     setDebounce(400);
-    expect(mockEl.getAttribute("debounce")).toBe("400");
+    expect(hud.getDebounceAttribute()).toBe("400");
+
     setDebounce(undefined);
-    expect(mockEl.getAttribute("debounce")).toBe("400");
+
+    expect(hud.getDebounceAttribute()).toBe("400");
   });
 
-  it("clears scopeElement when scope changes from element to undefined via signal", () => {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    const [scope, setScope] = createSignal<Element | null>(container);
-
-    render(() => {
-      createA11yHud({
-        get scope() {
-          return scope();
-        },
-      });
-      return null;
-    });
-
-    expect(mockEl.scopeElement).toBe(container);
-    setScope(null);
-    expect(mockEl.scopeElement).toBeUndefined();
-    container.remove();
-  });
-
-  it("returned runScan() delegates to instance.runScan()", () => {
-    let result!: ReturnType<typeof createA11yHud>;
-
-    render(() => {
-      result = createA11yHud({});
-      return null;
-    });
-
-    void result.runScan();
-    expect(mockInstance.runScan).toHaveBeenCalled();
-  });
-
-  it("returned setTheme() delegates to instance.setTheme()", () => {
-    let result!: ReturnType<typeof createA11yHud>;
-
-    render(() => {
-      result = createA11yHud({});
-      return null;
-    });
-
-    result.setTheme("dark");
-    expect(mockInstance.setTheme).toHaveBeenCalledWith("dark");
-  });
-
-  it("passes initial runOnly to mount()", () => {
-    mountHook({ runOnly: ["wcag2a", "wcag2aa"] });
-    expect(mount).toHaveBeenCalledWith(expect.objectContaining({ runOnly: ["wcag2a", "wcag2aa"] }));
-  });
-
-  it("calls instance.setRunOnly() when runOnly changes via signal", () => {
+  it("updates the rule sets when the runOnly signal changes", () => {
     const [runOnly, setRunOnly] = createSignal<string[] | undefined>(["wcag2a"]);
-
-    render(() => {
-      createA11yHud({
-        get runOnly() {
-          return runOnly();
-        },
-      });
-      return null;
+    mountHook({
+      get runOnly() {
+        return runOnly();
+      },
     });
 
     setRunOnly(["wcag2a", "wcag2aa"]);
-    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["wcag2a", "wcag2aa"]);
+
+    expect(hud.getRunOnly()).toEqual(["wcag2a", "wcag2aa"]);
   });
 
-  it("does not call setRunOnly when runOnly is undefined", () => {
-    render(() => {
-      createA11yHud({ runOnly: undefined });
-      return null;
-    });
-    expect(mockInstance.setRunOnly).not.toHaveBeenCalled();
+  it("leaves the rule sets untouched when runOnly is undefined", () => {
+    mountHook({ runOnly: undefined });
+    expect(hud.getRunOnly()).toBeNull();
   });
 
-  it("returned setRunOnly() delegates to instance.setRunOnly()", () => {
-    let result!: ReturnType<typeof createA11yHud>;
+  describe("returned API", () => {
+    it("runScan() scans the element and resolves with axe results", async () => {
+      const hook = mountHook();
+      runScan.mockClear();
 
-    render(() => {
-      result = createA11yHud({});
-      return null;
+      const results = await hook.runScan();
+
+      expect(runScan).toHaveBeenCalledTimes(1);
+      expect(Array.isArray(results?.violations)).toBe(true);
     });
 
-    result.setRunOnly(["best-practice"]);
-    expect(mockInstance.setRunOnly).toHaveBeenCalledWith(["best-practice"]);
-  });
-
-  it("returned ignores.add() delegates to instance.ignores.add()", () => {
-    let result!: ReturnType<typeof createA11yHud>;
-
-    render(() => {
-      result = createA11yHud({});
-      return null;
+    it("setTheme() changes the element's theme", () => {
+      const hook = mountHook();
+      hook.setTheme("github-dark");
+      expect(hud.getThemeAttribute()).toBe("github-dark");
     });
 
-    result.ignores.add("color-contrast");
-    expect(mockInstance.ignores.add).toHaveBeenCalledWith("color-contrast", undefined);
-  });
-
-  it("returned ignores.remove() delegates to instance.ignores.remove()", () => {
-    let result!: ReturnType<typeof createA11yHud>;
-    render(() => {
-      result = createA11yHud({});
-      return null;
-    });
-    result.ignores.remove("color-contrast");
-    expect(mockInstance.ignores.remove).toHaveBeenCalledWith("color-contrast", undefined);
-  });
-
-  it("returned ignores.clear() delegates to instance.ignores.clear()", () => {
-    let result!: ReturnType<typeof createA11yHud>;
-    render(() => {
-      result = createA11yHud({});
-      return null;
-    });
-    result.ignores.clear();
-    expect(mockInstance.ignores.clear).toHaveBeenCalledOnce();
-  });
-
-  it("returned ignores.exportJson() delegates to instance.ignores.exportJson()", () => {
-    mockInstance.ignores.exportJson.mockReturnValue('[{"ruleId":"image-alt"}]');
-    let result!: ReturnType<typeof createA11yHud>;
-    render(() => {
-      result = createA11yHud({});
-      return null;
-    });
-    const json = result.ignores.exportJson();
-    expect(json).toBe('[{"ruleId":"image-alt"}]');
-  });
-
-  it("returned ignores.importJson() delegates to instance.ignores.importJson()", () => {
-    let result!: ReturnType<typeof createA11yHud>;
-    render(() => {
-      result = createA11yHud({});
-      return null;
-    });
-    result.ignores.importJson('[{"ruleId":"image-alt"}]');
-    expect(mockInstance.ignores.importJson).toHaveBeenCalledWith('[{"ruleId":"image-alt"}]');
-  });
-
-  it("ignores.list() returns [] and exportJson returns '[]' before instance mounts", () => {
-    let earlyList: unknown[] | undefined;
-    let earlyJson: string | undefined;
-    render(() => {
-      const { ignores } = createA11yHud({});
-      earlyList = ignores.list();
-      earlyJson = ignores.exportJson();
-      return null;
-    });
-    expect(earlyList).toEqual([]);
-    expect(earlyJson).toBe("[]");
-    cleanup();
-  });
-
-  it("returned exportResults() delegates to instance.exportResults()", () => {
-    mockInstance.exportResults.mockReturnValue('{"version":"1"}');
-    let result!: ReturnType<typeof createA11yHud>;
-
-    render(() => {
-      result = createA11yHud({});
-      return null;
+    it("setRunOnly() changes the element's rule sets", () => {
+      const hook = mountHook();
+      hook.setRunOnly(["best-practice"]);
+      expect(hud.getRunOnly()).toEqual(["best-practice"]);
     });
 
-    const json = result.exportResults();
-    expect(mockInstance.exportResults).toHaveBeenCalledOnce();
-    expect(json).toBe('{"version":"1"}');
-  });
+    it("exportResults() returns the element's export once a scan has settled", async () => {
+      const hook = mountHook();
+      await hud.awaitReady();
 
-  it("runScan() returns a resolved promise when no instance", () => {
-    let result!: ReturnType<typeof createA11yHud>;
+      const json = hook.exportResults();
 
-    // We can't easily test this path without an instance, but verify the
-    // return type is a Promise when called on an unmounted hook
-    render(() => {
-      result = createA11yHud({});
-      return null;
+      expect(json).not.toBeNull();
+      expect((JSON.parse(json as string) as { version: string }).version).toBe("1");
     });
 
-    const scanResult = result.runScan();
-    expect(scanResult).toBeInstanceOf(Promise);
+    it("ignores.add() persists the rule and ignores.list() reads it back", () => {
+      const hook = mountHook();
+      hook.ignores.add("color-contrast");
+      expect(hook.ignores.list()).toEqual([{ ruleId: "color-contrast" }]);
+    });
+
+    it("ignores.remove() drops the rule again", () => {
+      const hook = mountHook();
+      hook.ignores.add("color-contrast");
+      hook.ignores.remove("color-contrast");
+      expect(hook.ignores.list()).toEqual([]);
+    });
+
+    it("ignores.clear() empties the list", () => {
+      const hook = mountHook();
+      hook.ignores.add("color-contrast");
+      hook.ignores.add("image-alt");
+      hook.ignores.clear();
+      expect(hook.ignores.list()).toEqual([]);
+    });
+
+    it("ignores.exportJson() and ignores.importJson() round-trip the list", () => {
+      const hook = mountHook();
+      hook.ignores.add("image-alt");
+      const json = hook.ignores.exportJson();
+      hook.ignores.clear();
+
+      hook.ignores.importJson(json);
+
+      expect(JSON.parse(json)).toEqual([{ ruleId: "image-alt" }]);
+      expect(hook.ignores.list()).toEqual([{ ruleId: "image-alt" }]);
+    });
+
+    it("ignores.list() and ignores.exportJson() are safe to call during render", () => {
+      let earlyList: unknown[] | undefined;
+      let earlyJson: string | undefined;
+
+      render(() => {
+        const { ignores } = createA11yHud({});
+        earlyList = ignores.list();
+        earlyJson = ignores.exportJson();
+        return null;
+      });
+
+      expect(earlyList).toEqual([]);
+      expect(earlyJson).toBe("[]");
+    });
+
+    it("runScan() resolves with null when called before the element is mounted", async () => {
+      let early: Promise<unknown> | undefined;
+
+      render(() => {
+        early = createA11yHud({}).runScan();
+        return null;
+      });
+
+      await expect(early).resolves.toBeNull();
+    });
   });
 });
