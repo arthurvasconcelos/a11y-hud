@@ -1,5 +1,13 @@
 # @a11y-hud/react
 
+## 1.0.2
+
+### Patch Changes
+
+- 6cdb934: Build with tsdown instead of the unmaintained tsup. Published output is functionally unchanged; declaration maps are now included alongside the type definitions.
+- Updated dependencies [6cdb934]
+  - a11y-hud@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes
