@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.2/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -15,7 +15,8 @@
       "!**/.vitepress",
       "!**/.angular",
       "!**/scripts",
-      "!**/*.svg"
+      "!**/*.svg",
+      "!pnpm-lock.yaml"
     ]
   },
   "formatter": {
@@ -44,6 +45,11 @@
   "json": {
     "formatter": {
       "trailingCommas": "none"
+    }
+  },
+  "markdown": {
+    "formatter": {
+      "enabled": false
     }
   },
   "overrides": [
