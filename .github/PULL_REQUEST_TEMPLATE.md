@@ -11,7 +11,7 @@
 
 ## Checklist
 
-- [ ] Tests included (required for any behaviour change)
+- [ ] Tests included at the layer [contributing/testing-strategy.md](../contributing/testing-strategy.md) prescribes (required for any behaviour change)
 - [ ] `pnpm check` passes (lint + format)
 - [ ] `pnpm typecheck` passes
 - [ ] Changeset added (`pnpm changeset`) if this changes public behaviour
