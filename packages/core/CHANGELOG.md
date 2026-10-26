@@ -1,5 +1,11 @@
 # a11y-hud
 
+## 1.0.1
+
+### Patch Changes
+
+- 51cda82: Update axe-core to 4.14.
+
 ## 1.0.0
 
 ### Major Changes
