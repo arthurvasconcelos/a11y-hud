@@ -1,5 +1,12 @@
 # @a11y-hud/angular
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies [ff31b03]
+  - a11y-hud@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes
